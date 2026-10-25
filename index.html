@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>疯狂水世界 · 末日打捞站</title>
+  <meta name="description" content="海平面吞没了世界。经营一座会漂的避难所，在沉城抓钩与废料拼图里打捞物资，把旧世界一点点捞回来。" />
+  <meta name="theme-color" content="#04131b" />
+  <meta property="og:title" content="疯狂水世界 · 末日打捞站" />
+  <meta property="og:description" content="海淹没了世界，我们把家捞回来。两个打捞小游戏，一座会漂的避难所。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="./docs/preview-title.webp" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="疯狂水世界" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/audio.js" defer></script>
+  <script src="js/hub.js" defer></script>
+  <script src="js/hub-scene.js" defer></script>
+  <script src="js/arcade.js" defer></script>
+  <script src="js/match.js" defer></script>
+</head>
+<body>
+  <main id="app">
+    <noscript><div class="noscript">请启用 JavaScript，才能进入疯狂水世界。</div></noscript>
+    <canvas id="scene" role="img" aria-label="末日之后漂浮在海面上的避难所"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="rain-glass" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- ── 避难所 HUD ─────────────────────────────────────── -->
+    <header id="hud" class="hud hidden" aria-hidden="true">
+      <div class="hud-bar">
+        <div class="brand-block">
+          <span class="brand-mark">疯</span>
+          <div>
+            <b>疯狂号避难所</b>
+            <span>末日第 <em id="hud-day">1,281</em> 天 · Lv.<em id="hud-level">1</em></span>
+          </div>
+        </div>
+
+        <div class="credit-block">
+          <span class="credit-coin" aria-hidden="true"></span>
+          <div><b id="hud-credits">0</b><span>打捞币</span></div>
+        </div>
+
+        <div class="store-block">
+          <div class="store-top"><span>仓库</span><b><em id="hud-store">0</em> / <em id="hud-store-cap">60</em></b></div>
+          <div class="store-track"><i id="hud-store-fill"></i></div>
+        </div>
+
+        <div class="hud-actions">
+          <button class="icon-btn" data-action="mute" aria-label="切换声音">
+            <img class="ic-sound" src="assets/icons/sound-on.svg" alt="" />
+            <img class="ic-mute" src="assets/icons/sound-off.svg" alt="" />
+          </button>
+          <button class="icon-btn" data-action="settings" aria-label="打开设置">
+            <img src="assets/icons/cog.svg" alt="" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── 避难所面板 ─────────────────────────────────────── -->
+    <aside id="hub-panel" class="hub-panel hidden" aria-label="避难所面板">
+      <div class="panel-hazard"></div>
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">SALVAGE OPERATIONS</p>
+          <h2 id="panel-title">打捞任务</h2>
+        </div>
+        <div id="panel-tag" class="panel-tag">2 个任务</div>
+      </div>
+      <nav class="panel-tabs" role="tablist" aria-label="避难所分类">
+        <button class="panel-tab active" data-tab="tasks" role="tab" aria-selected="true">打捞任务</button>
+        <button class="panel-tab" data-tab="warehouse" role="tab" aria-selected="false">仓库</button>
+        <button class="panel-tab" data-tab="shelter" role="tab" aria-selected="false">避难所</button>
+      </nav>
+      <div id="panel-content" class="panel-content" role="tabpanel"></div>
+      <div class="panel-foot">
+        <span><i></i> 进度自动保存</span>
+        <span id="panel-note">物资会存进避难所仓库</span>
+      </div>
+    </aside>
+
+    <!-- ── 浮动提示 ───────────────────────────────────────── -->
+    <div id="toast" class="toast" role="status" aria-live="polite">
+      <span id="toast-kicker" class="toast-kicker">SALVAGE</span>
+      <strong id="toast-title"></strong>
+      <span id="toast-sub"></span>
+    </div>
+
+    <!-- ── 标题 ───────────────────────────────────────────── -->
+    <section id="title-screen" class="screen title-screen" aria-label="开始界面">
+      <div class="title-inner">
+        <p class="eyebrow"><i></i> AFTER THE FLOOD · 97% LAND LOST</p>
+        <h1 class="logo" aria-label="疯狂水世界">
+          <span class="logo-cn">疯狂</span><span class="logo-cn accent">水世界</span>
+        </h1>
+        <p class="tagline">海淹没了世界，我们把家捞回来。</p>
+        <p class="tagline-sub">末日之后，你守着一座会漂的避难所。打捞旧世界，才是活下去的办法。</p>
+
+        <div class="title-stats">
+          <div><span>避难所</span><b>Lv.<em id="title-level">1</em></b></div>
+          <div><span>打捞币</span><b id="title-credits">0</b></div>
+          <div><span>仓库</span><b id="title-store">0 / 60</b></div>
+        </div>
+
+        <div class="title-menu">
+          <button id="start-btn" class="btn primary" data-action="start">
+            <span>进入避难所</span>
+            <kbd>ENTER</kbd>
+          </button>
+          <div class="title-row">
+            <button class="btn ghost" data-action="guide">怎么活</button>
+            <button class="btn ghost" data-action="settings">设置</button>
+          </div>
+          <p id="title-note" class="title-note">没有离线收益 · 每一份物资都要亲自捞</p>
+        </div>
+
+        <div class="title-brief">
+          <div><span>01</span><b>打捞</b><p>沉城抓钩 / 废料拼图</p></div>
+          <div><span>02</span><b>入库</b><p>废铁、燃料、纤维和芯片</p></div>
+          <div><span>03</span><b>扩建</b><p>把漂着的铁皮变成家</p></div>
+        </div>
+      </div>
+      <div class="title-footer">
+        <span>末日实景素材 · 本地图片 · 无离线收益</span>
+        <span>v2.3 · FLOODLINE SALVAGE</span>
+      </div>
+    </section>
+
+    <!-- ── 玩法说明 ───────────────────────────────────────── -->
+    <section id="guide-screen" class="overlay modal-overlay hidden" role="dialog" aria-modal="true" aria-label="怎么活">
+      <div class="modal guide-modal">
+        <button class="modal-close" data-action="close-guide" aria-label="关闭"><img src="assets/icons/cancel.svg" alt="" /></button>
+        <p class="eyebrow">SURVIVAL NOTES</p>
+        <h2>末日打捞指南</h2>
+        <div class="guide-grid">
+          <article>
+            <span class="guide-no">01</span>
+            <h3>沉城抓钩</h3>
+            <p>抓钩会来回摆动。点击水面放下抓钩，抓回沉船里的废料、燃料和保险箱。连续抓取会累积连击加成；水雷会炸掉 5 秒并清空连击。极少数医疗舱里还封着海水过滤器。</p>
+          </article>
+          <article>
+            <span class="guide-no">02</span>
+            <h3>废料拼图</h3>
+            <p>交换相邻的废料箱，让三个或更多同类连成一线。连锁消除会加分，步数用完后按成绩结算。</p>
+          </article>
+          <article>
+            <span class="guide-no">03</span>
+            <h3>避难所仓库</h3>
+            <p>打捞币是通用货币。所有物资都会进入仓库；仓库满了，多出来的部分会自动折算成打捞币。海水过滤器单独存放，不占容量。</p>
+          </article>
+          <article>
+            <span class="guide-no">04</span>
+            <h3>扩建疯狂号</h3>
+            <p>用打捞币和材料升级仓库、工坊、声呐、聚变核心和净水舱。净水舱需要稀有过滤器，但会永久提高所有收益。</p>
+          </article>
+        </div>
+        <div class="guide-rare">
+          <img src="assets/seawater-filter-icon.webp" alt="海水过滤器" />
+          <div>
+            <b>稀有打捞 · 海水过滤器</b>
+            <span>抓钩约 12% 航次出现，三消 1,200 分后约 5% 翻出。它不占仓库容量，用来建造净水舱。</span>
+          </div>
+        </div>
+        <div class="guide-tip">
+          <span><b>没有离线收益</b></span>
+          <span><b>没有体力限制</b></span>
+          <span><b>过滤器只能亲自捞</b></span>
+          <span><b>随时可以回避难所</b></span>
+        </div>
+        <button class="btn primary wide" data-action="close-guide">开始打捞</button>
+      </div>
+    </section>
+
+    <!-- ── 设置 ───────────────────────────────────────────── -->
+    <section id="settings-screen" class="overlay modal-overlay hidden" role="dialog" aria-modal="true" aria-label="设置">
+      <div class="modal settings-modal">
+        <button class="modal-close" data-action="close-settings" aria-label="关闭"><img src="assets/icons/cancel.svg" alt="" /></button>
+        <p class="eyebrow">SYSTEM</p>
+        <h2>设置</h2>
+        <div class="settings-row">
+          <div><b>声音与音景</b><span>雨水、金属和程序化配乐</span></div>
+          <button class="toggle" data-action="mute" aria-label="切换声音"><i></i><span>开启</span></button>
+        </div>
+        <div class="settings-row">
+          <div><b>自动保存</b><span>打捞结算与升级后写入本地存档</span></div>
+          <span class="status-pill on">已开启</span>
+        </div>
+        <div class="settings-row">
+          <div><b>离线收益</b><span>本作没有离线收益</span></div>
+          <span class="status-pill">关闭</span>
+        </div>
+        <button class="btn ghost wide" data-action="guide">查看玩法说明</button>
+        <button id="reset-save" class="btn danger wide" data-action="reset-save">清空避难所</button>
+        <p class="modal-note">清空会删除打捞币、物资和所有扩建，无法撤销。再次点击确认。</p>
+        <p class="version">疯狂水世界 · v2.3 · 本地图片素材 + 程序化特效，无远程依赖</p>
+      </div>
+    </section>
+
+    <!-- ── 小游戏 ─────────────────────────────────────────── -->
+    <section id="arcade" class="arcade hidden" aria-label="打捞任务">
+      <canvas id="arcade-canvas"></canvas>
+
+      <header id="arcade-hud" class="arcade-hud">
+        <button id="arcade-back" class="icon-btn" data-action="arcade-back" aria-label="退出任务"><img src="assets/icons/back.svg" alt="" /></button>
+        <div class="arcade-heading">
+          <span id="arcade-kicker">MISSION 01</span>
+          <b id="arcade-name">沉城抓钩</b>
+        </div>
+        <div class="arcade-stats">
+          <div><span id="arcade-stat-label">剩余时间</span><b id="arcade-stat-value">60</b></div>
+          <div><span>本局打捞币</span><b id="arcade-score">0</b></div>
+        </div>
+      </header>
+
+      <div id="arcade-loot" class="loot-strip" aria-label="本局物资"></div>
+
+      <div id="arcade-bottom" class="arcade-bottom">
+        <p id="arcade-hint">点击水面放下抓钩</p>
+        <button id="arcade-action" class="btn primary" data-action="arcade-action">放下抓钩</button>
+      </div>
+
+      <div id="arcade-countdown" class="countdown hidden">3</div>
+
+      <div id="arcade-brief" class="arcade-card brief-card">
+        <p id="brief-kicker" class="eyebrow">MISSION 01</p>
+        <h2 id="brief-title">沉城抓钩</h2>
+        <p id="brief-copy" class="arcade-copy">抓钩会来回摆动。点击水面放下抓钩，抓回旧世界的物资。</p>
+        <div class="brief-stats">
+          <div><span>任务时长</span><b id="brief-time">60 秒</b></div>
+          <div><span>仓库容量</span><b id="brief-capacity">60</b></div>
+          <div><span>打捞目标</span><b id="brief-goal">废铁 / 燃料 / 芯片</b></div>
+        </div>
+        <div class="brief-rewards">
+          <span>预计奖励</span>
+          <div id="brief-reward" class="reward-line"></div>
+        </div>
+        <button class="btn primary wide" data-action="arcade-start">开始打捞</button>
+        <button class="text-btn" data-action="arcade-close">返回避难所</button>
+      </div>
+
+      <div id="arcade-summary" class="arcade-card summary-card hidden">
+        <p class="eyebrow">SALVAGE COMPLETE</p>
+        <h2>打捞完成</h2>
+        <div class="summary-score"><span>本局成绩</span><b id="summary-score">0</b></div>
+        <div class="summary-credits"><span class="credit-coin"></span><b id="summary-credits">0</b><span>打捞币</span></div>
+        <div id="summary-loot" class="summary-loot"></div>
+        <p id="summary-rare" class="summary-rare hidden"></p>
+        <p id="summary-overflow" class="summary-overflow hidden"></p>
+        <button class="btn primary wide" data-action="arcade-close">返回避难所</button>
+        <button class="text-btn" data-action="arcade-again">再来一局</button>
+      </div>
+
+      <div id="arcade-confirm" class="arcade-card confirm-card hidden">
+        <p class="eyebrow">ABANDON RUN</p>
+        <h2>放弃这局？</h2>
+        <p class="arcade-copy">本局已经捞到的东西不会带回避难所。</p>
+        <div class="confirm-actions">
+          <button class="btn ghost" data-action="arcade-resume">继续打捞</button>
+          <button class="btn danger" data-action="arcade-quit">放弃</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
