@@ -10,11 +10,11 @@
 
 ## 立即开玩
 
-部署后访问：
+在线游玩：
 
-```text
-https://<你的 GitHub 用户名>.github.io/<仓库名>/
-```
+**https://yhsome.github.io/crazy-water-world/**
+
+源码仓库：**https://github.com/YHSome/crazy-water-world**
 
 本地预览（二选一）：
 

@@ -3,6 +3,11 @@
   "version": "2.3.0",
   "private": true,
   "description": "疯狂水世界 — a post-apocalyptic salvage station with a gold-miner hook, a match-3 dive, a shared currency and a floating warehouse.",
+  "homepage": "https://yhsome.github.io/crazy-water-world/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YHSome/crazy-water-world.git"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
