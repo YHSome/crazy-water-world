@@ -341,10 +341,12 @@
     return sum;
   };
   Hub.prototype.creditMult = function () {
-    return 1 + (this.data.upgrades.workshop || 0) * 0.1 + (this.data.upgrades.purifier || 0) * 0.1;
+    var setBonus = this.collectionSetBonuses();
+    return 1 + (this.data.upgrades.workshop || 0) * 0.1 + (this.data.upgrades.purifier || 0) * 0.1 + setBonus.credit;
   };
   Hub.prototype.materialMult = function () {
-    return 1 + (this.data.upgrades.sonar || 0) * 0.12 + (this.data.upgrades.purifier || 0) * 0.05;
+    var setBonus = this.collectionSetBonuses();
+    return 1 + (this.data.upgrades.sonar || 0) * 0.12 + (this.data.upgrades.purifier || 0) * 0.05 + setBonus.mat;
   };
   Hub.prototype.hookTime = function () { return 60 + (this.data.upgrades.core || 0) * 5; };
   Hub.prototype.matchMoves = function () { return 30 + (this.data.upgrades.core || 0) * 2; };
@@ -674,6 +676,29 @@
     return false;
   };
 
+  Hub.prototype.collectionSetOwned = function (set) {
+    var n = 0;
+    var map = this.data.collectibles || {};
+    for (var i = 0; i < set.items.length; i++) if ((map[set.items[i]] || 0) > 0) n++;
+    return n;
+  };
+
+  Hub.prototype.collectionSetActive = function (set) {
+    return this.collectionSetOwned(set) >= set.items.length;
+  };
+
+  Hub.prototype.collectionSetBonuses = function () {
+    var out = { credit: 0, mat: 0, active: 0 };
+    for (var i = 0; i < CW.COLLECTION_SETS.length; i++) {
+      var set = CW.COLLECTION_SETS[i];
+      if (!this.collectionSetActive(set)) continue;
+      out.active += 1;
+      out.credit += set.bonus.credit || 0;
+      out.mat += set.bonus.mat || 0;
+    }
+    return out;
+  };
+
   Hub.prototype.rollCollectibles = function (result) {
     if (!CW.COLLECTIBLES || !CW.COLLECTIBLES.length) return [];
     if (!this.data.collectibles) this.data.collectibles = {};
@@ -803,6 +828,23 @@
         '<button class="craft-btn' + (can ? ' ready' : '') + '" data-action="craft" data-rarity="' + rec.from + '"' + (can ? '' : ' disabled') + '>' +
           (can ? '合成 · ' + fmt(rec.cost) : (have < 3 ? '缺 ' + (3 - have) + ' 件' : '缺打捞币')) +
         '</button>' +
+      '</div>';
+    }
+    html += '</div></div>';
+    html += '<div class="set-board"><div class="set-head"><span>收藏套装</span><small>集齐整套获得永久加成</small></div><div class="set-list">';
+    for (var si = 0; si < CW.COLLECTION_SETS.length; si++) {
+      var set = CW.COLLECTION_SETS[si];
+      var owned = this.collectionSetOwned(set);
+      var active = owned >= set.items.length;
+      var icons = '';
+      for (var ii = 0; ii < set.items.length; ii++) {
+        var setItem = CW.COLLECTIBLE_MAP[set.items[ii]];
+        icons += '<img class="' + ((map[setItem.id] || 0) > 0 ? '' : 'missing') + '" src="' + setItem.icon + '" alt="" title="' + setItem.name + '">';
+      }
+      html += '<div class="set-card' + (active ? ' active' : '') + '" style="--set-color:' + set.color + '">' +
+        '<div class="set-icons">' + icons + '</div>' +
+        '<div class="set-copy"><b>' + set.name + '</b><span>' + set.desc + '</span></div>' +
+        '<div class="set-status"><b>' + owned + ' / ' + set.items.length + '</b><em>' + set.bonusText + '</em></div>' +
       '</div>';
     }
     html += '</div></div>';
