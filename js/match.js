@@ -34,6 +34,15 @@
     img.src = 'assets/icons/' + name + '.svg';
     TILE_IMAGES.push(img);
   });
+  var COLLECTIBLE_IMAGES = {};
+  function collectibleImage(src) {
+    if (!COLLECTIBLE_IMAGES[src]) {
+      var img = new Image();
+      img.src = src;
+      COLLECTIBLE_IMAGES[src] = img;
+    }
+    return COLLECTIBLE_IMAGES[src];
+  }
 
   function drawCover(ctx, img, w, h, fx, fy) {
     if (!img || !img.complete || !img.naturalWidth) return false;
@@ -78,6 +87,8 @@
     this.moves = 0;
     this.counts = [0, 0, 0, 0, 0];
     this.matched = [];
+    this.collectibles = [];
+    this.collectibleCell = null;
     this.particles = [];
     this.popups = [];
     this.done = false;
@@ -119,6 +130,8 @@
     this.selected = null;
     this.dragStart = null;
     this.specialFx = [];
+    this.collectibles = [];
+    this.collectibleCell = null;
     this.fallCells = {};
     this.fallTimer = 0;
     this.flash = 0;
@@ -145,6 +158,16 @@
       }
       tries++;
     } while (!this.hasPossibleMove() && tries < 30);
+    this.collectibleCell = null;
+    if (CW.rollCollectibleDef && chance(0.3)) {
+      var cdef = CW.rollCollectibleDef();
+      this.collectibleCell = {
+        r: (Math.random() * this.rows) | 0,
+        c: (Math.random() * this.cols) | 0,
+        id: cdef.id,
+        def: cdef
+      };
+    }
   };
 
   MatchGame.prototype.wouldImmediate = function (row, r, c, t) {
@@ -400,6 +423,24 @@
     this.phase = 'pop';
     this.popTimer = 0.24;
     this.matched = cells;
+    if (this.collectibleCell) {
+      for (var mc = 0; mc < cells.length; mc++) {
+        if (cells[mc].r === this.collectibleCell.r && cells[mc].c === this.collectibleCell.c) {
+          this.collectibles.push(this.collectibleCell.id);
+          this.popups.push({
+            x: this.boardX + this.collectibleCell.c * this.cell + this.cell / 2,
+            y: this.boardY + this.collectibleCell.r * this.cell,
+            text: '收藏品！' + this.collectibleCell.def.name,
+            life: 1.5, maxLife: 1.5,
+            color: CW.COLLECTIBLE_RARITY_MAP[this.collectibleCell.def.rarity].color,
+            size: 10
+          });
+          this.audio.relic();
+          this.collectibleCell = null;
+          break;
+        }
+      }
+    }
     for (var m = 0; m < cells.length; m++) {
       var cell = cells[m];
       this.counts[cell.t] += 1;
@@ -489,7 +530,7 @@
         color: color
       });
     }
-    if (this.particles.length > 180) this.particles.splice(0, this.particles.length - 180);
+    if (this.particles.length > 120) this.particles.splice(0, this.particles.length - 120);
   };
 
   MatchGame.prototype.update = function (dt) {
@@ -559,6 +600,7 @@
     this.result = {
       type: 'match',
       score: this.score,
+      collectibles: this.collectibles.slice(),
       credits: credits,
       filters: (((this.arcade.hub.data.filterPity || 0) >= 7) || (this.score >= 1200 && chance(0.05))) ? 1 : 0,
       materials: {
@@ -655,6 +697,9 @@
         }
         if (this.invalidTimer > 0) tx += invalidX;
         this.drawTile(ctx, tx, ty, cell, val, popScale, popAlpha);
+        if (this.collectibleCell && this.collectibleCell.r === rr && this.collectibleCell.c === cc) {
+          this.drawCollectibleMini(ctx, tx, ty, cell, this.collectibleCell.def);
+        }
       }
     }
 
@@ -809,6 +854,32 @@
       ctx.arc(dx, dy, 0.5 + hash(d * 3.2) * 1.2, 0, TAU);
       ctx.fill();
     }
+    ctx.restore();
+  };
+
+  MatchGame.prototype.drawCollectibleMini = function (ctx, cx, cy, cell, def) {
+    var s = cell * 0.36;
+    var img = collectibleImage(def.icon);
+    var color = CW.COLLECTIBLE_RARITY_MAP[def.rarity].color;
+    ctx.save();
+    ctx.translate(cx + cell * 0.24, cy - cell * 0.24);
+    ctx.fillStyle = 'rgba(1, 10, 15, 0.82)';
+    ctx.beginPath();
+    ctx.roundRect(-s / 2 - 2, -s / 2 - 2, s + 4, s + 4, 3);
+    ctx.fill();
+    if (img.complete && img.naturalWidth) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(-s / 2, -s / 2, s, s, 2);
+      ctx.clip();
+      ctx.drawImage(img, -s / 2, -s / 2, s, s);
+      ctx.restore();
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(-s / 2, -s / 2, s, s, 2);
+    ctx.stroke();
     ctx.restore();
   };
 

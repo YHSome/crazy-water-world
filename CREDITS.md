@@ -50,25 +50,27 @@ Pexels License：https://www.pexels.com/license/
 
 `tile-metal`、`tile-fuel`、`tile-fiber`、`tile-chip`、`tile-medkit` 是上述同源图标的白色重上色版本，用于三消棋盘。
 
-沉船收藏（`assets/collectibles/`）：
+沉船收藏（`assets/collectibles/`）使用 Pexels 写实照片，而非线稿图标：
 
-- `pocket-watch` — 锈蚀怀表
-- `key` — 黄铜钥匙
-- `glass-ball` — 海水玻璃瓶
-- `two-coins` — 旧时代硬币
-- `medal` — 船员徽章
-- `compass` — 黄铜罗盘
-- `photo-camera` — 防水相机
-- `treasure-map` — 航线图筒
-- `telescope` — 铜制望远镜
-- `musical-score` — 银质乐谱盒
-- `diving-helmet` — 深海潜水盔
-- `ringing-bell` — 沉船船钟
-- `book-cover` — 船长航海日志
-- `pocket-radio` — 黑匣子
-- `crown` — 潮汐王冠
+| 本地文件 | 收藏 | 摄影师 | 来源 |
+| --- | --- | --- | --- |
+| `rusty-watch.webp` | 锈蚀怀表 | Rezoana Amin Rayna | https://www.pexels.com/photo/4443658/ |
+| `brass-key.webp` | 旧船门钥 | Andrea Piacquadio | https://www.pexels.com/photo/3769979/ |
+| `sea-bottle.webp` | 海水玻璃瓶 | Valentin Ivantsov | https://www.pexels.com/photo/34557218/ |
+| `old-coin.webp` | 旧时代硬币 | Erick González González | https://www.pexels.com/photo/38598949/ |
+| `crew-badge.webp` | 船员勋章 | Suzy Hazelwood | https://www.pexels.com/photo/2040276/ |
+| `brass-compass.webp` | 黄铜罗盘 | Ylanite Koppens | https://www.pexels.com/photo/14436288/ |
+| `waterproof-camera.webp` | 防水相机 | Wallace Chuck | https://www.pexels.com/photo/4939936/ |
+| `chart-tube.webp` | 航线图筒 | Moein Moradi | https://www.pexels.com/photo/7190498/ |
+| `copper-telescope.webp` | 铜制望远镜 | Earth Photart | https://www.pexels.com/photo/39590146/ |
+| `silver-musicbox.webp` | 旧式留声机 | Adeetha Weerasekara | https://www.pexels.com/photo/36282708/ |
+| `diving-helmet.webp` | 深海潜水盔 | Pexels User | https://www.pexels.com/photo/31642674/ |
+| `ship-bell.webp` | 沉船船钟 | Jan van der Wolf | https://www.pexels.com/photo/29626228/ |
+| `captain-log.webp` | 船长航海日志 | Abdellah Benziane | https://www.pexels.com/photo/38019365/ |
+| `black-box.webp` | 黑匣子 | betül nur akyürek | https://www.pexels.com/photo/38074199/ |
+| `tide-crown.webp` | 潮汐王冠 | Regan Dsouza | https://www.pexels.com/photo/32937227/ |
 
-处理方式：通过 Iconify 指定象牙金色下载为 SVG，未修改图形轮廓。收藏品图标同样来自网上的 Game-icons.net 素材，不使用项目手绘图案。
+处理方式：统一方形裁切、调色、压缩为 360×360 WebP。遵循 Pexels License，无远程图床。
 
 ## 海水过滤器
 

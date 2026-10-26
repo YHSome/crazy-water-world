@@ -45,6 +45,12 @@
   ]);
 
   function id(x) { return document.getElementById(x); }
+  function hexA(hex, a) {
+    var s = hex.replace('#', '');
+    if (s.length === 3) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+    var n = parseInt(s, 16);
+    return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
   function hash(n) {
     var x = Math.sin(n * 127.1 + 311.7) * 43758.5453123;
     return x - Math.floor(x);
@@ -71,6 +77,16 @@
   HOOK_ICON.src = 'assets/icons/hook.svg';
   var PULLEY_ICON = new Image();
   PULLEY_ICON.src = 'assets/icons/pulley.svg';
+  var COLLECTIBLE_IMAGES = {};
+  function collectibleImage(src) {
+    if (!COLLECTIBLE_IMAGES[src]) {
+      var img = new Image();
+      img.decoding = 'async';
+      img.src = src;
+      COLLECTIBLE_IMAGES[src] = img;
+    }
+    return COLLECTIBLE_IMAGES[src];
+  }
 
   var ITEM_IMAGES = {
     scrap: 'assets/icons/scrap.svg',
@@ -151,8 +167,9 @@
   Arcade.prototype.resize = function () {
     this.w = Math.max(280, window.innerWidth);
     this.h = Math.max(280, window.innerHeight);
-    var dpr = Math.min(2, window.devicePixelRatio || 1);
-    var maxPixels = 4200000;
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var dpr = Math.min(coarse ? 1.5 : 2, window.devicePixelRatio || 1);
+    var maxPixels = 2600000;
     var raw = this.w * this.h * dpr * dpr;
     if (raw > maxPixels) dpr *= Math.sqrt(maxPixels / raw);
     this.dpr = dpr;
@@ -556,6 +573,7 @@
     this.bestCombo = 0;
     this.safeCount = 0;
     this.goldCount = 0;
+    this.collectibles = [];
     this.filters = 0;
     this.rareFound = false;
     this.hasFilter = false;
@@ -602,6 +620,7 @@
     this.bestCombo = 0;
     this.safeCount = 0;
     this.goldCount = 0;
+    this.collectibles = [];
     this.length = 62;
     this.swingTime = 0;
     this.angle = 0;
@@ -636,6 +655,39 @@
         x: x,
         y: y,
         r: (key === 'safe' ? 20 : key === 'gold' ? 17 : 16) * this.itemScale,
+        phase: Math.random() * TAU,
+        grabbed: false,
+        dead: false
+      });
+    }
+
+    // In-run collectible: a real salvage object sits on the seabed and must be hooked.
+    if (chance(0.22) && CW.rollCollectibleDef) {
+      var cdef = CW.rollCollectibleDef();
+      var cx = this.w * 0.5;
+      var cy = (top + bottom) * 0.58;
+      for (var ca = 0; ca < 70; ca++) {
+        var ctx2 = rand(left, right);
+        var cty = rand(top, bottom);
+        var clear2 = true;
+        for (var ci = 0; ci < this.items.length; ci++) {
+          var oi = this.items[ci];
+          var odx = oi.x - ctx2;
+          var ody = oi.y - cty;
+          if (odx * odx + ody * ody < 64 * 64 * this.itemScale * this.itemScale) { clear2 = false; break; }
+        }
+        if (clear2) { cx = ctx2; cy = cty; break; }
+      }
+      this.items.push({
+        key: 'collectible',
+        collectibleId: cdef.id,
+        name: cdef.name,
+        icon: cdef.icon,
+        color: CW.COLLECTIBLE_RARITY_MAP[cdef.rarity].color,
+        rarity: cdef.rarity,
+        x: cx,
+        y: cy,
+        r: 18 * this.itemScale,
         phase: Math.random() * TAU,
         grabbed: false,
         dead: false
@@ -687,6 +739,7 @@
     this.comboTimer = 0;
     this.safeCount = 0;
     this.goldCount = 0;
+    this.collectibles = [];
     this.buildItemSprites();
     this.audio.click();
   };
@@ -766,7 +819,8 @@
         }
       }
     } else if (this.state === 'retract') {
-      var rSpeed = this.attached ? clamp(300 / ITEM_TYPES[this.attached.key].weight, 62, 260) : 980;
+      var attachedWeight = this.attached && ITEM_TYPES[this.attached.key] ? ITEM_TYPES[this.attached.key].weight : 1.5;
+      var rSpeed = this.attached ? clamp(300 / attachedWeight, 62, 260) : 980;
       if (this.condition && this.condition.reel) rSpeed *= this.condition.reel;
       this.length -= rSpeed * dt;
       if (this.attached) {
@@ -794,7 +848,7 @@
       var dy = tip.y - it.y;
       var rr = it.r + 8;
       if (dx * dx + dy * dy <= rr * rr) {
-        if (ITEM_TYPES[it.key].mine) {
+        if (ITEM_TYPES[it.key] && ITEM_TYPES[it.key].mine) {
           it.dead = true;
           this.state = 'retract';
           this.attached = null;
@@ -822,6 +876,17 @@
   HookGame.prototype.collectAttached = function () {
     var it = this.attached;
     if (!it) return;
+    if (it.key === 'collectible') {
+      this.collectibles.push(it.collectibleId);
+      this.popups.push({ x: it.x, y: it.y - 24, text: '收藏品！' + it.name, color: it.color, life: 2.0, maxLife: 2.0 });
+      this.spawnBurst(it.x, it.y, it.color, 30, 150);
+      this.audio.relic();
+      this.flash = 0.35;
+      var cidx = this.items.indexOf(it);
+      if (cidx >= 0) this.items.splice(cidx, 1);
+      this.attached = null;
+      return;
+    }
     var data = ITEM_TYPES[it.key];
     if (it.key === 'filter') {
       this.filters += 1;
@@ -866,7 +931,7 @@
         color: color
       });
     }
-    if (this.particles.length > 220) this.particles.splice(0, this.particles.length - 220);
+    if (this.particles.length > 150) this.particles.splice(0, this.particles.length - 150);
   };
 
   HookGame.prototype.updateParticles = function (dt) {
@@ -906,6 +971,7 @@
       bestCombo: this.bestCombo,
       safeCount: this.safeCount,
       goldCount: this.goldCount,
+      collectibles: this.collectibles.slice(),
       materials: {
         metal: this.counts.metal,
         fuel: this.counts.fuel,
@@ -1143,6 +1209,13 @@
     ctx.translate(x, y);
     if (carried) ctx.scale(0.9, 0.9);
 
+    if (item.key === 'collectible') {
+      this.drawCollectibleItem(ctx, item, s);
+      ctx.restore();
+      this.drawItemLabel(ctx, x, y + s + 14, item.name, item.color);
+      return;
+    }
+
     if (item.key === 'filter') {
       this.drawFilterItem(ctx, s);
       ctx.restore();
@@ -1197,6 +1270,42 @@
     ctx.restore();
 
     this.drawItemLabel(ctx, x, y + s + 9, data.name, data.mine ? '#ff8a6b' : data.color);
+  };
+
+  HookGame.prototype.drawCollectibleItem = function (ctx, item, s) {
+    var pulse = 0.5 + Math.sin(this.time * 2.4 + item.phase) * 0.5;
+    var size = s * 2.25;
+    var half = size / 2;
+    var glow = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 2.5);
+    glow.addColorStop(0, hexA(item.color, 0.24 + pulse * 0.1));
+    glow.addColorStop(1, hexA(item.color, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, s * 2.5, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(1, 12, 18, 0.86)';
+    ctx.beginPath();
+    ctx.roundRect(-half - 3, -half - 3, size + 6, size + 6, 6);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(-half, -half, size, size, 4);
+    ctx.clip();
+    var img = collectibleImage(item.icon);
+    if (img.complete && img.naturalWidth) {
+      ctx.drawImage(img, -half, -half, size, size);
+      ctx.fillStyle = 'rgba(0, 12, 18, 0.14)';
+      ctx.fillRect(-half, -half, size, size);
+    } else {
+      ctx.fillStyle = 'rgba(9, 45, 55, 0.95)';
+      ctx.fillRect(-half, -half, size, size);
+    }
+    ctx.restore();
+    ctx.strokeStyle = hexA(item.color, 0.78);
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.roundRect(-half, -half, size, size, 4);
+    ctx.stroke();
   };
 
   HookGame.prototype.drawFilterItem = function (ctx, s) {

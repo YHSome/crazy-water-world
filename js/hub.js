@@ -149,7 +149,7 @@
       reward: { credits: 230, mats: { chip: 2 } }
     },
     {
-      id: 'collector', name: '沉船收藏家', iconImg: 'assets/collectibles/tide-crown.svg', metric: 'collectibles', mode: 'sum', target: 3,
+      id: 'collector', name: '沉船收藏家', iconImg: 'assets/collectibles/tide-crown.webp', metric: 'collectibles', mode: 'sum', target: 3,
       desc: '累计从打捞中带回 3 件收藏品。',
       reward: { credits: 260, mats: { fiber: 2 } }
     }
@@ -264,6 +264,7 @@
     this.data = loaded || makeDefault();
     this.state = 'title';
     this.tab = 'tasks';
+    this.warehouseView = 'materials';
     this.w = 0;
     this.h = 0;
     this.dpr = 1;
@@ -357,8 +358,9 @@
   Hub.prototype.resize = function () {
     this.w = Math.max(280, window.innerWidth);
     this.h = Math.max(280, window.innerHeight);
-    var dpr = Math.min(2, window.devicePixelRatio || 1);
-    var maxPixels = 4200000;
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var dpr = Math.min(coarse ? 1.5 : 2, window.devicePixelRatio || 1);
+    var maxPixels = 3000000;
     var raw = this.w * this.h * dpr * dpr;
     if (raw > maxPixels) dpr *= Math.sqrt(maxPixels / raw);
     this.dpr = dpr;
@@ -487,8 +489,8 @@
       contractTab.classList.toggle('has-ready', readyCount > 0);
       contractTab.setAttribute('data-ready', String(readyCount));
     }
-    var collectionTab = document.querySelector('.panel-tab[data-tab="collection"]');
-    if (collectionTab) collectionTab.classList.toggle('has-ready', this.collectionCanCraftAny());
+    var warehouseTab = document.querySelector('.panel-tab[data-tab="warehouse"]');
+    if (warehouseTab) warehouseTab.classList.toggle('has-ready', this.collectionCanCraftAny());
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
       this.dom.panelTag.textContent = MISSIONS.length + ' 个任务';
@@ -498,14 +500,15 @@
       this.dom.panelTitle.textContent = '打捞契约';
       this.dom.panelTag.textContent = '第 ' + Math.max(1, this.data.contractRound || 1) + ' 轮' + (contractReady ? ' · ' + contractReady + ' 可领' : '');
       this.dom.panelNote.textContent = '完成契约领取打捞币与补给';
-    } else if (this.tab === 'collection') {
-      this.dom.panelTitle.textContent = '沉船收藏';
-      this.dom.panelTag.textContent = this.collectionUnique() + ' / ' + CW.COLLECTIBLES.length;
-      this.dom.panelNote.textContent = '3 件同级 + 打捞币可合成更高稀有度';
     } else if (this.tab === 'warehouse') {
-      this.dom.panelTitle.textContent = '避难所仓库';
-      this.dom.panelTag.textContent = used + ' / ' + cap;
-      this.dom.panelNote.textContent = '超出容量的物资会折算成打捞币';
+      this.dom.panelTitle.textContent = this.warehouseView === 'collection' ? '仓库 · 收藏' : '仓库 · 物资';
+      if (this.warehouseView === 'collection') {
+        this.dom.panelTag.textContent = this.collectionUnique() + ' / ' + CW.COLLECTIBLES.length;
+        this.dom.panelNote.textContent = '分解重复件 / 合成更高稀有度';
+      } else {
+        this.dom.panelTag.textContent = used + ' / ' + cap;
+        this.dom.panelNote.textContent = '超出容量的物资会折算成打捞币';
+      }
     } else {
       this.dom.panelTitle.textContent = '扩建疯狂号';
       this.dom.panelTag.textContent = 'Lv.' + this.level();
@@ -519,7 +522,6 @@
     var scroll = this.dom.panelContent.scrollTop;
     if (this.tab === 'tasks') this.renderTasks();
     else if (this.tab === 'contracts') this.renderContracts();
-    else if (this.tab === 'collection') this.renderCollection();
     else if (this.tab === 'warehouse') this.renderWarehouse();
     else this.renderShelter();
     this.dom.panelContent.scrollTop = scroll;
@@ -699,30 +701,15 @@
     return out;
   };
 
-  Hub.prototype.rollCollectibles = function (result) {
-    if (!CW.COLLECTIBLES || !CW.COLLECTIBLES.length) return [];
+  Hub.prototype.registerCollectibles = function (result) {
     if (!this.data.collectibles) this.data.collectibles = {};
-    var dropChance = 0.55;
-    if (result.type === 'hook') dropChance += clamp((Number(result.score) || 0) / 4000, 0, 0.3);
-    else if (result.type === 'match') dropChance += clamp((Number(result.score) || 0) / 6000, 0, 0.3);
-    else dropChance += Math.max(0, Number(result.found) || 0) * 0.07;
-    dropChance = Math.min(0.95, dropChance);
-    var count = Math.random() < dropChance ? 1 : 0;
-    if (count && dropChance > 0.85 && chance(0.28)) count += 1;
     var out = [];
-    for (var d = 0; d < count; d++) {
-      var total = 0;
-      for (var w = 0; w < CW.COLLECTIBLE_WEIGHTS.length; w++) total += CW.COLLECTIBLE_WEIGHTS[w].weight;
-      var roll = Math.random() * total;
-      var rarity = CW.COLLECTIBLE_WEIGHTS[0].rarity;
-      for (var j = 0; j < CW.COLLECTIBLE_WEIGHTS.length; j++) {
-        roll -= CW.COLLECTIBLE_WEIGHTS[j].weight;
-        if (roll <= 0) { rarity = CW.COLLECTIBLE_WEIGHTS[j].rarity; break; }
-      }
-      var pool = CW.collectiblesOfRarity(rarity);
-      if (!pool.length) continue;
-      var def = pool[(Math.random() * pool.length) | 0];
-      this.data.collectibles[def.id] = (this.data.collectibles[def.id] || 0) + 1;
+    if (!Array.isArray(result.collectibles)) return out;
+    for (var i = 0; i < result.collectibles.length; i++) {
+      var id = result.collectibles[i];
+      var def = CW.COLLECTIBLE_MAP[id];
+      if (!def) continue;
+      this.data.collectibles[id] = (this.data.collectibles[id] || 0) + 1;
       out.push({
         id: def.id,
         name: def.name,
@@ -732,6 +719,29 @@
       });
     }
     return out;
+  };
+
+  Hub.prototype.dismantle = function (id) {
+    if (!this.data.collectibles) this.data.collectibles = {};
+    var def = CW.COLLECTIBLE_MAP[id];
+    var count = this.data.collectibles[id] || 0;
+    if (!def || count < 1) return;
+    var yieldMats = CW.DISMANTLE_YIELDS[def.rarity] || {};
+    this.data.collectibles[id] -= 1;
+    if (this.data.collectibles[id] <= 0) delete this.data.collectibles[id];
+    var gained = this.grantContractReward({ credits: 0, mats: yieldMats });
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    this.audio.record();
+    this.showToast('COLLECTION DISMANTLED', def.name, '分解为材料' + (gained.overflow ? ' · 仓库溢出已折算' : ''));
+  };
+
+  Hub.prototype.warehouseSwitch = function () {
+    return '<div class="warehouse-switch">' +
+      '<button class="' + (this.warehouseView === 'materials' ? 'active' : '') + '" data-action="warehouse-view" data-view="materials">物资</button>' +
+      '<button class="' + (this.warehouseView === 'collection' ? 'active' : '') + '" data-action="warehouse-view" data-view="collection">收藏</button>' +
+    '</div>';
   };
 
   Hub.prototype.craft = function (fromRarity) {
@@ -809,7 +819,7 @@
     var unique = this.collectionUnique();
     var total = this.collectionTotal();
     var map = this.data.collectibles || {};
-    var html = '<div class="collection-summary">' +
+    var html = this.warehouseSwitch() + '<div class="collection-summary">' +
       '<span class="collection-kicker">SUNKEN ARCHIVE · 沉船收藏</span>' +
       '<div class="collection-headline"><b>' + unique + ' / ' + CW.COLLECTIBLES.length + '</b><span>已发现 · 共 ' + total + ' 件</span></div>' +
       '<p>收藏品不占仓库容量，从打捞结算中随机带回。重复件可以在合成台合并。</p>' +
@@ -862,6 +872,7 @@
         html += '<article class="collectible-card' + (n ? '' : ' unknown') + '" title="' + item.desc + '" style="--rarity:' + rarity.color + '">' +
           '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
           '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em></span>' +
+          (n ? '<button class="collectible-dismantle" data-action="dismantle" data-id="' + item.id + '" title="分解 1 件为材料">分解</button>' : '') +
         '</article>';
       }
       html += '</div></section>';
@@ -871,6 +882,7 @@
   };
 
   Hub.prototype.renderWarehouse = function () {
+    if (this.warehouseView === 'collection') { this.renderCollection(); return; }
     var used = this.used();
     var cap = this.capacity();
     var pct = clamp(used / cap, 0, 1);
@@ -881,7 +893,7 @@
     var purifierMaxed = (this.data.upgrades.purifier || 0) >= purifierMax;
     var filterButton = purifierMaxed ? '净水舱满级' : (filters > 0 ? '去安装' : '去捞一个');
     var filterTab = purifierMaxed || filters > 0 ? 'shelter' : 'tasks';
-    var html = '<div class="capacity-card">' +
+    var html = this.warehouseSwitch() + '<div class="capacity-card">' +
       '<div class="capacity-head"><span>仓库占用</span><b>' + used + ' / ' + cap + '</b></div>' +
       '<div class="capacity-track"><i style="width:' + (pct * 100).toFixed(1) + '%"></i></div>' +
       '<p class="capacity-note">仓库满了以后，多出来的物资会按废料价折算成打捞币。扩建仓库可以提高上限。</p>' +
@@ -1048,7 +1060,7 @@
     this.data.runs += 1;
     var key = result.type === 'match' ? 'match' : result.type === 'sonar' ? 'sonar' : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
-    var collectibles = this.rollCollectibles(result);
+    var collectibles = this.registerCollectibles(result);
     result.collectibles = collectibles;
     this.applyContractProgress(result);
     this.saveGame();
@@ -1193,6 +1205,11 @@
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
         else if (action === 'craft') self.craft(actionEl.getAttribute('data-rarity'));
+        else if (action === 'warehouse-view') {
+          self.warehouseView = actionEl.getAttribute('data-view');
+          self.audio.click();
+          self.renderPanel();
+        } else if (action === 'dismantle') self.dismantle(actionEl.getAttribute('data-id'));
         return;
       }
       var tabEl = e.target.closest ? e.target.closest('[data-tab]') : null;

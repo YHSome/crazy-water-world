@@ -494,6 +494,9 @@ body.muted .ic-mute { display: block; }
 .panel-tab.has-ready::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 4px; border-radius: 50%; background: #ffd166; box-shadow: 0 0 7px rgba(255, 209, 102, 0.9); vertical-align: middle; }
 
 /* ── collection & crafting ─────────────────────────────────── */
+.warehouse-switch { display: inline-flex; gap: 3px; margin: 0 0 9px; padding: 3px; border: 1px solid rgba(122, 207, 205, 0.13); border-radius: 7px; background: rgba(1, 12, 18, 0.45); }
+.warehouse-switch button { min-width: 52px; min-height: 24px; padding: 0 9px; border: 0; border-radius: 5px; background: transparent; color: rgba(164, 199, 200, 0.5); font-family: var(--mono); font-size: 7px; cursor: pointer; }
+.warehouse-switch button.active { background: rgba(121, 232, 255, 0.13); color: #9feeff; box-shadow: inset 0 0 0 1px rgba(121, 232, 255, 0.2); }
 .collection-summary { padding: 2px 2px 10px; border-bottom: 1px solid rgba(122, 207, 205, 0.12); }
 .collection-kicker { display: block; font-family: var(--mono); font-size: 7px; letter-spacing: 0.15em; color: var(--aqua); }
 .collection-headline { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
@@ -531,7 +534,7 @@ body.muted .ic-mute { display: block; }
 .collection-group > header { display: flex; align-items: baseline; justify-content: space-between; padding: 0 2px 5px; border-bottom: 1px solid rgba(122, 207, 205, 0.1); }
 .collection-group > header b { font-family: var(--mono); font-size: 8px; letter-spacing: 0.12em; color: var(--rarity); }
 .collection-group > header span { font-family: var(--mono); font-size: 7px; color: rgba(164, 199, 200, 0.4); }
-.collectible-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.collectible-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
 .collectible-card { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px; border: 1px solid color-mix(in srgb, var(--rarity) 30%, transparent); border-radius: 7px; background: linear-gradient(135deg, rgba(6, 32, 40, 0.8), rgba(3, 18, 25, 0.9)); }
 .collectible-card.unknown { opacity: 0.42; filter: grayscale(0.7); }
 .collectible-art { display: grid; place-items: center; flex: 0 0 auto; width: 29px; height: 29px; border: 1px solid color-mix(in srgb, var(--rarity) 24%, transparent); border-radius: 5px; background: rgba(1, 12, 18, 0.5); }
@@ -539,6 +542,8 @@ body.muted .ic-mute { display: block; }
 .collectible-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .collectible-copy b { overflow: hidden; font-size: 8px; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; color: rgba(239, 250, 244, 0.9); }
 .collectible-copy em { font-family: var(--mono); font-size: 6px; font-style: normal; color: var(--rarity); }
+.collectible-dismantle { flex: 0 0 auto; min-width: 24px; min-height: 20px; padding: 0 3px; border: 1px solid rgba(255, 138, 92, 0.22); border-radius: 4px; background: rgba(64, 26, 17, 0.35); color: rgba(255, 166, 128, 0.7); font-family: var(--mono); font-size: 6px; cursor: pointer; }
+.collectible-dismantle:hover { border-color: rgba(255, 180, 120, 0.5); color: #ffd0a8; }
 .collection-note { margin: 2px 2px 0; font-family: var(--mono); font-size: 6px; line-height: 1.6; color: rgba(144, 196, 205, 0.4); }
 .summary-collect { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 8px; padding: 7px 9px; border: 1px solid rgba(201, 166, 255, 0.22); border-radius: 7px; background: rgba(45, 29, 62, 0.15); font-family: var(--mono); font-size: 7px; color: rgba(210, 191, 238, 0.65); }
 .summary-collect > span:first-child { color: rgba(201, 166, 255, 0.75); }
@@ -1179,6 +1184,39 @@ body.muted .toggle i { transform: translateX(3px); background: linear-gradient(1
 @media (pointer: coarse) {
   .btn.primary kbd { display: none; }
 }
+
+/* ── cinematic polish ─────────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 45%, transparent 42%, rgba(0, 4, 8, 0.34) 100%),
+    linear-gradient(180deg, rgba(0, 3, 7, 0.1), transparent 24%, transparent 76%, rgba(0, 3, 7, 0.22));
+  mix-blend-mode: multiply;
+}
+.hub-panel::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 18%;
+  right: 18%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 184, 112, 0.5), transparent);
+}
+.mission-card { transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+.mission-card:hover { border-color: rgba(144, 228, 218, 0.22); transform: translateY(-1px); box-shadow: 0 16px 34px rgba(0, 4, 8, 0.18); }
+.collectible-card { box-shadow: 0 7px 18px rgba(0, 4, 8, 0.18); transition: transform 150ms ease, border-color 150ms ease; }
+.collectible-card:hover { transform: translateY(-1px); }
+.collectible-art { width: 36px; height: 36px; padding: 1px; }
+.collectible-art img { width: 100%; height: 100%; border-radius: 4px; object-fit: cover; }
+.collectible-copy b { font-size: 9px; }
+.arcade-stats > div { box-shadow: inset 0 1px 0 rgba(213, 255, 247, 0.05), 0 8px 22px rgba(0, 0, 0, 0.16); }
+.arcade-heading b { text-shadow: 0 0 24px rgba(111, 255, 224, 0.16), 0 4px 18px rgba(0, 0, 0, 0.4); }
+.summary-card, .arcade-card { box-shadow: 0 0 0 100vmax rgba(1, 7, 11, 0.62), 0 36px 100px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(213, 255, 247, 0.08); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

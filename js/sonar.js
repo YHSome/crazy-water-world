@@ -61,6 +61,7 @@
     this.credits = 0;
     this.found = 0;
     this.filters = 0;
+    this.collectibles = [];
     this.counts = { metal: 0, fuel: 0, fiber: 0, chip: 0 };
     this.revealed = [];
     this.clues = [];
@@ -88,6 +89,7 @@
     this.score = 0;
     this.credits = 0;
     this.filters = 0;
+    this.collectibles = [];
     this.counts = { metal: 0, fuel: 0, fiber: 0, chip: 0 };
     for (var r = 0; r < this.rows; r++) {
       var row = [];
@@ -123,6 +125,13 @@
         r: Number(parts[0]),
         c: Number(parts[1])
       };
+    }
+    if (CW.rollCollectibleDef && chance(0.3)) {
+      var keys = Object.keys(this.cargo);
+      var pick = keys[(Math.random() * keys.length) | 0];
+      var cdef = CW.rollCollectibleDef();
+      this.cargo[pick].collectible = cdef.id;
+      this.cargo[pick].collectibleName = cdef.name;
     }
   };
 
@@ -216,6 +225,15 @@
         if (Object.prototype.hasOwnProperty.call(data.mats, mk)) this.counts[mk] += data.mats[mk];
       }
       if (item.key === 'filter') this.filters = 1;
+      if (item.collectible) {
+        this.collectibles.push(item.collectible);
+        this.popups.push({
+          x: cx, y: cy - this.cell * 0.8,
+          text: '收藏品！' + item.collectibleName,
+          color: CW.COLLECTIBLE_RARITY_MAP[CW.COLLECTIBLE_MAP[item.collectible].rarity].color,
+          life: 1.5, maxLife: 1.5
+        });
+      }
       this.rings.push({ x: cx, y: cy, life: 0.65, maxLife: 0.65, color: data.color, big: true });
       this.popups.push({
         x: cx, y: cy - this.cell * 0.5,
@@ -246,6 +264,7 @@
         size: rand(1, 3.2), color: color
       });
     }
+    if (this.particles.length > 120) this.particles.splice(0, this.particles.length - 120);
   };
 
   SonarGame.prototype.update = function (dt) {
@@ -289,6 +308,7 @@
       credits: this.credits,
       filters: this.filters,
       found: this.found,
+      collectibles: this.collectibles.slice(),
       materials: {
         metal: this.counts.metal,
         fuel: this.counts.fuel,
