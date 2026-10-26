@@ -130,7 +130,7 @@
       </div>
       <div class="title-footer">
         <span>末日实景素材 · 本地图片 · 无离线收益</span>
-        <span>v2.5 · FLOODLINE SALVAGE</span>
+        <span>v2.6 · FLOODLINE SALVAGE</span>
       </div>
     </section>
 
@@ -165,6 +165,11 @@
             <span class="guide-no">05</span>
             <h3>打捞契约</h3>
             <p>「契约」标签每轮给出 3 个目标，完成后领取打捞币与补给；全部领取会自动刷新下一轮。进度只在打捞结算时更新，没有离线增长。</p>
+          </article>
+          <article>
+            <span class="guide-no">06</span>
+            <h3>海况词条</h3>
+            <p>每次出发会随机一种海况：静水、雷区、富氧或油污。它们改变水雷数量、时间、步数或收益。任务简报和 HUD 会显示本局海况。</p>
           </article>
         </div>
         <div class="guide-rare">
@@ -205,7 +210,7 @@
         <button class="btn ghost wide" data-action="guide">查看玩法说明</button>
         <button id="reset-save" class="btn danger wide" data-action="reset-save">清空避难所</button>
         <p class="modal-note">清空会删除打捞币、物资和所有扩建，无法撤销。再次点击确认。</p>
-        <p class="version">疯狂水世界 · v2.5 · 本地图片素材 + 程序化特效，无远程依赖</p>
+        <p class="version">疯狂水世界 · v2.6 · 本地图片素材 + 程序化特效，无远程依赖</p>
       </div>
     </section>
 
@@ -243,6 +248,7 @@
           <div><span>仓库容量</span><b id="brief-capacity">60</b></div>
           <div><span>打捞目标</span><b id="brief-goal">废铁 / 燃料 / 芯片</b></div>
         </div>
+        <div id="brief-condition" class="brief-condition hidden" style="--cond: #79d8ff"></div>
         <div class="brief-rewards">
           <span>预计奖励</span>
           <div id="brief-reward" class="reward-line"></div>
@@ -276,5 +282,6 @@
   </main>
 </body>
 </html>
+
 
 

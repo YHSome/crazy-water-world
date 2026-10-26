@@ -17,6 +17,32 @@
   var fmt = CW.fmt;
   var MATERIALS = CW.MATERIALS;
   var MISSIONS = CW.MISSIONS;
+  var CONDITIONS = (CW.CONDITIONS = [
+    {
+      id: 'calm', name: '静水', color: '#79d8ff',
+      desc: '水面平稳：抓钩没有水雷，三消 +2 步；全收益 -10%',
+      short: '无水雷 · +2 步 · 收益 -10%',
+      credit: 0.9, mat: 0.9, mines: -1, time: 0, moves: 2, reel: 1
+    },
+    {
+      id: 'storm', name: '雷区', color: '#ff8a5c',
+      desc: '水雷密集：抓钩额外 3 颗水雷，三消 -2 步；打捞币 +30%',
+      short: '水雷 +3 · -2 步 · 打捞币 +30%',
+      credit: 1.3, mat: 1, mines: 3, time: 0, moves: -2, reel: 1
+    },
+    {
+      id: 'rich', name: '富氧', color: '#9be2a9',
+      desc: '海水富氧：抓钩 +2 秒，三消 +3 步；全收益 -8%',
+      short: '+2 秒 / +3 步 · 收益 -8%',
+      credit: 0.92, mat: 0.92, mines: 0, time: 2, moves: 3, reel: 1
+    },
+    {
+      id: 'oil', name: '油污', color: '#ffb15e',
+      desc: '海面浮油：抓钩回收 -12%，三消 -1 步；物资 +18%',
+      short: '回收 -12% · -1 步 · 物资 +18%',
+      credit: 1, mat: 1.18, mines: 0, time: 0, moves: -1, reel: 0.88
+    }
+  ]);
 
   function id(x) { return document.getElementById(x); }
   function hash(n) {
@@ -77,6 +103,7 @@
     this.active = false;
     this.type = null;
     this.phase = 'closed';
+    this.condition = null;
     this.game = null;
     this.countdown = 0;
     this.hudTimer = 0;
@@ -105,6 +132,7 @@
       briefTime: id('brief-time'),
       briefCapacity: id('brief-capacity'),
       briefGoal: id('brief-goal'),
+      briefCondition: id('brief-condition'),
       briefReward: id('brief-reward'),
       summary: id('arcade-summary'),
       summaryScore: id('summary-score'),
@@ -212,16 +240,48 @@
     this.render();
   };
 
+  Arcade.prototype.pickCondition = function () {
+    var pick = CONDITIONS[(Math.random() * CONDITIONS.length) | 0];
+    if (this.condition && CONDITIONS.length > 1 && pick.id === this.condition.id) {
+      pick = CONDITIONS[(CONDITIONS.indexOf(pick) + 1) % CONDITIONS.length];
+    }
+    return pick;
+  };
+
   Arcade.prototype.createGame = function () {
+    this.condition = this.pickCondition();
     var config = {
       w: this.w,
       h: this.h,
-      duration: this.hub.hookTime(),
-      moves: this.hub.matchMoves(),
-      capacity: this.hub.capacity()
+      duration: this.hub.hookTime() + this.condition.time,
+      moves: this.hub.matchMoves() + this.condition.moves,
+      capacity: this.hub.capacity(),
+      condition: this.condition
     };
     if (this.type === 'match' && CW.MatchGame) this.game = new CW.MatchGame(this, config);
     else this.game = new CW.HookGame(this, config);
+    if (this.condition && this.dom.kicker) {
+      var mission = null;
+      for (var i = 0; i < MISSIONS.length; i++) if (MISSIONS[i].id === this.type) mission = MISSIONS[i];
+      if (mission) this.dom.kicker.textContent = mission.kicker + ' · ' + this.condition.name;
+    }
+  };
+
+  Arcade.prototype.applyCondition = function (result) {
+    if (!result || !this.condition) return result;
+    var cond = this.condition;
+    var out = {};
+    for (var key in result) {
+      if (Object.prototype.hasOwnProperty.call(result, key)) out[key] = result[key];
+    }
+    out.credits = Math.round((result.credits || 0) * cond.credit);
+    out.materials = {};
+    for (var i = 0; i < MATERIALS.length; i++) {
+      var m = MATERIALS[i];
+      out.materials[m.id] = Math.round(((result.materials && result.materials[m.id]) || 0) * cond.mat);
+    }
+    out.condition = cond.id;
+    return out;
   };
 
   Arcade.prototype.fillBrief = function () {
@@ -229,12 +289,18 @@
     for (var i = 0; i < MISSIONS.length; i++) if (MISSIONS[i].id === this.type) mission = MISSIONS[i];
     if (!mission) return;
     var isHook = this.type === 'hook';
-    this.dom.kicker.textContent = mission.kicker;
+    var cond = this.condition;
+    this.dom.kicker.textContent = mission.kicker + (cond ? ' · ' + cond.name : '');
     this.dom.name.textContent = mission.name;
-    this.dom.briefKicker.textContent = mission.kicker;
+    this.dom.briefKicker.textContent = mission.kicker + (cond ? ' · ' + cond.name : '');
     this.dom.briefTitle.textContent = mission.name;
     this.dom.briefCopy.textContent = mission.desc;
-    this.dom.briefTime.textContent = isHook ? this.hub.hookTime() + ' 秒' : this.hub.matchMoves() + ' 步';
+    this.dom.briefTime.textContent = isHook ? (this.hub.hookTime() + (cond ? cond.time : 0)) + ' 秒' : (this.hub.matchMoves() + (cond ? cond.moves : 0)) + ' 步';
+    if (this.dom.briefCondition && cond) {
+      this.dom.briefCondition.classList.remove('hidden');
+      this.dom.briefCondition.style.setProperty('--cond', cond.color);
+      this.dom.briefCondition.innerHTML = '<span>本局海况</span><b>' + cond.name + '</b><em>' + cond.desc + '</em>';
+    }
     var used = this.hub.used();
     var cap = this.hub.capacity();
     this.dom.briefCapacity.textContent = used + ' / ' + cap + (used >= cap ? ' · 满' : '');
@@ -349,7 +415,9 @@
   Arcade.prototype.finish = function (result) {
     if (!result || this.phase === 'summary') return;
     this.phase = 'summary';
-    this.applied = this.hub.applyRunResult(result);
+    var finalResult = this.applyCondition(result);
+    this.finalResult = finalResult;
+    this.applied = this.hub.applyRunResult(finalResult);
     this.dom.countdown.classList.add('hidden');
     this.showPlayUI(false);
     this.dom.brief.classList.add('hidden');
@@ -357,6 +425,9 @@
     this.dom.summaryScore.textContent = fmt(result.score || 0);
     this.dom.summaryCredits.textContent = fmt(this.applied.totalCredits);
     var chips = '';
+    if (this.condition) {
+      chips += '<span class="summary-chip condition" style="--tone:' + this.condition.color + '">海况 · ' + this.condition.name + '</span>';
+    }
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
       var n = this.applied.stored[m.id] || 0;
@@ -453,6 +524,7 @@
     this.audio = arcade.audio;
     this.w = config.w;
     this.h = config.h;
+    this.condition = config.condition || null;
     this.duration = config.duration || 60;
     this.remaining = this.duration;
     this.time = 0;
@@ -516,6 +588,10 @@
     this.angle = 0;
     this.itemScale = clamp(Math.min(this.w, this.h) / 520, 0.7, 1.15);
     var pool = ['scrap', 'scrap', 'scrap', 'barrel', 'barrel', 'barrel', 'tarp', 'tarp', 'tarp', 'chip', 'chip', 'safe', 'safe', 'gold', 'mine', 'mine', 'mine', 'scrap'];
+    if (this.condition) {
+      if (this.condition.mines < 0) pool = pool.filter(function (key) { return key !== 'mine'; });
+      else for (var extraMine = 0; extraMine < this.condition.mines; extraMine++) pool.push('mine');
+    }
     var n = this.itemCount();
     var top = this.fieldTop();
     var bottom = this.fieldBottom();
@@ -672,6 +748,7 @@
       }
     } else if (this.state === 'retract') {
       var rSpeed = this.attached ? clamp(300 / ITEM_TYPES[this.attached.key].weight, 62, 260) : 980;
+      if (this.condition && this.condition.reel) rSpeed *= this.condition.reel;
       this.length -= rSpeed * dt;
       if (this.attached) {
         var t = this.hookTip();

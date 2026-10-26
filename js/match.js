@@ -49,6 +49,7 @@
     this.audio = arcade.audio;
     this.w = config.w;
     this.h = config.h;
+    this.condition = config.condition || null;
     this.movesStart = config.moves || 30;
     this.movesLeft = this.movesStart;
     this.landscape = this.w > this.h;
