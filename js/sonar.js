@@ -240,13 +240,13 @@
         text: data.name, color: data.color, life: 1.1, maxLife: 1.1
       });
       this.spawnBurst(cx, cy, data.color, item.key === 'filter' ? 28 : 16);
-      this.audio.record();
+      this.audio.sonarFound();
       if (item.key === 'filter') this.flash = 0.35;
     } else {
       var dist = this.nearest(cell.r, cell.c);
       this.clues[cell.r][cell.c] = dist;
       this.rings.push({ x: cx, y: cy, life: 0.55, maxLife: 0.55, color: '#79d8ff', big: false });
-      this.audio.warn();
+      this.audio.sonarPing();
     }
     if (this.found >= 4 || this.probesLeft <= 0) this.ending = 0.55;
   };

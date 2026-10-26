@@ -87,12 +87,18 @@ Pexels License：https://www.pexels.com/license/
 
 ## 背景音乐
 
-- 曲目：**RUOK – Apocalyptic Loop D**
 - 作者：RUOK
 - 来源：https://opengameart.org/content/ruok-apocalyptic-loopstracks
 - 授权：**CC BY 4.0** · https://creativecommons.org/licenses/by/4.0/
-- 本地文件：`assets/bgm-floodline.mp3`
-- 处理方式：仅从作者发布的 MP3 包中提取单曲，未做二次混音；游戏内循环播放。
+
+| 本地文件 | 场景 | 原曲 |
+| --- | --- | --- |
+| `bgm-hub.mp3` | 标题 / 避难所 | Apocalyptic Loop A |
+| `bgm-floodline.mp3` | 沉城抓钩 | Apocalyptic Loop D |
+| `bgm-match.mp3` | 废料拼图 | Apocalyptic Loop I |
+| `bgm-sonar.mp3` | 声呐扫掠 | Apocalyptic Loop C |
+
+处理方式：从作者发布的 MP3 包中提取四首单曲，未做二次混音；游戏内按场景循环播放。
 
 ## 预览图
 

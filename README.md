@@ -259,8 +259,9 @@ python -m http.server 4173
 ## 技术栈
 
 - HTML5 Canvas 2D + 原生 JavaScript，无框架、无构建步骤。
-- **本地 BGM**：RUOK《Apocalyptic Loop D》循环播放，首次点击后启动；声音按钮同时控制音乐和音效。
-- Web Audio API 实时合成雨声、金属碰撞、抓钩、三消、四连/五连与结算音效。
+- **四首本地 BGM**：标题/避难所 Loop A、抓钩 Loop D、三消 Loop I、声呐 Loop C；场景切换时自动换曲，返回避难所从暂停位置继续。
+- **音效扩充**：界面切换、领取契约、合成、分解、声呐 ping / 货箱发现、四连线扫、五连彩虹、连击、错误与稀有物音效均由 Web Audio 实时合成。
+- 声音按钮同时控制 BGM 和音效，静音时暂停当前曲目，恢复后从原位置继续。
 - 响应式 HUD：桌面为侧边控制台，手机竖屏为底部任务面板，横屏自动切换侧栏。
 - 手机端 DPR 限制为 1.5、像素预算下调、粒子数量封顶；抓钩/三消继续使用预渲染缓存，减少卡顿。
 - **所有游戏插画与物件均为写实照片**：标题、避难所、三个小游戏背景，以及抓钩物品、三消废料、声呐货箱、任务、材料、扩建与收藏，全部使用本地化 Pexels 照片；仅声音/设置/返回/关闭等界面操作图标保留矢量图形。
@@ -289,7 +290,10 @@ python -m http.server 4173
 │   ├── bg-hook.webp              # 抓钩：海底沉船
 │   ├── bg-match.webp             # 三消：废弃控制室
 │   ├── bg-sonar.webp             # 声呐：潜艇控制面板
-│   ├── bgm-floodline.mp3         # RUOK《Apocalyptic Loop D》，CC BY 4.0
+│   ├── bgm-hub.mp3               # 标题 / 避难所
+│   ├── bgm-floodline.mp3         # 沉城抓钩
+│   ├── bgm-match.mp3             # 废料拼图
+│   ├── bgm-sonar.mp3             # 声呐扫掠
 │   ├── real/                     # 抓钩 / 三消 / 声呐 / 材料 / 扩建写实照片
 │   ├── icons/                    # 仅声音 / 设置 / 返回 / 关闭界面图标
 │   ├── collectibles/             # 15 件收藏写实照片（Pexels）
@@ -328,7 +332,7 @@ location.reload();
 - 场景与物件：替换 `assets/bg-*.webp`、`assets/real/*.webp` 或 `assets/collectibles/*.webp` 即可整体换皮。
 - 素材来源与授权：[CREDITS.md](CREDITS.md)。
 - 色彩与排版：`css/style.css` 顶部变量。
-- 音效：`js/audio.js`。
+- 音效与 BGM：`js/audio.js`。
 
 更完整的设计说明见 [DESIGN.md](DESIGN.md)。  
 后续两小时迭代计划和候选玩法见 [ROADMAP.md](ROADMAP.md)。

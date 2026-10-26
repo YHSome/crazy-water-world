@@ -240,6 +240,7 @@
     if (this.active) return;
     this.active = true;
     this.type = type;
+    this.audio.setScene(type);
     this.phase = 'brief';
     this.applied = null;
     this.lastLoot = '';
@@ -535,6 +536,7 @@
     this.dom.confirm.classList.add('hidden');
     this.dom.countdown.classList.add('hidden');
     document.body.classList.remove('is-arcade');
+    this.audio.setScene('hub');
     this.hub.onArcadeClosed();
     this.audio.click();
   };

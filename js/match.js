@@ -385,7 +385,7 @@
           color: '#9feeff',
           size: 16
         });
-        this.audio.relic();
+        this.audio.matchRainbow();
       } else {
         if (run.dir === 'h') {
           for (var c2 = 0; c2 < this.cols; c2++) {
@@ -415,7 +415,7 @@
           color: '#ffd166',
           size: 13
         });
-        this.audio.pickup(4);
+        this.audio.matchLine();
       }
     }
 

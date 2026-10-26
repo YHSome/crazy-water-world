@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    疯狂水世界 · soundscape
-   One local BGM loop + synthesized Web Audio effects.
+   Four local BGM loops (hub / hook / match / sonar) + synthesized SFX.
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -16,6 +16,14 @@
     this.built = false;
     this.bgm = null;
     this.bgmWanted = false;
+    this.scene = 'hub';
+    this.bgmTracks = {
+      hub: 'assets/bgm-hub.mp3',
+      hook: 'assets/bgm-floodline.mp3',
+      match: 'assets/bgm-match.mp3',
+      sonar: 'assets/bgm-sonar.mp3'
+    };
+    this.bgmCache = {};
     this.muted = false;
     HW.audio = this;
     try {
@@ -47,16 +55,31 @@
   };
 
   AudioEngine.prototype.initBgm = function () {
-    if (this.bgm) return;
+    var src = this.bgmTracks[this.scene] || this.bgmTracks.hub;
+    if (this.bgmCache[src]) {
+      this.bgm = this.bgmCache[src];
+      return;
+    }
     try {
-      var a = new Audio('assets/bgm-floodline.mp3');
+      var a = new Audio(src);
       a.loop = true;
-      a.preload = 'auto';
-      a.volume = 0.19;
+      a.preload = 'none';
+      a.volume = 0.18;
+      this.bgmCache[src] = a;
       this.bgm = a;
     } catch (err) {
       this.bgm = null;
     }
+  };
+
+  AudioEngine.prototype.setScene = function (scene) {
+    if (!this.bgmTracks[scene]) scene = 'hub';
+    if (this.scene === scene && this.bgm) return;
+    this.scene = scene;
+    var previous = this.bgm;
+    this.initBgm();
+    if (previous && previous !== this.bgm) previous.pause();
+    if (this.bgmWanted && !this.muted) this.playBgm();
   };
 
   AudioEngine.prototype.playBgm = function () {
@@ -285,6 +308,67 @@
     this.tone(740, 0.12, 'triangle', 0.07);
     this.tone(988, 0.14, 'sine', 0.06, 0.07);
     this.tone(1480, 0.22, 'sine', 0.035, 0.14);
+  };
+
+  AudioEngine.prototype.tab = function () {
+    this.tone(460, 0.06, 'sine', 0.035);
+    this.tone(690, 0.09, 'triangle', 0.025, 0.025);
+  };
+
+  AudioEngine.prototype.craft = function () {
+    var notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    for (var i = 0; i < notes.length; i++) this.tone(notes[i], 0.45, 'triangle', 0.065, i * 0.075);
+    this.noiseBurst(0.45, 0.035, 2100, 1.2, 0.02);
+  };
+
+  AudioEngine.prototype.dismantle = function () {
+    this.noiseBurst(0.24, 0.09, 950, 0.8);
+    this.tone(160, 0.2, 'square', 0.045, 0.02, 82);
+    this.tone(320, 0.12, 'triangle', 0.04, 0.1);
+  };
+
+  AudioEngine.prototype.claim = function () {
+    var notes = [587.33, 740, 880, 1174.66];
+    for (var i = 0; i < notes.length; i++) this.tone(notes[i], 0.36, 'sine', 0.07, i * 0.075);
+    this.noiseBurst(0.4, 0.032, 2800, 1.4, 0.04);
+  };
+
+  AudioEngine.prototype.sonarPing = function () {
+    this.tone(1320, 0.28, 'sine', 0.065, 0, 980);
+    this.tone(880, 0.34, 'sine', 0.035, 0.11);
+    this.noiseBurst(0.18, 0.025, 2400, 2.4);
+  };
+
+  AudioEngine.prototype.sonarFound = function () {
+    this.tone(392, 0.22, 'triangle', 0.07);
+    this.tone(587.33, 0.28, 'sine', 0.06, 0.06);
+    this.tone(880, 0.4, 'sine', 0.045, 0.14);
+  };
+
+  AudioEngine.prototype.matchLine = function () {
+    this.tone(420, 0.18, 'sawtooth', 0.055, 0, 1100);
+    this.noiseBurst(0.2, 0.04, 1600, 1.1);
+  };
+
+  AudioEngine.prototype.matchRainbow = function () {
+    var notes = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568];
+    for (var i = 0; i < notes.length; i++) this.tone(notes[i], 0.5, 'sine', 0.055, i * 0.055);
+    this.noiseBurst(0.55, 0.045, 3000, 1.6, 0.02);
+  };
+
+  AudioEngine.prototype.notify = function () {
+    this.tone(880, 0.12, 'sine', 0.045);
+    this.tone(1174.66, 0.18, 'sine', 0.04, 0.08);
+  };
+
+  AudioEngine.prototype.error = function () {
+    this.tone(220, 0.2, 'square', 0.045, 0, 110);
+  };
+
+  AudioEngine.prototype.combo = function (level) {
+    var base = 600 + Math.min(8, level || 1) * 45;
+    this.tone(base, 0.12, 'sine', 0.045);
+    this.tone(base * 1.5, 0.16, 'sine', 0.03, 0.04);
   };
 
   window.addEventListener('pagehide', function () {

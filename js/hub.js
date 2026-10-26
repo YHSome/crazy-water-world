@@ -409,6 +409,7 @@
   Hub.prototype.enterHub = function () {
     if (this.state === 'playing') return;
     this.audio.unlock();
+    this.audio.setScene('hub');
     this.audio.click();
     if (!this.data.started) {
       this.data.started = true;
@@ -627,7 +628,7 @@
     if (!def || c.progress < def.target) return;
     c.claimed = true;
     var reward = this.grantContractReward(def.reward);
-    this.audio.buy();
+    this.audio.claim();
     var allClaimed = true;
     for (var i = 0; i < this.data.contracts.length; i++) {
       if (!this.data.contracts[i].claimed) { allClaimed = false; break; }
@@ -733,7 +734,7 @@
     this.saveGame();
     this.updateUI();
     this.renderPanel();
-    this.audio.record();
+    this.audio.dismantle();
     this.showToast('COLLECTION DISMANTLED', def.name, '分解为材料' + (gained.overflow ? ' · 仓库溢出已折算' : ''));
   };
 
@@ -773,7 +774,7 @@
     this.saveGame();
     this.updateUI();
     this.renderPanel();
-    this.audio.record();
+    this.audio.craft();
     var rarity = CW.COLLECTIBLE_RARITY_MAP[result.rarity];
     this.showToast('COLLECTION CRAFTED', result.name, '合成消耗 3 件 · ' + rarity.name + '级收藏');
   };
@@ -1173,7 +1174,7 @@
 
   Hub.prototype.setTab = function (tab) {
     if (tab === this.tab) return;
-    this.audio.click();
+    this.audio.tab();
     this.tab = tab;
     for (var i = 0; i < this.dom.tabs.length; i++) {
       var b = this.dom.tabs[i];

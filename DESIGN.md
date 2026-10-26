@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：3.1 · 类型：末日打捞 / 小游戏合集 / 轻经营  
+> 版本：3.2 · 类型：末日打捞 / 小游戏合集 / 轻经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -356,9 +356,14 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 
 ## 13. 声音
 
-- **BGM**：本地 MP3 `assets/bgm-floodline.mp3`（RUOK《Apocalyptic Loop D》，CC BY 4.0）循环播放。首次点击后启动，避免浏览器自动播放拦截；静音时暂停，恢复时从原位置继续。
+- **四首场景 BGM**（RUOK，CC BY 4.0，本地 MP3）：
+  - 标题 / 避难所：Loop A
+  - 沉城抓钩：Loop D（`bgm-floodline.mp3`）
+  - 废料拼图：Loop I
+  - 声呐扫掠：Loop C
+- 场景切换时暂停旧曲、播放对应曲目；返回避难所会从暂停位置继续。首次点击后启动，避免浏览器自动播放拦截。
 - **环境层**：Web Audio 持续低频噪声 + 三层 drone，模拟海压和雨；与 BGM 叠放时降低环境层音量。
-- **音效**：抓钩下潜 whoosh、收集拨弦/金币、水雷爆点、三消按 Combo 递进的拨弦、四连线扫提示、五连彩虹音、结算琶音。
+- **音效扩充**：界面切换、领取契约、收藏合成、分解、声呐 ping / 货箱发现、四连线扫、五连彩虹、连击、错误与稀有物音效。
 - 支持全局静音，写入 `localStorage`；声音按钮同时控制 BGM 和音效。
 - 所有音频均为本地文件或实时合成，不依赖远程音频服务。
 
@@ -373,7 +378,10 @@ arcade.js     小游戏外壳 + 沉城抓钩 + 稀有过滤器
 match.js      废料拼图（三消）
 sonar.js      声呐扫掠（6×6 距离推理）
 assets/bg-*.webp                  标题 / 避难所 / 抓钩 / 三消 / 声呐照片
-assets/bgm-floodline.mp3          本地 BGM 循环（RUOK，CC BY 4.0）
+assets/bgm-hub.mp3                标题 / 避难所 BGM（RUOK Loop A）
+assets/bgm-floodline.mp3          抓钩 BGM（RUOK Loop D）
+assets/bgm-match.mp3              三消 BGM（RUOK Loop I）
+assets/bgm-sonar.mp3              声呐 BGM（RUOK Loop C）
 assets/collectibles/*.webp        15 件收藏写实照片（Pexels）
 assets/real/*.webp                抓钩 / 三消 / 声呐 / 材料 / 扩建写实照片
 assets/icons/*.svg                仅 5 个界面操作图标
@@ -404,6 +412,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
