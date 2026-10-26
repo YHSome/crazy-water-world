@@ -1,7 +1,7 @@
-# 图片来源与授权
+# 图片、图标与音乐来源
 
-本项目不再使用手绘场景/物件。以下图片均为本地文件，页面不依赖远程图床。  
-代码使用 MIT；图片与图标分别遵循下方各自授权。
+本项目不再使用手绘场景/物件。以下素材均为本地文件，页面不依赖远程图床。  
+代码使用 MIT；图片、图标与音乐分别遵循下方各自授权。
 
 ## 场景照片 · Pexels
 
@@ -55,6 +55,15 @@ Pexels License：https://www.pexels.com/license/
 
 `assets/seawater-filter.webp`、`assets/seawater-filter-icon.webp`、`favicon.png` 来自用户提供的图片。  
 已按水印位置裁切，移除左上角「AI生成」与右下角「千问」标记；随后缩放并压缩为 WebP / PNG。
+
+## 背景音乐
+
+- 曲目：**RUOK – Apocalyptic Loop D**
+- 作者：RUOK
+- 来源：https://opengameart.org/content/ruok-apocalyptic-loopstracks
+- 授权：**CC BY 4.0** · https://creativecommons.org/licenses/by/4.0/
+- 本地文件：`assets/bgm-floodline.mp3`
+- 处理方式：仅从作者发布的 MP3 包中提取单曲，未做二次混音；游戏内循环播放。
 
 ## 预览图
 

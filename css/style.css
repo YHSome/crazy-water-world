@@ -1073,6 +1073,20 @@ body.muted .toggle i { transform: translateX(3px); background: linear-gradient(1
   .arcade-bottom { gap: 3px; }
   .arcade-bottom .btn { min-height: 40px; }
 }
+@media (max-height: 540px) and (max-width: 640px) {
+  :root { --panel-height: calc(100dvh - 12px); }
+  .mission-desc { display: none; }
+  .mission-tags { margin-top: 3px; }
+  .panel-foot { display: none; }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .hub-panel { top: calc(var(--safe-top) + 8px); max-height: calc(100dvh - 16px); }
+  .panel-head { padding-top: 8px; }
+  .mission-desc, .mission-tags { display: none; }
+  .mission-card { padding: 8px 9px; }
+  .panel-content { padding-bottom: 4px; }
+  .panel-foot { display: none; }
+}
 
 @media (pointer: coarse) {
   .btn.primary kbd { display: none; }

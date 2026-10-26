@@ -102,7 +102,7 @@
     },
     {
       id: 'match', name: '废料拼图', icon: '消', iconImg: 'assets/icons/puzzle.svg', kicker: 'MISSION 02',
-      desc: '在反应堆控制室里分拣废料。交换相邻箱子，三连消除，连锁会给更多分。',
+      desc: '在反应堆控制室里分拣废料。滑动交换，四连扫线、五连清同色。',
       tags: ['30 步', '三消', '稀有过滤器']
     }
   ]);

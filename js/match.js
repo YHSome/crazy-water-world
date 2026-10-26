@@ -9,6 +9,7 @@
   var CW = window.CW;
   if (!CW || !CW.Arcade) return;
   var clamp = CW.clamp;
+  var lerp = CW.lerp;
   var rand = CW.rand;
   var chance = CW.chance;
   var mod = CW.mod;
@@ -55,13 +56,22 @@
     this.rows = this.landscape ? 6 : 8;
     this.grid = [];
     this.selected = null;
+    this.dragStart = null;
     this.swapA = null;
     this.swapB = null;
     this.phase = 'waiting';
     this.swapTimer = 0;
+    this.swapDuration = 0.16;
     this.popTimer = 0;
     this.invalidTimer = 0;
     this.time = 0;
+    this.flash = 0;
+    this.specialFx = [];
+    this.fallCells = {};
+    this.fallTimer = 0;
+    this.fallDuration = 0.22;
+    this.tileSprites = null;
+    this.bgCache = null;
     this.score = 0;
     this.combo = 0;
     this.moves = 0;
@@ -89,6 +99,8 @@
     this.boardH = cell * this.rows;
     this.boardX = (this.w - this.boardW) / 2;
     this.boardY = top + Math.max(0, (available - this.boardH) / 2);
+    this.tileSprites = null;
+    this.bgCache = null;
   };
 
   MatchGame.prototype.resize = function (w, h) {
@@ -104,6 +116,11 @@
     this.counts = [0, 0, 0, 0, 0];
     this.matched = [];
     this.selected = null;
+    this.dragStart = null;
+    this.specialFx = [];
+    this.fallCells = {};
+    this.fallTimer = 0;
+    this.flash = 0;
     this.phase = 'idle';
     this.time = 0;
     this.done = false;
@@ -199,6 +216,32 @@
     return this.findOn(this.grid);
   };
 
+  MatchGame.prototype.scanRuns = function (grid) {
+    var runs = [];
+    var r, c;
+    for (r = 0; r < this.rows; r++) {
+      c = 0;
+      while (c < this.cols) {
+        var t = grid[r][c];
+        var end = c + 1;
+        while (end < this.cols && grid[r][end] === t) end++;
+        if (t !== null && end - c >= 3) runs.push({ dir: 'h', r: r, c: c, end: end, t: t, len: end - c });
+        c = end;
+      }
+    }
+    for (c = 0; c < this.cols; c++) {
+      r = 0;
+      while (r < this.rows) {
+        var t2 = grid[r][c];
+        var end2 = r + 1;
+        while (end2 < this.rows && grid[end2][c] === t2) end2++;
+        if (t2 !== null && end2 - r >= 3) runs.push({ dir: 'v', r: r, c: c, end: end2, t: t2, len: end2 - r });
+        r = end2;
+      }
+    }
+    return runs;
+  };
+
   MatchGame.prototype.hitTest = function (x, y) {
     if (x < this.boardX || x > this.boardX + this.boardW || y < this.boardY || y > this.boardY + this.boardH) return null;
     var c = Math.floor((x - this.boardX) / this.cell);
@@ -210,26 +253,40 @@
   MatchGame.prototype.pointerDown = function (x, y) {
     if (this.phase !== 'idle') return;
     var cell = this.hitTest(x, y);
-    if (!cell) { this.selected = null; return; }
-    if (!this.selected) {
-      this.selected = cell;
-      this.audio.click();
-      return;
-    }
-    if (this.selected.r === cell.r && this.selected.c === cell.c) {
-      this.selected = null;
-      return;
-    }
-    var dist = Math.abs(this.selected.r - cell.r) + Math.abs(this.selected.c - cell.c);
-    if (dist === 1) {
-      this.trySwap(this.selected, cell);
-      this.selected = null;
-    } else {
-      this.selected = cell;
-      this.audio.click();
-    }
+    if (!cell) { this.selected = null; this.dragStart = null; return; }
+    this.dragStart = cell;
   };
-  MatchGame.prototype.pointerUp = function () {};
+  MatchGame.prototype.pointerUp = function (x, y) {
+    if (this.phase !== 'idle' || !this.dragStart) return;
+    var start = this.dragStart;
+    this.dragStart = null;
+    var end = this.hitTest(x, y);
+    if (!end) return;
+    var dx = Math.abs(start.r - end.r) + Math.abs(start.c - end.c);
+    if (dx === 1) {
+      this.selected = null;
+      this.trySwap(start, end);
+      return;
+    }
+    if (start.r !== end.r || start.c !== end.c) {
+      this.selected = end;
+      this.audio.click();
+      return;
+    }
+    if (this.selected && this.selected.r === start.r && this.selected.c === start.c) {
+      this.selected = null;
+      return;
+    }
+    if (this.selected &&
+        Math.abs(this.selected.r - start.r) + Math.abs(this.selected.c - start.c) === 1) {
+      var previous = this.selected;
+      this.selected = null;
+      this.trySwap(previous, start);
+      return;
+    }
+    this.selected = start;
+    this.audio.click();
+  };
 
   MatchGame.prototype.trySwap = function (a, b) {
     if (!this.swapWouldMatch(a, b)) {
@@ -242,9 +299,12 @@
     this.grid[b.r][b.c] = tmp;
     this.movesLeft = Math.max(0, this.movesLeft - 1);
     this.phase = 'swap';
-    this.swapTimer = 0.12;
+    this.swapDuration = 0.16;
+    this.swapTimer = this.swapDuration;
     this.swapA = a;
     this.swapB = b;
+    this.spawnBurst(this.boardX + a.c * this.cell + this.cell / 2, this.boardY + a.r * this.cell + this.cell / 2, TILES[this.grid[a.r][a.c]].color, 7);
+    this.spawnBurst(this.boardX + b.c * this.cell + this.cell / 2, this.boardY + b.r * this.cell + this.cell / 2, TILES[this.grid[b.r][b.c]].color, 7);
     this.audio.pickup(0);
   };
 
@@ -254,16 +314,101 @@
       this.finishTurn();
       return;
     }
+    var runs = this.scanRuns(this.grid);
+    var cells = [];
+    var seen = {};
+
+    function addCell(r, c) {
+      var key = r + ':' + c;
+      if (seen[key] || r < 0 || r >= this.rows || c < 0 || c >= this.cols) return;
+      if (this.grid[r][c] === null) return;
+      seen[key] = true;
+      cells.push({ r: r, c: c, t: this.grid[r][c] });
+    }
+
+    for (var i = 0; i < matches.length; i++) addCell.call(this, matches[i].r, matches[i].c);
+
+    for (var ri = 0; ri < runs.length; ri++) {
+      var run = runs[ri];
+      if (run.len < 4) continue;
+      var isFive = run.len >= 5;
+      var added = 0;
+      if (isFive) {
+        for (var rr = 0; rr < this.rows; rr++) {
+          for (var cc = 0; cc < this.cols; cc++) {
+            if (this.grid[rr][cc] === run.t && !seen[rr + ':' + cc]) {
+              addCell.call(this, rr, cc);
+              added++;
+            }
+          }
+        }
+        this.specialFx.push({
+          type: 'rainbow',
+          t: run.t,
+          color: TILES[run.t].color,
+          x: this.boardX + this.boardW / 2,
+          y: this.boardY + this.boardH / 2,
+          life: 0.75,
+          maxLife: 0.75
+        });
+        this.flash = Math.max(this.flash, 0.28);
+        this.popups.push({
+          x: this.w / 2,
+          y: this.boardY + this.boardH / 2,
+          text: '五连 · 同色清除',
+          life: 1.15,
+          maxLife: 1.15,
+          color: '#9feeff',
+          size: 16
+        });
+        this.audio.relic();
+      } else {
+        if (run.dir === 'h') {
+          for (var c2 = 0; c2 < this.cols; c2++) {
+            if (!seen[run.r + ':' + c2]) { addCell.call(this, run.r, c2); added++; }
+          }
+          this.specialFx.push({
+            type: 'line', dir: 'h', r: run.r,
+            color: TILES[run.t].color,
+            life: 0.5, maxLife: 0.5
+          });
+        } else {
+          for (var r2 = 0; r2 < this.rows; r2++) {
+            if (!seen[r2 + ':' + run.c]) { addCell.call(this, r2, run.c); added++; }
+          }
+          this.specialFx.push({
+            type: 'line', dir: 'v', c: run.c,
+            color: TILES[run.t].color,
+            life: 0.5, maxLife: 0.5
+          });
+        }
+        this.popups.push({
+          x: this.boardX + (run.c + run.end) / 2 * this.cell,
+          y: this.boardY + run.r * this.cell + this.cell / 2,
+          text: '四连 · 线扫',
+          life: 0.9,
+          maxLife: 0.9,
+          color: '#ffd166',
+          size: 13
+        });
+        this.audio.pickup(4);
+      }
+    }
+
     this.combo += 1;
     this.phase = 'pop';
     this.popTimer = 0.24;
-    this.matched = matches;
-    for (var i = 0; i < matches.length; i++) {
-      var m = matches[i];
-      this.counts[m.t] += 1;
+    this.matched = cells;
+    for (var m = 0; m < cells.length; m++) {
+      var cell = cells[m];
+      this.counts[cell.t] += 1;
       this.score += 10 * this.combo;
       if (chance(0.15)) {
-        this.spawnBurst(this.boardX + m.c * this.cell + this.cell / 2, this.boardY + m.r * this.cell + this.cell / 2, TILES[m.t].color, 4);
+        this.spawnBurst(
+          this.boardX + cell.c * this.cell + this.cell / 2,
+          this.boardY + cell.r * this.cell + this.cell / 2,
+          TILES[cell.t].color, 4
+        );
       }
     }
     if (this.combo > 1) {
@@ -294,17 +439,23 @@
   };
 
   MatchGame.prototype.collapse = function () {
+    this.fallCells = {};
+    this.fallTimer = this.fallDuration;
     for (var c = 0; c < this.cols; c++) {
-      var write = this.rows - 1;
+      var vals = [];
       for (var r = this.rows - 1; r >= 0; r--) {
-        if (this.grid[r][c] !== null) {
-          this.grid[write][c] = this.grid[r][c];
-          if (write !== r) this.grid[r][c] = null;
-          write--;
-        }
+        if (this.grid[r][c] !== null) vals.push({ v: this.grid[r][c], from: r });
+      }
+      for (var clear = 0; clear < this.rows; clear++) this.grid[clear][c] = null;
+      var write = this.rows - 1;
+      for (var i = 0; i < vals.length; i++) {
+        this.grid[write][c] = vals[i].v;
+        if (write !== vals[i].from) this.fallCells[write + ':' + c] = { from: vals[i].from };
+        write--;
       }
       while (write >= 0) {
         this.grid[write][c] = (Math.random() * TILES.length) | 0;
+        this.fallCells[write + ':' + c] = { from: write - 2.2, fresh: true };
         write--;
       }
     }
@@ -344,6 +495,15 @@
     if (this.phase === 'waiting' || this.phase === 'done') return;
     this.time += dt;
     this.invalidTimer = Math.max(0, this.invalidTimer - dt);
+    this.flash = Math.max(0, this.flash - dt * 2.8);
+    if (this.fallTimer > 0) {
+      this.fallTimer = Math.max(0, this.fallTimer - dt);
+      if (this.fallTimer <= 0) this.fallCells = {};
+    }
+    for (var f = this.specialFx.length - 1; f >= 0; f--) {
+      this.specialFx[f].life -= dt;
+      if (this.specialFx[f].life <= 0) this.specialFx.splice(f, 1);
+    }
 
     for (var i = this.particles.length - 1; i >= 0; i--) {
       var p = this.particles[i];
@@ -385,7 +545,7 @@
         chip: Math.floor(this.counts[3] / 4)
       },
       hasAction: false,
-      hint: '点两个相邻废料箱交换 · 连锁消除会加分'
+      hint: '滑动相邻废料箱，或点选两格交换 · 四连扫线、五连同色清除'
     };
   };
 
@@ -467,11 +627,14 @@
     var matchedSet = {};
     for (var m = 0; m < this.matched.length; m++) matchedSet[this.matched[m].r + ':' + this.matched[m].c] = true;
     var invalidX = this.invalidTimer > 0 ? Math.sin(this.time * 60) * 4 : 0;
+    var swapping = this.phase === 'swap' && this.swapA && this.swapB;
+    var swapP = swapping ? clamp(1 - this.swapTimer / this.swapDuration, 0, 1) : 1;
 
     for (var rr = 0; rr < this.rows; rr++) {
       for (var cc = 0; cc < this.cols; cc++) {
         var val = this.grid[rr][cc];
         if (val === null || val === undefined) continue;
+        if (swapping && ((rr === this.swapA.r && cc === this.swapA.c) || (rr === this.swapB.r && cc === this.swapB.c))) continue;
         var tx = bx + cc * cell + cell / 2;
         var ty = by + rr * cell + cell / 2;
         var isMatch = matchedSet[rr + ':' + cc];
@@ -482,10 +645,30 @@
           popScale = 0.55 + k * 0.45;
           popAlpha = 0.25 + k * 0.75;
         }
+        var fall = this.fallCells[rr + ':' + cc];
+        if (fall && this.fallTimer > 0) {
+          var fp = 1 - this.fallTimer / this.fallDuration;
+          var fe = 1 - Math.pow(1 - fp, 3);
+          ty += (fall.from - rr) * cell * (1 - fe);
+          if (fall.fresh) popScale *= 0.8 + fe * 0.2;
+        }
         if (this.invalidTimer > 0) tx += invalidX;
         this.drawTile(ctx, tx, ty, cell, val, popScale, popAlpha);
       }
     }
+
+    if (swapping) {
+      var ease = 1 - Math.pow(1 - swapP, 3);
+      var ax = bx + this.swapA.c * cell + cell / 2;
+      var ay = by + this.swapA.r * cell + cell / 2;
+      var bx2 = bx + this.swapB.c * cell + cell / 2;
+      var by2 = by + this.swapB.r * cell + cell / 2;
+      var lift = 1 + Math.sin(swapP * Math.PI) * 0.07;
+      this.drawTile(ctx, lerp(bx2, ax, ease), lerp(by2, ay, ease), cell, this.grid[this.swapA.r][this.swapA.c], lift, 1);
+      this.drawTile(ctx, lerp(ax, bx2, ease), lerp(ay, by2, ease), cell, this.grid[this.swapB.r][this.swapB.c], lift, 1);
+    }
+
+    this.drawSpecialFx(ctx);
 
     // particles
     ctx.save();
@@ -526,36 +709,93 @@
       ctx.restore();
     }
     ctx.restore();
+
+    if (this.flash > 0) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(172, 251, 255, ' + (this.flash * 0.28).toFixed(3) + ')';
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+  };
+
+  MatchGame.prototype.drawSpecialFx = function (ctx) {
+    if (!this.specialFx.length) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < this.specialFx.length; i++) {
+      var fx = this.specialFx[i];
+      var a = clamp(fx.life / fx.maxLife, 0, 1);
+      if (fx.type === 'line') {
+        ctx.fillStyle = this.hexA(fx.color, a * 0.16);
+        if (fx.dir === 'h') {
+          var y = this.boardY + fx.r * this.cell + this.cell / 2;
+          ctx.fillRect(this.boardX - 6, y - this.cell * 0.34, this.boardW + 12, this.cell * 0.68);
+          ctx.fillStyle = this.hexA(fx.color, a * 0.7);
+          ctx.fillRect(this.boardX - 6, y - 1.5, this.boardW + 12, 3);
+        } else {
+          var x = this.boardX + fx.c * this.cell + this.cell / 2;
+          ctx.fillRect(x - this.cell * 0.34, this.boardY - 6, this.cell * 0.68, this.boardH + 12);
+          ctx.fillStyle = this.hexA(fx.color, a * 0.7);
+          ctx.fillRect(x - 1.5, this.boardY - 6, 3, this.boardH + 12);
+        }
+      } else if (fx.type === 'rainbow') {
+        var r = this.cell * (2.5 + (1 - a) * 5);
+        var g = ctx.createRadialGradient(fx.x, fx.y, 0, fx.x, fx.y, r);
+        g.addColorStop(0, this.hexA(fx.color, a * 0.38));
+        g.addColorStop(0.5, this.hexA('#9feeff', a * 0.16));
+        g.addColorStop(1, this.hexA(fx.color, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(fx.x, fx.y, r, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = this.hexA(fx.color, a * 0.7);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(fx.x, fx.y, this.cell * 1.2 + (1 - a) * this.cell * 4, 0, TAU);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  };
+
+  MatchGame.prototype.buildBgCache = function () {
+    if (!MATCH_BG.complete || !MATCH_BG.naturalWidth) { this.bgCache = null; return; }
+    var w = Math.max(1, Math.round(this.w));
+    var h = Math.max(1, Math.round(this.h));
+    var c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    var g = c.getContext('2d');
+    g.fillStyle = '#020e14';
+    g.fillRect(0, 0, w, h);
+    drawCover(g, MATCH_BG, w, h, 0.5, 0.45);
+    g.fillStyle = 'rgba(1, 14, 20, 0.34)';
+    g.fillRect(0, 0, w, h);
+    var shade = g.createLinearGradient(0, 0, 0, h);
+    shade.addColorStop(0, 'rgba(0, 7, 12, 0.58)');
+    shade.addColorStop(0.25, 'rgba(0, 7, 12, 0.06)');
+    shade.addColorStop(0.75, 'rgba(0, 7, 12, 0.22)');
+    shade.addColorStop(1, 'rgba(0, 7, 12, 0.75)');
+    g.fillStyle = shade;
+    g.fillRect(0, 0, w, h);
+    var vignette = g.createRadialGradient(w * 0.5, h * 0.48, Math.min(w, h) * 0.2, w * 0.5, h * 0.52, Math.max(w, h) * 0.7);
+    vignette.addColorStop(0, 'rgba(0, 6, 10, 0)');
+    vignette.addColorStop(1, 'rgba(0, 5, 9, 0.48)');
+    g.fillStyle = vignette;
+    g.fillRect(0, 0, w, h);
+    this.bgCache = c;
   };
 
   MatchGame.prototype.drawBackdrop = function (ctx) {
     var w = this.w;
     var h = this.h;
-    ctx.fillStyle = '#020e14';
-    ctx.fillRect(0, 0, w, h);
-    var ok = drawCover(ctx, MATCH_BG, w, h, 0.5, 0.45);
-    if (!ok) {
-      var fallback = ctx.createLinearGradient(0, 0, 0, h);
-      fallback.addColorStop(0, '#08262f');
-      fallback.addColorStop(1, '#010a10');
-      ctx.fillStyle = fallback;
+    if (!this.bgCache) this.buildBgCache();
+    if (this.bgCache) {
+      ctx.drawImage(this.bgCache, 0, 0, w, h);
+    } else {
+      ctx.fillStyle = '#020e14';
       ctx.fillRect(0, 0, w, h);
     }
-    ctx.fillStyle = 'rgba(1, 14, 20, 0.34)';
-    ctx.fillRect(0, 0, w, h);
-    var shade = ctx.createLinearGradient(0, 0, 0, h);
-    shade.addColorStop(0, 'rgba(0, 7, 12, 0.58)');
-    shade.addColorStop(0.25, 'rgba(0, 7, 12, 0.06)');
-    shade.addColorStop(0.75, 'rgba(0, 7, 12, 0.22)');
-    shade.addColorStop(1, 'rgba(0, 7, 12, 0.75)');
-    ctx.fillStyle = shade;
-    ctx.fillRect(0, 0, w, h);
-
-    var vignette = ctx.createRadialGradient(w * 0.5, h * 0.48, Math.min(w, h) * 0.2, w * 0.5, h * 0.52, Math.max(w, h) * 0.7);
-    vignette.addColorStop(0, 'rgba(0, 6, 10, 0)');
-    vignette.addColorStop(1, 'rgba(0, 5, 9, 0.48)');
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, w, h);
 
     // floating dust
     ctx.save();
@@ -571,45 +811,102 @@
     ctx.restore();
   };
 
+  MatchGame.prototype.buildTileSprites = function () {
+    for (var k = 0; k < TILE_IMAGES.length; k++) {
+      if (!TILE_IMAGES[k].complete || !TILE_IMAGES[k].naturalWidth) return;
+    }
+    var cell = Math.ceil(this.cell);
+    var out = [];
+    for (var type = 0; type < TILES.length; type++) {
+      var data = TILES[type];
+      var c = document.createElement('canvas');
+      c.width = cell;
+      c.height = cell;
+      var g = c.getContext('2d');
+      g.translate(cell / 2, cell / 2);
+      var s = this.cell * 0.84;
+      g.fillStyle = 'rgba(0, 5, 9, 0.34)';
+      g.beginPath();
+      g.roundRect(-s / 2 + 1, -s / 2 + 3, s, s, s * 0.17);
+      g.fill();
+
+      var rim = g.createLinearGradient(-s / 2, -s / 2, s / 2, s / 2);
+      rim.addColorStop(0, 'rgba(210, 245, 244, 0.22)');
+      rim.addColorStop(0.34, 'rgba(43, 78, 83, 0.9)');
+      rim.addColorStop(1, 'rgba(1, 15, 22, 0.98)');
+      g.fillStyle = rim;
+      g.beginPath();
+      g.roundRect(-s / 2 - 2, -s / 2 - 2, s + 4, s + 4, s * 0.18);
+      g.fill();
+
+      var body = g.createLinearGradient(-s / 2, -s / 2, s / 2, s / 2);
+      body.addColorStop(0, data.color);
+      body.addColorStop(0.38, data.dark);
+      body.addColorStop(1, '#0a222c');
+      g.fillStyle = body;
+      g.beginPath();
+      g.roundRect(-s / 2, -s / 2, s, s, s * 0.15);
+      g.fill();
+
+      g.save();
+      g.beginPath();
+      g.roundRect(-s / 2, -s / 2, s, s, s * 0.15);
+      g.clip();
+      g.fillStyle = 'rgba(255, 255, 255, 0.14)';
+      g.beginPath();
+      g.moveTo(-s / 2, -s / 2);
+      g.lineTo(s * 0.05, -s / 2);
+      g.lineTo(-s / 2, s * 0.12);
+      g.closePath();
+      g.fill();
+      g.fillStyle = 'rgba(0, 0, 0, 0.14)';
+      g.fillRect(-s / 2, s * 0.32, s, s * 0.18);
+      g.restore();
+
+      g.fillStyle = 'rgba(1, 14, 20, 0.42)';
+      g.beginPath();
+      g.arc(0, 0, s * 0.315, 0, TAU);
+      g.fill();
+      g.strokeStyle = 'rgba(225, 255, 251, 0.18)';
+      g.lineWidth = 1;
+      g.stroke();
+
+      var icon = TILE_IMAGES[type];
+      g.drawImage(icon, -s * 0.27, -s * 0.27, s * 0.54, s * 0.54);
+
+      g.fillStyle = 'rgba(255, 217, 158, 0.38)';
+      var dots = [[-s * 0.37, -s * 0.37], [s * 0.37, -s * 0.37], [-s * 0.37, s * 0.37], [s * 0.37, s * 0.37]];
+      for (var d = 0; d < dots.length; d++) {
+        g.beginPath();
+        g.arc(dots[d][0], dots[d][1], 1.2, 0, TAU);
+        g.fill();
+      }
+
+      g.strokeStyle = 'rgba(223, 255, 249, 0.24)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.roundRect(-s / 2, -s / 2, s, s, s * 0.15);
+      g.stroke();
+      out.push(c);
+    }
+    this.tileSprites = out;
+  };
+
   MatchGame.prototype.drawTile = function (ctx, cx, cy, cell, type, scale, alpha) {
-    var data = TILES[type];
-    var size = cell * 0.8 * scale;
+    if (!this.tileSprites) this.buildTileSprites();
+    var sprite = this.tileSprites && this.tileSprites[type];
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(cx, cy);
-
-    // shadow
-    ctx.fillStyle = 'rgba(0, 6, 10, 0.32)';
-    ctx.beginPath();
-    ctx.roundRect(-size / 2 + 1, -size / 2 + 2, size, size, size * 0.17);
-    ctx.fill();
-
-    var g = ctx.createLinearGradient(-size / 2, -size / 2, size / 2, size / 2);
-    g.addColorStop(0, data.color);
-    g.addColorStop(0.58, data.dark);
-    g.addColorStop(1, '#102b33');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.roundRect(-size / 2, -size / 2, size, size, size * 0.16);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(220, 255, 246, 0.22)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
-    ctx.beginPath();
-    ctx.roundRect(-size / 2 + 2, -size / 2 + 2, size - 4, size * 0.25, size * 0.1);
-    ctx.fill();
-
-    var icon = TILE_IMAGES[type];
-    if (icon && icon.complete && icon.naturalWidth) {
-      ctx.drawImage(icon, -size * 0.32, -size * 0.32, size * 0.64, size * 0.64);
+    ctx.scale(scale, scale);
+    if (sprite) {
+      ctx.drawImage(sprite, -cell / 2, -cell / 2, cell, cell);
     } else {
-      ctx.fillStyle = 'rgba(235, 255, 251, 0.9)';
-      ctx.font = '800 ' + (size * 0.34) + 'px "Microsoft YaHei", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(data.name.slice(0, 1), 0, 2);
+      var data = TILES[type];
+      ctx.fillStyle = data.dark;
+      ctx.beginPath();
+      ctx.roundRect(-cell * 0.4, -cell * 0.4, cell * 0.8, cell * 0.8, cell * 0.12);
+      ctx.fill();
     }
     ctx.restore();
   };

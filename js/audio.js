@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   疯狂水世界 · procedural soundscape
-   No audio files. Everything is synthesized with the Web Audio API.
+   疯狂水世界 · soundscape
+   One local BGM loop + synthesized Web Audio effects.
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -14,7 +14,10 @@
     this.ambientGain = null;
     this.noiseBuffer = null;
     this.built = false;
+    this.bgm = null;
+    this.bgmWanted = false;
     this.muted = false;
+    HW.audio = this;
     try {
       this.muted = localStorage.getItem(MUTE_KEY) === '1';
     } catch (err) {
@@ -40,6 +43,28 @@
     if (this.ctx.state === 'suspended') {
       this.ctx.resume().catch(function () {});
     }
+    this.playBgm();
+  };
+
+  AudioEngine.prototype.initBgm = function () {
+    if (this.bgm) return;
+    try {
+      var a = new Audio('assets/bgm-floodline.mp3');
+      a.loop = true;
+      a.preload = 'auto';
+      a.volume = 0.19;
+      this.bgm = a;
+    } catch (err) {
+      this.bgm = null;
+    }
+  };
+
+  AudioEngine.prototype.playBgm = function () {
+    this.bgmWanted = true;
+    this.initBgm();
+    if (!this.bgm || this.muted) return;
+    var p = this.bgm.play();
+    if (p && p.catch) p.catch(function () {});
   };
 
   AudioEngine.prototype.makeNoise = function () {
@@ -120,7 +145,7 @@
 
     var now = ctx.currentTime;
     bus.gain.setValueAtTime(0.0001, now);
-    bus.gain.exponentialRampToValueAtTime(0.32, now + 3.5);
+    bus.gain.exponentialRampToValueAtTime(0.15, now + 3.5);
   };
 
   AudioEngine.prototype.setMuted = function (muted) {
@@ -132,6 +157,11 @@
       var now = this.ctx.currentTime;
       this.master.gain.cancelScheduledValues(now);
       this.master.gain.setTargetAtTime(this.muted ? 0 : 0.82, now, 0.04);
+    }
+    if (this.muted) {
+      if (this.bgm) this.bgm.pause();
+    } else if (this.bgmWanted) {
+      this.playBgm();
     }
   };
 
@@ -256,6 +286,10 @@
     this.tone(988, 0.14, 'sine', 0.06, 0.07);
     this.tone(1480, 0.22, 'sine', 0.035, 0.14);
   };
+
+  window.addEventListener('pagehide', function () {
+    if (HW.audio && HW.audio.bgm) HW.audio.bgm.pause();
+  });
 
   HW.AudioEngine = AudioEngine;
 })();

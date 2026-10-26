@@ -477,6 +477,8 @@
     this.flash = 0;
     this.shake = 0;
     this.itemScale = 1;
+    this.bgCache = null;
+    this.itemSprites = null;
     this.buildField();
   }
 
@@ -584,6 +586,7 @@
     this.shake = 0;
     this.combo = 0;
     this.comboTimer = 0;
+    this.buildItemSprites();
     this.audio.click();
   };
 
@@ -597,6 +600,8 @@
       this.items[i].y = clamp(this.items[i].y, top, bottom);
     }
     this.itemScale = clamp(Math.min(w, h) / 520, 0.7, 1.15);
+    this.bgCache = null;
+    this.itemSprites = null;
   };
 
   HookGame.prototype.drop = function () {
@@ -804,9 +809,80 @@
     };
   };
 
+  HookGame.prototype.buildBgCache = function () {
+    if (!HOOK_BG.complete || !HOOK_BG.naturalWidth) { this.bgCache = null; return; }
+    var w = Math.max(1, Math.round(this.w));
+    var h = Math.max(1, Math.round(this.h));
+    var c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    var g = c.getContext('2d');
+    g.fillStyle = '#020e16';
+    g.fillRect(0, 0, w, h);
+    var ok = drawCover(g, HOOK_BG, w, h, 0.5, 0.48);
+    g.fillStyle = 'rgba(1, 11, 18, 0.28)';
+    g.fillRect(0, 0, w, h);
+    var shade = g.createLinearGradient(0, 0, 0, h);
+    shade.addColorStop(0, 'rgba(0, 8, 14, 0.62)');
+    shade.addColorStop(0.3, 'rgba(0, 10, 16, 0.1)');
+    shade.addColorStop(0.68, 'rgba(0, 8, 14, 0.22)');
+    shade.addColorStop(1, 'rgba(0, 6, 11, 0.72)');
+    g.fillStyle = shade;
+    g.fillRect(0, 0, w, h);
+    if (!ok) {
+      g.fillStyle = 'rgba(2, 22, 30, 0.9)';
+      g.fillRect(0, 0, w, h);
+    }
+    this.bgCache = c;
+  };
+
+  HookGame.prototype.itemTypeRadius = function (key) {
+    return (key === 'safe' ? 20 : key === 'gold' ? 17 : 16) * this.itemScale;
+  };
+
+  HookGame.prototype.buildItemSprites = function () {
+    for (var k in ITEM_IMAGES) {
+      if (!Object.prototype.hasOwnProperty.call(ITEM_IMAGES, k)) continue;
+      var im = ITEM_IMAGES[k];
+      if (!im.complete || !im.naturalWidth) { this.itemSprites = null; return; }
+    }
+    this.itemSprites = {};
+    for (var key in ITEM_IMAGES) {
+      if (!Object.prototype.hasOwnProperty.call(ITEM_IMAGES, key)) continue;
+      var data = ITEM_TYPES[key];
+      var s = this.itemTypeRadius(key);
+      var size = Math.ceil(s * 4.8);
+      var c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      var g = c.getContext('2d');
+      g.translate(size / 2, size / 2);
+      var glow = g.createRadialGradient(0, 0, 0, 0, 0, s * 2.3);
+      glow.addColorStop(0, data.mine ? 'rgba(255, 90, 65, 0.2)' : data.color + '22');
+      glow.addColorStop(1, data.mine ? 'rgba(255, 90, 65, 0)' : data.color + '00');
+      g.fillStyle = glow;
+      g.beginPath();
+      g.arc(0, 0, s * 2.3, 0, TAU);
+      g.fill();
+      g.fillStyle = 'rgba(1, 12, 18, 0.48)';
+      g.beginPath();
+      g.arc(0, 0, s * 1.12, 0, TAU);
+      g.fill();
+      g.drawImage(ITEM_IMAGES[key], -s * 0.98, -s * 0.98, s * 1.96, s * 1.96);
+      g.strokeStyle = data.mine ? 'rgba(255, 108, 85, 0.6)' : 'rgba(218, 255, 249, 0.2)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.arc(0, 0, s * 1.08, 0, TAU);
+      g.stroke();
+      this.itemSprites[key] = c;
+    }
+  };
+
   HookGame.prototype.render = function (ctx) {
     var w = this.w;
     var h = this.h;
+    if (!this.bgCache) this.buildBgCache();
+    if (!this.itemSprites) this.buildItemSprites();
     var shakeX = this.shake > 0.2 ? rand(-this.shake, this.shake) : 0;
     var shakeY = this.shake > 0.2 ? rand(-this.shake, this.shake) : 0;
     ctx.save();
@@ -816,21 +892,9 @@
     var bottom = this.fieldBottom();
     var pivot = this.pivot();
 
-    // photographic wreck background
-    ctx.fillStyle = '#020e16';
-    ctx.fillRect(0, 0, w, h);
-    var bgOk = drawCover(ctx, HOOK_BG, w, h, 0.5, 0.48);
-    ctx.fillStyle = 'rgba(1, 11, 18, 0.28)';
-    ctx.fillRect(0, 0, w, h);
-    var shade = ctx.createLinearGradient(0, 0, 0, h);
-    shade.addColorStop(0, 'rgba(0, 8, 14, 0.62)');
-    shade.addColorStop(0.3, 'rgba(0, 10, 16, 0.1)');
-    shade.addColorStop(0.68, 'rgba(0, 8, 14, 0.22)');
-    shade.addColorStop(1, 'rgba(0, 6, 11, 0.72)');
-    ctx.fillStyle = shade;
-    ctx.fillRect(0, 0, w, h);
-    if (!bgOk) {
-      ctx.fillStyle = 'rgba(2, 22, 30, 0.9)';
+    if (this.bgCache) ctx.drawImage(this.bgCache, 0, 0, w, h);
+    else {
+      ctx.fillStyle = '#020e16';
       ctx.fillRect(0, 0, w, h);
     }
 
@@ -953,7 +1017,7 @@
   HookGame.prototype.drawHook = function (ctx, tip) {
     ctx.save();
     ctx.translate(tip.x, tip.y);
-    ctx.rotate(tip.angle);
+    ctx.rotate(tip.angle + 0.42);
     ctx.fillStyle = 'rgba(1, 12, 18, 0.5)';
     ctx.beginPath();
     ctx.arc(0, 0, 15, 0, TAU);
@@ -977,6 +1041,14 @@
       this.drawFilterItem(ctx, s);
       ctx.restore();
       this.drawItemLabel(ctx, x, y + s + 14, data.name, '#bff8ff');
+      return;
+    }
+
+    var sprite = this.itemSprites && this.itemSprites[item.key];
+    if (sprite) {
+      ctx.drawImage(sprite, -sprite.width / 2, -sprite.height / 2);
+      ctx.restore();
+      this.drawItemLabel(ctx, x, y + s + 9, data.name, data.mine ? '#ff8a6b' : data.color);
       return;
     }
 
