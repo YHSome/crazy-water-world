@@ -19,10 +19,10 @@
   SONAR_BG.src = 'assets/bg-sonar.webp';
 
   var CARGO = {
-    safe: { name: '保险箱', icon: 'assets/icons/safe.svg', credits: 150, mats: { metal: 3, chip: 1 }, color: '#d9c7a1' },
-    barrel: { name: '燃料桶', icon: 'assets/icons/fuel.svg', credits: 80, mats: { fuel: 3 }, color: '#ffb15e' },
-    chip: { name: '芯片箱', icon: 'assets/icons/chip.svg', credits: 110, mats: { chip: 3 }, color: '#79d8ff' },
-    gold: { name: '金条', icon: 'assets/icons/gold.svg', credits: 230, mats: {}, color: '#ffd166' },
+    safe: { name: '保险箱', icon: 'assets/real/safe.webp', credits: 150, mats: { metal: 3, chip: 1 }, color: '#d9c7a1' },
+    barrel: { name: '燃料桶', icon: 'assets/real/fuel.webp', credits: 80, mats: { fuel: 3 }, color: '#ffb15e' },
+    chip: { name: '芯片箱', icon: 'assets/real/chip.webp', credits: 110, mats: { chip: 3 }, color: '#79d8ff' },
+    gold: { name: '金条', icon: 'assets/real/gold.webp', credits: 230, mats: {}, color: '#ffd166' },
     filter: { name: '海水过滤器', icon: 'assets/seawater-filter-icon.webp', credits: 0, mats: {}, color: '#9feeff', rare: true }
   };
   var CARGO_IMAGES = {};
@@ -493,7 +493,12 @@
       ctx.arc(0, 0, s * 0.38, 0, TAU);
       ctx.fill();
       if (img && img.complete && img.naturalWidth) {
-        ctx.drawImage(img, -s * 0.3, -s * 0.3, s * 0.6, s * 0.6);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, s * 0.32, 0, TAU);
+        ctx.clip();
+        ctx.drawImage(img, -s * 0.34, -s * 0.34, s * 0.68, s * 0.68);
+        ctx.restore();
       }
     } else {
       var tone = clue <= 2 ? '#ff8a5c' : clue <= 4 ? '#ffd166' : '#79d8ff';
@@ -523,3 +528,4 @@
 
   CW.SonarGame = SonarGame;
 })();
+

@@ -30,15 +30,15 @@
   }
 
   var MATERIALS = (CW.MATERIALS = [
-    { id: 'metal', name: '废铁', icon: '铁', iconImg: 'assets/icons/scrap.svg', color: '#a9bec2', sell: 8, desc: '锈蚀的船板、钢梁和齿轮' },
-    { id: 'fuel', name: '燃料', icon: '油', iconImg: 'assets/icons/fuel.svg', color: '#ffb15e', sell: 10, desc: '旧世界的柴油、丙烷和火种' },
-    { id: 'fiber', name: '纤维', icon: '纤', iconImg: 'assets/icons/fiber.svg', color: '#9be2a9', sell: 8, desc: '尼龙、帆布和还能用的绳索' },
-    { id: 'chip', name: '芯片', icon: '芯', iconImg: 'assets/icons/chip.svg', color: '#79d8ff', sell: 16, desc: '控制板、电池和文明残片' }
+    { id: 'metal', name: '废铁', icon: '铁', iconImg: 'assets/real/scrap.webp', color: '#a9bec2', sell: 8, desc: '锈蚀的船板、钢梁和齿轮' },
+    { id: 'fuel', name: '燃料', icon: '油', iconImg: 'assets/real/fuel.webp', color: '#ffb15e', sell: 10, desc: '旧世界的柴油、丙烷和火种' },
+    { id: 'fiber', name: '纤维', icon: '纤', iconImg: 'assets/real/fiber.webp', color: '#9be2a9', sell: 8, desc: '尼龙、帆布和还能用的绳索' },
+    { id: 'chip', name: '芯片', icon: '芯', iconImg: 'assets/real/chip.webp', color: '#79d8ff', sell: 16, desc: '控制板、电池和文明残片' }
   ]);
 
   var UPGRADES = (CW.UPGRADES = [
     {
-      id: 'storage', name: '仓库扩容', icon: '仓', iconImg: 'assets/icons/storage.svg', tone: '#ffc46b',
+      id: 'storage', name: '仓库扩容', icon: '仓', iconImg: 'assets/real/storage.webp', tone: '#ffc46b',
       desc: '仓库容量 +30',
       max: 5,
       costs: [
@@ -50,7 +50,7 @@
       ]
     },
     {
-      id: 'workshop', name: '打捞工坊', icon: '工', iconImg: 'assets/icons/workshop.svg', tone: '#9dffc7',
+      id: 'workshop', name: '打捞工坊', icon: '工', iconImg: 'assets/real/workshop.webp', tone: '#9dffc7',
       desc: '所有打捞币收益 +10%',
       max: 5,
       costs: [
@@ -62,7 +62,7 @@
       ]
     },
     {
-      id: 'sonar', name: '声呐阵列', icon: '声', iconImg: 'assets/icons/sonar.svg', tone: '#79d8ff',
+      id: 'sonar', name: '声呐阵列', icon: '声', iconImg: 'assets/real/sonar.webp', tone: '#79d8ff',
       desc: '所有物资收益 +12%',
       max: 4,
       costs: [
@@ -73,7 +73,7 @@
       ]
     },
     {
-      id: 'core', name: '聚变核心', icon: '核', iconImg: 'assets/icons/core.svg', tone: '#ff8a5c',
+      id: 'core', name: '聚变核心', icon: '核', iconImg: 'assets/real/core.webp', tone: '#ff8a5c',
       desc: '抓钩 +5 秒 · 三消 +2 步',
       max: 3,
       costs: [
@@ -96,17 +96,17 @@
 
   var MISSIONS = (CW.MISSIONS = [
     {
-      id: 'hook', name: '沉城抓钩', icon: '钩', iconImg: 'assets/icons/hook.svg', kicker: 'MISSION 01',
+      id: 'hook', name: '沉城抓钩', icon: '钩', iconImg: 'assets/real/hook.webp', kicker: 'MISSION 01',
       desc: '沉在旧城区里的钢梁、油桶和保险箱。抓钩会来回摆动，水雷会浪费五秒。',
       tags: ['60 秒', '抓钩', '稀有过滤器']
     },
     {
-      id: 'match', name: '废料拼图', icon: '消', iconImg: 'assets/icons/puzzle.svg', kicker: 'MISSION 02',
+      id: 'match', name: '废料拼图', icon: '消', iconImg: 'assets/real/puzzle.webp', kicker: 'MISSION 02',
       desc: '在反应堆控制室里分拣废料。滑动交换，四连扫线、五连清同色。',
       tags: ['30 步', '三消', '稀有过滤器']
     },
     {
-      id: 'sonar', name: '声呐扫掠', icon: '声', iconImg: 'assets/icons/sonar.svg', kicker: 'MISSION 03',
+      id: 'sonar', name: '声呐扫掠', icon: '声', iconImg: 'assets/real/sonar.webp', kicker: 'MISSION 03',
       desc: '在锈蚀控制台前发射声呐，用距离回波定位隐藏货箱。每格只能探测一次，声呐次数有限。',
       tags: ['10 次声呐', '探索', '稀有过滤器']
     }
@@ -114,37 +114,37 @@
 
   var CONTRACTS = (CW.CONTRACTS = [
     {
-      id: 'safe', name: '保险箱回收', iconImg: 'assets/icons/safe.svg', metric: 'safe', mode: 'sum', target: 5,
+      id: 'safe', name: '保险箱回收', iconImg: 'assets/real/safe.webp', metric: 'safe', mode: 'sum', target: 5,
       desc: '在沉城抓钩里累计抓回 5 个保险箱。',
       reward: { credits: 180, mats: { metal: 4 } }
     },
     {
-      id: 'combo', name: '连击专家', iconImg: 'assets/icons/hook.svg', metric: 'bestCombo', mode: 'max', target: 6,
+      id: 'combo', name: '连击专家', iconImg: 'assets/real/hook.webp', metric: 'bestCombo', mode: 'max', target: 6,
       desc: '单局抓钩最高连击达到 6。',
       reward: { credits: 220, mats: { chip: 2 } }
     },
     {
-      id: 'score', name: '高分分拣', iconImg: 'assets/icons/puzzle.svg', metric: 'matchScore', mode: 'max', target: 1800,
+      id: 'score', name: '高分分拣', iconImg: 'assets/real/puzzle.webp', metric: 'matchScore', mode: 'max', target: 1800,
       desc: '单局废料拼图达到 1,800 分。',
       reward: { credits: 240, mats: { fiber: 4 } }
     },
     {
-      id: 'runs', name: '连续作业', iconImg: 'assets/icons/sonar.svg', metric: 'runs', mode: 'sum', target: 3,
+      id: 'runs', name: '连续作业', iconImg: 'assets/real/sonar.webp', metric: 'runs', mode: 'sum', target: 3,
       desc: '完成 3 次打捞。',
       reward: { credits: 160, mats: { fuel: 3 } }
     },
     {
-      id: 'chips', name: '芯片储备', iconImg: 'assets/icons/chip.svg', metric: 'chips', mode: 'sum', target: 12,
+      id: 'chips', name: '芯片储备', iconImg: 'assets/real/chip.webp', metric: 'chips', mode: 'sum', target: 12,
       desc: '累计获得 12 个芯片。',
       reward: { credits: 200, mats: { fiber: 2 } }
     },
     {
-      id: 'gold', name: '金条猎人', iconImg: 'assets/icons/gold.svg', metric: 'gold', mode: 'sum', target: 2,
+      id: 'gold', name: '金条猎人', iconImg: 'assets/real/gold.webp', metric: 'gold', mode: 'sum', target: 2,
       desc: '抓钩累计抓回 2 根金条。',
       reward: { credits: 220, mats: { chip: 1 } }
     },
     {
-      id: 'sonar', name: '声呐猎手', iconImg: 'assets/icons/sonar.svg', metric: 'sonarFinds', mode: 'max', target: 3,
+      id: 'sonar', name: '声呐猎手', iconImg: 'assets/real/sonar.webp', metric: 'sonarFinds', mode: 'max', target: 3,
       desc: '单局声呐扫掠找到 3 个货箱。',
       reward: { credits: 230, mats: { chip: 2 } }
     },
@@ -1270,3 +1270,4 @@
     window.__cw = hub;
   });
 })();
+

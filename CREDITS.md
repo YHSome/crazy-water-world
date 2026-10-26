@@ -18,39 +18,47 @@ Pexels License：https://www.pexels.com/license/
 
 处理方式：裁切、缩放、调色、压缩为 WebP。
 
-## 物件与 UI 图标 · Game-icons.net
+## 游戏物件 · Pexels 写实照片
+
+所有游戏物件（抓钩物品、三消方块、声呐货箱、材料、任务与扩建图标）均已替换为 Pexels 写实照片，不再使用线稿图标。
+
+| 本地文件 | 用途 | 摄影师 | 来源 |
+| --- | --- | --- | --- |
+| `assets/real/scrap.webp` | 废钢 / 三消废铁 | David Underland | https://www.pexels.com/photo/34133732/ |
+| `assets/real/fuel.webp` | 燃料桶 / 燃料 | wal_ 172619 | https://www.pexels.com/photo/37636113/ |
+| `assets/real/fiber.webp` | 纤维 / 纤维捆 | kaboompics | https://www.pexels.com/photo/6478161/ |
+| `assets/real/chip.webp` | 芯片箱 / 芯片 | Ivan Chumak | https://www.pexels.com/photo/40342984/ |
+| `assets/real/safe.webp` | 保险箱 | khezez \| خزاز | https://www.pexels.com/photo/32334240/ |
+| `assets/real/gold.webp` | 金条 | Aurelijus U. | https://www.pexels.com/photo/30201205/ |
+| `assets/real/mine.webp` | 水雷 | Valentin Ivantsov | https://www.pexels.com/photo/39814979/ |
+| `assets/real/medkit.webp` | 医疗包 / 三消医疗 | Roger Brown | https://www.pexels.com/photo/5149759/ |
+| `assets/real/hook.webp` | 沉城抓钩 | Cemrecan Yurtman | https://www.pexels.com/photo/29224605/ |
+| `assets/real/puzzle.webp` | 废料拼图 | Rafael Minguet Delgado | https://www.pexels.com/photo/39295510/ |
+| `assets/real/sonar.webp` | 声呐扫掠 / 声呐阵列 | Jørgen Larsen | https://www.pexels.com/photo/11398989/ |
+| `assets/real/storage.webp` | 仓库扩容 | Kate Filatova | https://www.pexels.com/photo/30537502/ |
+| `assets/real/workshop.webp` | 打捞工坊 | Aleksei Andreev | https://www.pexels.com/photo/8877770/ |
+| `assets/real/core.webp` | 聚变核心 | Jakub Zerdzicki | https://www.pexels.com/photo/37226176/ |
+| `assets/real/coin.webp` | 打捞币（裁自旧硬币照片） | Erick González González | https://www.pexels.com/photo/38598949/ |
+
+处理方式：方形裁切、调色、压缩为 256×256 WebP。遵循 Pexels License。
+
+## 界面操作图标 · Game-icons.net
+
+仅保留 5 个界面操作图标，不再用于任何游戏物件或插画：
+
+- `sound-on` / `sound-off` — 声音开关
+- `cog` — 设置
+- `return-arrow` — 返回
+- `cancel` — 关闭
 
 来源：https://game-icons.net/  
 通过 Iconify 下载：https://icon-sets.iconify.design/game-icons/  
 授权：CC BY 3.0 · https://creativecommons.org/licenses/by/3.0/  
 作者：Game-icons.net 社区，包括 Lorc、Delapouite、Skoll 等贡献者。
 
-使用图标：
+## 沉船收藏 · Pexels 写实照片
 
-- `metal-plate` — 废铁 / 三消废铁
-- `barrel` — 燃料桶
-- `rope-coil` — 纤维
-- `microchip` — 芯片
-- `strongbox` — 保险箱
-- `gold-bar` — 金条
-- `land-mine` — 水雷
-- `first-aid-kit` — 医疗包
-- `fishing-hook` — 沉城抓钩
-- `puzzle` — 废料拼图
-- `cargo-crate` — 仓库扩容
-- `gears` — 打捞工坊
-- `radar-sweep` — 声呐阵列
-- `reactor` — 聚变核心
-- `pulley-hook` — 抓钩滑轮
-- `two-coins` — 打捞币
-- `sound-on` / `sound-off` — 声音开关
-- `cog` — 设置
-- `return-arrow` — 返回
-- `cancel` — 关闭
-
-`tile-metal`、`tile-fuel`、`tile-fiber`、`tile-chip`、`tile-medkit` 是上述同源图标的白色重上色版本，用于三消棋盘。
-
-沉船收藏（`assets/collectibles/`）使用 Pexels 写实照片，而非线稿图标：
+`assets/collectibles/` 中的 15 件收藏同样使用 Pexels 写实照片：
 
 | 本地文件 | 收藏 | 摄影师 | 来源 |
 | --- | --- | --- | --- |

@@ -164,7 +164,7 @@ kbd {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: url("../assets/icons/coin.svg") center / contain no-repeat;
+  background: url("../assets/real/coin.webp") center / contain no-repeat;
   filter: drop-shadow(0 0 5px rgba(255, 195, 94, 0.45));
   flex: 0 0 auto;
 }
@@ -1225,3 +1225,4 @@ body::after {
     transition-duration: 0.001ms !important;
   }
 }
+

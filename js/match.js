@@ -29,9 +29,9 @@
   MATCH_BG.src = 'assets/bg-match.webp';
 
   var TILE_IMAGES = [];
-  ['tile-metal', 'tile-fuel', 'tile-fiber', 'tile-chip', 'tile-medkit'].forEach(function (name) {
+  ['assets/real/scrap.webp', 'assets/real/fuel.webp', 'assets/real/fiber.webp', 'assets/real/chip.webp', 'assets/real/medkit.webp'].forEach(function (src) {
     var img = new Image();
-    img.src = 'assets/icons/' + name + '.svg';
+    img.src = src;
     TILE_IMAGES.push(img);
   });
   var COLLECTIBLE_IMAGES = {};
@@ -944,7 +944,14 @@
       g.stroke();
 
       var icon = TILE_IMAGES[type];
-      g.drawImage(icon, -s * 0.27, -s * 0.27, s * 0.54, s * 0.54);
+      g.save();
+      g.beginPath();
+      g.arc(0, 0, s * 0.30, 0, TAU);
+      g.clip();
+      g.drawImage(icon, -s * 0.31, -s * 0.31, s * 0.62, s * 0.62);
+      g.fillStyle = 'rgba(0, 9, 14, 0.12)';
+      g.fillRect(-s, -s, s * 2, s * 2);
+      g.restore();
 
       g.fillStyle = 'rgba(255, 217, 158, 0.38)';
       var dots = [[-s * 0.37, -s * 0.37], [s * 0.37, -s * 0.37], [-s * 0.37, s * 0.37], [s * 0.37, s * 0.37]];

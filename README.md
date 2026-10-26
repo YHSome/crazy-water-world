@@ -263,7 +263,7 @@ python -m http.server 4173
 - Web Audio API 实时合成雨声、金属碰撞、抓钩、三消、四连/五连与结算音效。
 - 响应式 HUD：桌面为侧边控制台，手机竖屏为底部任务面板，横屏自动切换侧栏。
 - 手机端 DPR 限制为 1.5、像素预算下调、粒子数量封顶；抓钩/三消继续使用预渲染缓存，减少卡顿。
-- **场景与物件不再手绘**：标题、避难所、抓钩沉船、三消控制室使用本地照片；抓钩物品、三消废料、任务、材料和扩建图标使用本地图片素材。
+- **所有游戏插画与物件均为写实照片**：标题、避难所、三个小游戏背景，以及抓钩物品、三消废料、声呐货箱、任务、材料、扩建与收藏，全部使用本地化 Pexels 照片；仅声音/设置/返回/关闭等界面操作图标保留矢量图形。
 - 海水过滤器使用你提供的图片，已裁掉左上「AI生成」与右下「千问」水印；它会出现在抓钩水面、任务标签、任务简报、HUD 战利品、仓库稀有卡、净水舱图标、玩法说明和结算页。
 - Canvas 现在只负责图片合成、雨、光照、粒子、抓钩物理和棋盘交互。
 
@@ -290,7 +290,8 @@ python -m http.server 4173
 │   ├── bg-match.webp             # 三消：废弃控制室
 │   ├── bg-sonar.webp             # 声呐：潜艇控制面板
 │   ├── bgm-floodline.mp3         # RUOK《Apocalyptic Loop D》，CC BY 4.0
-│   ├── icons/                    # 任务 / 材料 / 扩建 / 物件图标
+│   ├── real/                     # 抓钩 / 三消 / 声呐 / 材料 / 扩建写实照片
+│   ├── icons/                    # 仅声音 / 设置 / 返回 / 关闭界面图标
 │   ├── collectibles/             # 15 件收藏写实照片（Pexels）
 │   ├── seawater-filter.webp      # 用户提供的过滤器图（已裁掉水印）
 │   └── seawater-filter-icon.webp # 方图，用于抓钩 / 标签 / 图标
@@ -324,7 +325,7 @@ location.reload();
 - 三消棋盘、过滤器掉落、步数与奖励：`js/match.js` 的 `TILES` / `chance(0.05)` / `MatchGame`。
 - 末日海景和避难所：`js/hub-scene.js`。
 - 过滤器图片：`assets/seawater-filter.webp`（仓库卡 / 文档）和 `assets/seawater-filter-icon.webp`（水面 / 标签 / 图标）。
-- 场景与图标：替换 `assets/bg-*.webp` 或 `assets/icons/*.svg` 即可整体换皮。
+- 场景与物件：替换 `assets/bg-*.webp`、`assets/real/*.webp` 或 `assets/collectibles/*.webp` 即可整体换皮。
 - 素材来源与授权：[CREDITS.md](CREDITS.md)。
 - 色彩与排版：`css/style.css` 顶部变量。
 - 音效：`js/audio.js`。

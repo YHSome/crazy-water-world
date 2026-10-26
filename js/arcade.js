@@ -74,9 +74,9 @@
   HOOK_BG.src = 'assets/bg-hook.webp';
 
   var HOOK_ICON = new Image();
-  HOOK_ICON.src = 'assets/icons/hook.svg';
+  HOOK_ICON.src = 'assets/real/hook.webp';
   var PULLEY_ICON = new Image();
-  PULLEY_ICON.src = 'assets/icons/pulley.svg';
+  PULLEY_ICON.src = 'assets/real/workshop.webp';
   var COLLECTIBLE_IMAGES = {};
   function collectibleImage(src) {
     if (!COLLECTIBLE_IMAGES[src]) {
@@ -89,13 +89,13 @@
   }
 
   var ITEM_IMAGES = {
-    scrap: 'assets/icons/scrap.svg',
-    barrel: 'assets/icons/fuel.svg',
-    tarp: 'assets/icons/fiber.svg',
-    chip: 'assets/icons/chip.svg',
-    safe: 'assets/icons/safe.svg',
-    gold: 'assets/icons/gold.svg',
-    mine: 'assets/icons/mine.svg'
+    scrap: 'assets/real/scrap.webp',
+    barrel: 'assets/real/fuel.webp',
+    tarp: 'assets/real/fiber.webp',
+    chip: 'assets/real/chip.webp',
+    safe: 'assets/real/safe.webp',
+    gold: 'assets/real/gold.webp',
+    mine: 'assets/real/mine.webp'
   };
   for (var ik in ITEM_IMAGES) {
     if (!Object.prototype.hasOwnProperty.call(ITEM_IMAGES, ik)) continue;
@@ -1040,7 +1040,14 @@
       g.beginPath();
       g.arc(0, 0, s * 1.12, 0, TAU);
       g.fill();
+      g.save();
+      g.beginPath();
+      g.arc(0, 0, s * 0.98, 0, TAU);
+      g.clip();
       g.drawImage(ITEM_IMAGES[key], -s * 0.98, -s * 0.98, s * 1.96, s * 1.96);
+      g.fillStyle = data.mine ? 'rgba(255, 48, 34, 0.28)' : 'rgba(0, 10, 15, 0.12)';
+      g.fillRect(-s, -s, s * 2, s * 2);
+      g.restore();
       g.strokeStyle = data.mine ? 'rgba(255, 108, 85, 0.6)' : 'rgba(218, 255, 249, 0.2)';
       g.lineWidth = 1;
       g.beginPath();
@@ -1177,7 +1184,12 @@
     ctx.arc(0, 0, 23, 0, TAU);
     ctx.fill();
     if (PULLEY_ICON.complete && PULLEY_ICON.naturalWidth) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(0, 0, 20, 0, TAU);
+      ctx.clip();
       ctx.drawImage(PULLEY_ICON, -20, -20, 40, 40);
+      ctx.restore();
     }
     ctx.fillStyle = 'rgba(255, 192, 113, ' + (0.35 + Math.sin(this.time * 2.3) * 0.2).toFixed(3) + ')';
     ctx.beginPath();
@@ -1195,7 +1207,17 @@
     ctx.arc(0, 0, 15, 0, TAU);
     ctx.fill();
     if (HOOK_ICON.complete && HOOK_ICON.naturalWidth) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(0, 0, 14.5, 0, TAU);
+      ctx.clip();
       ctx.drawImage(HOOK_ICON, -15, -15, 30, 30);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255, 206, 128, 0.55)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, 14.5, 0, TAU);
+      ctx.stroke();
     }
     ctx.restore();
   };
@@ -1399,3 +1421,4 @@
 
   CW.HookGame = HookGame;
 })();
+
