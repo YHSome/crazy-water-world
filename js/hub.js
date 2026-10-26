@@ -107,6 +107,78 @@
     }
   ]);
 
+  var CONTRACTS = (CW.CONTRACTS = [
+    {
+      id: 'safe', name: '保险箱回收', iconImg: 'assets/icons/safe.svg', metric: 'safe', mode: 'sum', target: 5,
+      desc: '在沉城抓钩里累计抓回 5 个保险箱。',
+      reward: { credits: 180, mats: { metal: 4 } }
+    },
+    {
+      id: 'combo', name: '连击专家', iconImg: 'assets/icons/hook.svg', metric: 'bestCombo', mode: 'max', target: 6,
+      desc: '单局抓钩最高连击达到 6。',
+      reward: { credits: 220, mats: { chip: 2 } }
+    },
+    {
+      id: 'score', name: '高分分拣', iconImg: 'assets/icons/puzzle.svg', metric: 'matchScore', mode: 'max', target: 1800,
+      desc: '单局废料拼图达到 1,800 分。',
+      reward: { credits: 240, mats: { fiber: 4 } }
+    },
+    {
+      id: 'runs', name: '连续作业', iconImg: 'assets/icons/sonar.svg', metric: 'runs', mode: 'sum', target: 3,
+      desc: '完成 3 次打捞。',
+      reward: { credits: 160, mats: { fuel: 3 } }
+    },
+    {
+      id: 'chips', name: '芯片储备', iconImg: 'assets/icons/chip.svg', metric: 'chips', mode: 'sum', target: 12,
+      desc: '累计获得 12 个芯片。',
+      reward: { credits: 200, mats: { fiber: 2 } }
+    },
+    {
+      id: 'gold', name: '金条猎人', iconImg: 'assets/icons/gold.svg', metric: 'gold', mode: 'sum', target: 2,
+      desc: '抓钩累计抓回 2 根金条。',
+      reward: { credits: 220, mats: { chip: 1 } }
+    }
+  ]);
+
+  function contractDef(contractId) {
+    for (var i = 0; i < CONTRACTS.length; i++) if (CONTRACTS[i].id === contractId) return CONTRACTS[i];
+    return null;
+  }
+
+  function makeContractSet() {
+    var pool = CONTRACTS.slice();
+    var out = [];
+    while (out.length < 3 && pool.length) {
+      var idx = (Math.random() * pool.length) | 0;
+      var def = pool.splice(idx, 1)[0];
+      out.push({ id: def.id, progress: 0, claimed: false });
+    }
+    return out;
+  }
+
+  function normalizeContractSet(raw) {
+    if (!Array.isArray(raw) || raw.length !== 3) return makeContractSet();
+    var out = [];
+    var seen = {};
+    for (var i = 0; i < raw.length; i++) {
+      var item = raw[i] || {};
+      var def = contractDef(String(item.id || ''));
+      if (!def || seen[def.id]) continue;
+      seen[def.id] = true;
+      out.push({
+        id: def.id,
+        progress: clamp(Math.floor(Number(item.progress) || 0), 0, def.target),
+        claimed: !!item.claimed
+      });
+    }
+    var fill = makeContractSet();
+    for (var j = 0; out.length < 3 && j < fill.length; j++) {
+      if (!seen[fill[j].id]) { seen[fill[j].id] = true; out.push(fill[j]); }
+    }
+    while (out.length < 3) out.push({ id: CONTRACTS[out.length % CONTRACTS.length].id, progress: 0, claimed: false });
+    return out;
+  }
+
   var SAVE_KEY = 'crazywater.floodline.v1';
 
   function makeDefault() {
@@ -117,6 +189,8 @@
       materials: { metal: 0, fuel: 0, fiber: 0, chip: 0 },
       filters: 0,
       filterPity: 0,
+      contracts: makeContractSet(),
+      contractRound: 1,
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0 },
       runs: 0
@@ -132,6 +206,8 @@
     data.credits = Math.max(0, Number(raw.credits) || 0);
     data.filters = Math.max(0, Math.floor(Number(raw.filters) || 0));
     data.filterPity = clamp(Math.floor(Number(raw.filterPity) || 0), 0, 7);
+    data.contracts = normalizeContractSet(raw.contracts);
+    data.contractRound = Math.max(1, Math.floor(Number(raw.contractRound) || 1));
     data.runs = Math.max(0, Math.floor(Number(raw.runs) || 0));
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
@@ -376,10 +452,21 @@
     if (!this.dom || !this.dom.panelTitle) return;
     var used = this.used();
     var cap = this.capacity();
+    var contractTab = document.querySelector('.panel-tab[data-tab="contracts"]');
+    if (contractTab) {
+      var readyCount = this.contractsReadyCount();
+      contractTab.classList.toggle('has-ready', readyCount > 0);
+      contractTab.setAttribute('data-ready', String(readyCount));
+    }
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
       this.dom.panelTag.textContent = '2 个任务';
       this.dom.panelNote.textContent = '物资会存进避难所仓库';
+    } else if (this.tab === 'contracts') {
+      var contractReady = this.contractsReadyCount();
+      this.dom.panelTitle.textContent = '打捞契约';
+      this.dom.panelTag.textContent = '第 ' + Math.max(1, this.data.contractRound || 1) + ' 轮' + (contractReady ? ' · ' + contractReady + ' 可领' : '');
+      this.dom.panelNote.textContent = '完成契约领取打捞币与补给';
     } else if (this.tab === 'warehouse') {
       this.dom.panelTitle.textContent = '避难所仓库';
       this.dom.panelTag.textContent = used + ' / ' + cap;
@@ -396,6 +483,7 @@
     if (!this.dom.panelContent) return;
     var scroll = this.dom.panelContent.scrollTop;
     if (this.tab === 'tasks') this.renderTasks();
+    else if (this.tab === 'contracts') this.renderContracts();
     else if (this.tab === 'warehouse') this.renderWarehouse();
     else this.renderShelter();
     this.dom.panelContent.scrollTop = scroll;
@@ -425,6 +513,130 @@
       '</article>';
     }
     html += '</div>';
+    this.dom.panelContent.innerHTML = html;
+  };
+
+  Hub.prototype.contractValue = function (def, result) {
+    switch (def.metric) {
+      case 'safe': return Math.max(0, Number(result.safeCount) || 0);
+      case 'gold': return Math.max(0, Number(result.goldCount) || 0);
+      case 'bestCombo': return Math.max(0, Number(result.bestCombo) || 0);
+      case 'matchScore': return result.type === 'match' ? Math.max(0, Number(result.score) || 0) : 0;
+      case 'runs': return 1;
+      case 'chips': return Math.max(0, Number(result.materials && result.materials.chip) || 0);
+      default: return 0;
+    }
+  };
+
+  Hub.prototype.applyContractProgress = function (result) {
+    if (!Array.isArray(this.data.contracts) || !this.data.contracts.length) {
+      this.data.contracts = makeContractSet();
+      this.data.contractRound = Math.max(1, this.data.contractRound || 1);
+    }
+    for (var i = 0; i < this.data.contracts.length; i++) {
+      var c = this.data.contracts[i];
+      if (!c || c.claimed) continue;
+      var def = contractDef(c.id);
+      if (!def) continue;
+      var value = this.contractValue(def, result);
+      if (def.mode === 'max') c.progress = Math.max(c.progress || 0, value);
+      else c.progress = Math.min(def.target, (c.progress || 0) + value);
+    }
+  };
+
+  Hub.prototype.contractsReadyCount = function () {
+    var n = 0;
+    if (!Array.isArray(this.data.contracts)) return 0;
+    for (var i = 0; i < this.data.contracts.length; i++) {
+      var c = this.data.contracts[i];
+      var def = c && contractDef(c.id);
+      if (c && def && !c.claimed && c.progress >= def.target) n++;
+    }
+    return n;
+  };
+
+  Hub.prototype.grantContractReward = function (reward) {
+    var credits = Math.max(0, Math.round(reward.credits || 0));
+    this.data.credits += credits;
+    var space = Math.max(0, this.capacity() - this.used());
+    var overflow = 0;
+    var overflowCredits = 0;
+    var stored = {};
+    for (var i = 0; i < MATERIALS.length; i++) {
+      var m = MATERIALS[i];
+      var amount = Math.max(0, Math.round((reward.mats && reward.mats[m.id]) || 0));
+      var put = Math.min(amount, space);
+      stored[m.id] = put;
+      space -= put;
+      this.data.materials[m.id] = (this.data.materials[m.id] || 0) + put;
+      var extra = amount - put;
+      if (extra > 0) {
+        overflow += extra;
+        overflowCredits += extra * m.sell;
+      }
+    }
+    this.data.credits += overflowCredits;
+    return { credits: credits + overflowCredits, stored: stored, overflow: overflow };
+  };
+
+  Hub.prototype.claimContract = function (index) {
+    var c = this.data.contracts && this.data.contracts[index];
+    if (!c || c.claimed) return;
+    var def = contractDef(c.id);
+    if (!def || c.progress < def.target) return;
+    c.claimed = true;
+    var reward = this.grantContractReward(def.reward);
+    this.audio.buy();
+    var allClaimed = true;
+    for (var i = 0; i < this.data.contracts.length; i++) {
+      if (!this.data.contracts[i].claimed) { allClaimed = false; break; }
+    }
+    if (allClaimed) {
+      this.data.contracts = makeContractSet();
+      this.data.contractRound = Math.max(1, this.data.contractRound || 1) + 1;
+      this.showToast('CONTRACT ROUND', '第 ' + this.data.contractRound + ' 轮契约', '新目标已刷新 · 继续打捞');
+    } else {
+      this.showToast('CONTRACT CLAIMED', def.name, '+' + fmt(reward.credits) + ' 打捞币' + (reward.overflow ? ' · 仓库溢出已折算' : ''));
+    }
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.renderContracts = function () {
+    var round = Math.max(1, this.data.contractRound || 1);
+    var ready = this.contractsReadyCount();
+    var html = '<div class="contract-intro">' +
+      '<span class="contract-kicker">CONTRACT BOARD · 第 ' + round + ' 轮</span>' +
+      '<p>完成打捞目标领取额外补给。三项全部领取后自动刷新下一轮，不需要等待时间。</p>' +
+      '<span class="contract-count">' + (ready ? ready + ' 项可领取' : '进行中') + '</span>' +
+      '</div><div class="contract-list">';
+    for (var i = 0; i < this.data.contracts.length; i++) {
+      var c = this.data.contracts[i];
+      var def = contractDef(c.id);
+      if (!def) continue;
+      var progress = Math.min(def.target, c.progress || 0);
+      var pct = clamp(progress / def.target, 0, 1);
+      var isReady = !c.claimed && progress >= def.target;
+      var rewardHtml = '<span>打捞币 +' + fmt(def.reward.credits) + '</span>';
+      for (var m = 0; m < MATERIALS.length; m++) {
+        var mat = MATERIALS[m];
+        var amount = def.reward.mats && def.reward.mats[mat.id];
+        if (amount) rewardHtml += '<span><img src="' + mat.iconImg + '" alt="">' + mat.name + ' +' + amount + '</span>';
+      }
+      html += '<article class="contract-card' + (isReady ? ' ready' : '') + (c.claimed ? ' claimed' : '') + '">' +
+        '<div class="contract-icon"><img src="' + def.iconImg + '" alt=""></div>' +
+        '<div class="contract-body">' +
+          '<div class="contract-title"><b>' + def.name + '</b><span>' + progress + ' / ' + def.target + '</span></div>' +
+          '<p class="contract-desc">' + def.desc + '</p>' +
+          '<div class="contract-track"><i style="width:' + (pct * 100).toFixed(1) + '%"></i></div>' +
+          '<div class="contract-reward">' + rewardHtml + '</div>' +
+        '</div>' +
+        '<button class="contract-claim' + (isReady ? ' ready' : '') + '" data-action="claim-contract" data-contract="' + i + '"' +
+          (c.claimed || !isReady ? ' disabled' : '') + '>' + (c.claimed ? '已领取' : isReady ? '领取' : '进行中') + '</button>' +
+      '</article>';
+    }
+    html += '</div><p class="contract-footnote">契约进度在每次打捞结算时更新，关闭页面不会自动增长。</p>';
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -567,6 +779,12 @@
     var self = this;
     requestAnimationFrame(function () { self.updateLayout(); });
     window.setTimeout(function () { self.updateLayout(); }, 260);
+    window.setTimeout(function () {
+      var n = self.contractsReadyCount();
+      if (n > 0 && self.state === 'playing') {
+        self.showToast('CONTRACT READY', n + ' 份契约可领取', '打开「契约」标签领取打捞币与补给');
+      }
+    }, 520);
   };
 
   Hub.prototype.applyRunResult = function (result) {
@@ -600,6 +818,7 @@
     this.data.runs += 1;
     var key = result.type === 'match' ? 'match' : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
+    this.applyContractProgress(result);
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -739,6 +958,7 @@
         else if (action === 'reset-save') self.resetSave();
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
+        else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
         return;
       }
       var tabEl = e.target.closest ? e.target.closest('[data-tab]') : null;

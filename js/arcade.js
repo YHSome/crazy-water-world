@@ -463,6 +463,8 @@
     this.combo = 0;
     this.comboTimer = 0;
     this.bestCombo = 0;
+    this.safeCount = 0;
+    this.goldCount = 0;
     this.filters = 0;
     this.rareFound = false;
     this.hasFilter = false;
@@ -507,6 +509,8 @@
     this.combo = 0;
     this.comboTimer = 0;
     this.bestCombo = 0;
+    this.safeCount = 0;
+    this.goldCount = 0;
     this.length = 62;
     this.swingTime = 0;
     this.angle = 0;
@@ -586,6 +590,8 @@
     this.shake = 0;
     this.combo = 0;
     this.comboTimer = 0;
+    this.safeCount = 0;
+    this.goldCount = 0;
     this.buildItemSprites();
     this.audio.click();
   };
@@ -732,6 +738,8 @@
       this.combo = Math.min(9, this.combo + 1);
       this.comboTimer = 6;
       this.bestCombo = Math.max(this.bestCombo, this.combo);
+      if (it.key === 'safe') this.safeCount += 1;
+      if (it.key === 'gold') this.goldCount += 1;
       var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.08));
       this.credits += gained;
       for (var key in data.mats) {
@@ -800,6 +808,8 @@
       credits: this.credits,
       filters: this.filters,
       bestCombo: this.bestCombo,
+      safeCount: this.safeCount,
+      goldCount: this.goldCount,
       materials: {
         metal: this.counts.metal,
         fuel: this.counts.fuel,

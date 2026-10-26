@@ -464,6 +464,35 @@ body.muted .ic-mute { display: block; }
 .rare-info p { margin-top: 3px; font-size: 7px; line-height: 1.55; color: rgba(156, 198, 204, 0.56); }
 .rare-note { display: block; margin-top: 3px; font-family: var(--mono); font-size: 6px; color: rgba(144, 196, 205, 0.42); }
 .rare-pity { display: block; margin-top: 2px; font-family: var(--mono); font-size: 6px; color: rgba(255, 210, 132, 0.64); }
+
+/* ── contracts ─────────────────────────────────────────────── */
+.contract-intro { padding: 2px 2px 9px; border-bottom: 1px solid rgba(122, 207, 205, 0.12); margin-bottom: 9px; }
+.contract-kicker { display: block; font-family: var(--mono); font-size: 7px; letter-spacing: 0.15em; color: var(--aqua); }
+.contract-intro p { margin: 4px 0 0; font-size: 9px; line-height: 1.55; color: rgba(164, 199, 200, 0.62); }
+.contract-count { display: inline-block; margin-top: 5px; padding: 2px 7px; border: 1px solid rgba(122, 207, 205, 0.22); border-radius: 99px; font-family: var(--mono); font-size: 7px; color: #9feeff; }
+.contract-list { display: flex; flex-direction: column; gap: 8px; }
+.contract-card { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 10px; border: 1px solid rgba(122, 207, 205, 0.16); border-radius: 9px; background: linear-gradient(135deg, rgba(8, 35, 45, 0.72), rgba(4, 22, 30, 0.82)); }
+.contract-card.ready { border-color: rgba(255, 206, 128, 0.46); box-shadow: inset 0 0 24px rgba(255, 193, 102, 0.05); }
+.contract-card.claimed { opacity: 0.55; }
+.contract-icon { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid rgba(122, 207, 205, 0.23); border-radius: 8px; background: rgba(3, 20, 28, 0.72); }
+.contract-icon img { width: 28px; height: 28px; object-fit: contain; }
+.contract-body { min-width: 0; }
+.contract-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.contract-title b { font-size: 12px; font-weight: 600; color: #e9f7f1; letter-spacing: 0.02em; }
+.contract-title span { flex: 0 0 auto; font-family: var(--mono); font-size: 7px; color: var(--aqua); }
+.contract-desc { margin: 2px 0 5px; font-size: 8px; line-height: 1.45; color: rgba(164, 199, 200, 0.6); }
+.contract-track { height: 3px; overflow: hidden; border-radius: 99px; background: rgba(122, 207, 205, 0.13); }
+.contract-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mint), var(--aqua)); }
+.contract-card.ready .contract-track i { background: linear-gradient(90deg, #ffd166, #ff9e6d); }
+.contract-reward { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-top: 5px; font-family: var(--mono); font-size: 7px; color: rgba(255, 216, 160, 0.76); }
+.contract-reward span { display: inline-flex; align-items: center; gap: 3px; }
+.contract-reward img { width: 11px; height: 11px; object-fit: contain; opacity: 0.82; }
+.contract-claim { min-width: 48px; min-height: 30px; padding: 0 7px; border: 1px solid rgba(122, 207, 205, 0.2); border-radius: 6px; background: rgba(3, 20, 28, 0.7); color: rgba(164, 199, 200, 0.45); font-family: var(--mono); font-size: 7px; }
+.contract-claim.ready { border-color: rgba(255, 206, 128, 0.5); color: #ffd166; background: rgba(255, 175, 84, 0.1); cursor: pointer; }
+.contract-claim.ready:hover { background: rgba(255, 175, 84, 0.18); }
+.contract-footnote { margin: 10px 2px 0; font-family: var(--mono); font-size: 6px; line-height: 1.6; color: rgba(144, 196, 205, 0.4); }
+.panel-tab.has-ready::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 4px; border-radius: 50%; background: #ffd166; box-shadow: 0 0 7px rgba(255, 209, 102, 0.9); vertical-align: middle; }
+
 .rare-link { grid-column: 1 / -1; min-height: 31px; font-size: 8px; color: #a6efff; border-color: rgba(112, 220, 255, 0.22); background: rgba(12, 91, 120, 0.18); }
 .rare-link:hover { background: rgba(16, 119, 151, 0.3); border-color: rgba(112, 220, 255, 0.42); }
 .upgrade-card.rare { border-color: rgba(112, 220, 255, 0.16); background: linear-gradient(100deg, rgba(14, 80, 103, 0.22), rgba(1, 18, 27, 0.4)); }
