@@ -618,18 +618,18 @@
     // board frame
     ctx.save();
     var frame = ctx.createLinearGradient(bx - 12, by - 12, bx + this.boardW + 12, by + this.boardH + 12);
-    frame.addColorStop(0, 'rgba(28, 61, 68, 0.94)');
-    frame.addColorStop(1, 'rgba(4, 25, 34, 0.97)');
+    frame.addColorStop(0, 'rgba(232, 251, 244, 0.97)');
+    frame.addColorStop(1, 'rgba(185, 235, 226, 0.98)');
     ctx.fillStyle = frame;
     ctx.beginPath();
     ctx.roundRect(bx - 12, by - 12, this.boardW + 24, this.boardH + 24, 14);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 178, 116, 0.14)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // rivets
-    ctx.fillStyle = 'rgba(255, 205, 151, 0.14)';
+    ctx.fillStyle = 'rgba(20, 143, 134, 0.22)';
     for (var i = 0; i < 8; i++) {
       var rx = bx - 5 + i * (this.boardW + 10) / 7;
       ctx.beginPath();

@@ -430,7 +430,7 @@
         lootHtml += '<span class="loot-chip" style="--tone:' + m.color + '"><i></i>' + m.name + ' ' + counts[m.id] + '</span>';
       }
     }
-    if (!lootHtml) lootHtml = '<span class="loot-chip">暂无物资</span>';
+    if (!lootHtml) lootHtml = '<span class="loot-chip empty">暂无物资</span>';
     if (lootHtml !== this.lastLoot) {
       this.lastLoot = lootHtml;
       this.dom.loot.innerHTML = lootHtml;
@@ -626,7 +626,7 @@
     this.length = 62;
     this.swingTime = 0;
     this.angle = 0;
-    this.itemScale = clamp(Math.min(this.w, this.h) / 520, 0.7, 1.15);
+    this.itemScale = clamp(Math.min(this.w, this.h) / 400, 0.9, 1.2);
     var pool = ['scrap', 'scrap', 'scrap', 'barrel', 'barrel', 'barrel', 'tarp', 'tarp', 'tarp', 'chip', 'chip', 'safe', 'safe', 'gold', 'mine', 'mine', 'mine', 'scrap', 'collectible'];
     if (this.condition) {
       if (this.condition.mines < 0) pool = pool.filter(function (key) { return key !== 'mine'; });
@@ -1388,12 +1388,18 @@
   HookGame.prototype.drawItemLabel = function (ctx, x, y, text, color) {
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = '500 7px "Noto Sans SC", "Microsoft YaHei", sans-serif';
-    ctx.fillStyle = 'rgba(0, 8, 12, 0.6)';
-    ctx.fillText(text, x + 1, y + 1);
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.72;
-    ctx.fillText(text, x, y);
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+    var tw = ctx.measureText(text).width;
+    ctx.fillStyle = 'rgba(255, 252, 244, 0.88)';
+    ctx.beginPath();
+    ctx.roundRect(x - tw / 2 - 5, y - 8, tw + 10, 16, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(23, 78, 82, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = color === '#ff8a6b' ? '#b9472c' : '#24555a';
+    ctx.fillText(text, x, y + 0.5);
     ctx.restore();
   };
 

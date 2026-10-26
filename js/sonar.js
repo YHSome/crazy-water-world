@@ -358,20 +358,20 @@
 
     // board housing
     ctx.save();
-    ctx.fillStyle = 'rgba(1, 14, 20, 0.68)';
+    ctx.fillStyle = 'rgba(244, 253, 248, 0.94)';
     ctx.beginPath();
     ctx.roundRect(bx - 14, by - 38, boardW + 28, boardH + 58, 14);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(115, 227, 218, 0.18)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(121, 216, 255, 0.7)';
-    ctx.font = '600 8px "Cascadia Mono", monospace';
+    ctx.fillStyle = 'rgba(20, 91, 95, 0.86)';
+    ctx.font = '700 11px "Cascadia Mono", monospace';
     ctx.textAlign = 'left';
     ctx.fillText('SONAR ARRAY · 06 × 06', bx, by - 20);
     ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(159, 238, 255, 0.65)';
+    ctx.fillStyle = 'rgba(15, 143, 138, 0.82)';
     ctx.fillText('PROBES ' + this.probesLeft, bx + boardW, by - 20);
 
     // radar sweep
@@ -381,11 +381,11 @@
     ctx.clip();
     var sweep = (this.time * 0.7) % TAU;
     var rg = ctx.createRadialGradient(bx + boardW / 2, by + boardH / 2, 0, bx + boardW / 2, by + boardH / 2, boardW * 0.7);
-    rg.addColorStop(0, 'rgba(121, 232, 255, 0.045)');
-    rg.addColorStop(1, 'rgba(121, 232, 255, 0)');
+    rg.addColorStop(0, 'rgba(20, 184, 178, 0.09)');
+    rg.addColorStop(1, 'rgba(20, 184, 178, 0)');
     ctx.fillStyle = rg;
     ctx.fillRect(bx, by, boardW, boardH);
-    ctx.strokeStyle = 'rgba(121, 232, 255, 0.13)';
+    ctx.strokeStyle = 'rgba(20, 144, 139, 0.2)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(bx + boardW / 2, by + boardH / 2);
@@ -401,7 +401,7 @@
 
     // rings
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = 'source-over';
     for (var i = 0; i < this.rings.length; i++) {
       var ring = this.rings[i];
       var a = clamp(ring.life / ring.maxLife, 0, 1);
@@ -415,7 +415,7 @@
 
     // particles
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = 'source-over';
     for (var p = 0; p < this.particles.length; p++) {
       var pt = this.particles[p];
       var pa = clamp(pt.life / pt.maxLife, 0, 1);
@@ -433,7 +433,7 @@
     for (var q = 0; q < this.popups.length; q++) {
       var pop = this.popups[q];
       var poa = clamp(pop.life / pop.maxLife, 0, 1);
-      ctx.font = '800 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.font = '800 12px "Noto Sans SC", "Microsoft YaHei", sans-serif';
       ctx.fillStyle = 'rgba(0, 8, 13, ' + (poa * 0.5).toFixed(3) + ')';
       ctx.fillText(pop.text, pop.x + 1, pop.y + 1);
       ctx.fillStyle = pop.color;
@@ -445,11 +445,11 @@
 
     // found counter
     ctx.textAlign = 'left';
-    ctx.font = '600 8px "Cascadia Mono", monospace';
-    ctx.fillStyle = 'rgba(255, 209, 102, 0.8)';
+    ctx.font = '700 10px "Cascadia Mono", monospace';
+    ctx.fillStyle = 'rgba(184, 87, 38, 0.92)';
     ctx.fillText('RECOVERED ' + this.found + ' / 4', bx, by + boardH + 25);
     ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(159, 238, 255, 0.44)';
+    ctx.fillStyle = 'rgba(15, 112, 111, 0.7)';
     ctx.fillText('回波数字 = 最近货箱距离', bx + boardW, by + boardH + 25);
     ctx.restore();
 
@@ -470,24 +470,24 @@
     ctx.save();
     ctx.translate(cx, cy);
 
-    ctx.fillStyle = 'rgba(0, 5, 9, 0.35)';
+    ctx.fillStyle = 'rgba(20, 100, 100, 0.1)';
     ctx.beginPath();
     ctx.roundRect(-s / 2 + 1, -s / 2 + 3, s, s, s * 0.16);
     ctx.fill();
-    ctx.fillStyle = revealed ? 'rgba(4, 27, 33, 0.92)' : 'rgba(5, 35, 43, 0.9)';
+    ctx.fillStyle = revealed ? 'rgba(226, 247, 241, 0.96)' : 'rgba(210, 240, 234, 0.94)';
     ctx.beginPath();
     ctx.roundRect(-s / 2, -s / 2, s, s, s * 0.15);
     ctx.fill();
-    ctx.strokeStyle = item && item.found ? hexA(data.color, 0.8) : 'rgba(115, 227, 218, 0.18)';
+    ctx.strokeStyle = item && item.found ? hexA(data.color, 0.75) : 'rgba(15, 143, 138, 0.2)';
     ctx.lineWidth = item && item.found ? 1.4 : 1;
     ctx.stroke();
 
     if (!revealed) {
-      ctx.strokeStyle = 'rgba(121, 232, 255, ' + (0.13 + Math.sin(this.time * 1.4 + r + c) * 0.04).toFixed(3) + ')';
+      ctx.strokeStyle = 'rgba(15, 143, 138, ' + (0.3 + Math.sin(this.time * 1.4 + r + c) * 0.08).toFixed(3) + ')';
       ctx.beginPath();
       ctx.arc(0, 0, s * 0.26, 0, TAU);
       ctx.stroke();
-      ctx.fillStyle = 'rgba(121, 232, 255, 0.22)';
+      ctx.fillStyle = 'rgba(15, 143, 138, 0.28)';
       ctx.beginPath();
       ctx.arc(0, 0, 1.2, 0, TAU);
       ctx.fill();
@@ -506,12 +506,12 @@
         ctx.restore();
       }
     } else {
-      var tone = clue <= 2 ? '#ff8a5c' : clue <= 4 ? '#ffd166' : '#79d8ff';
-      ctx.fillStyle = 'rgba(121, 232, 255, 0.06)';
+      var tone = clue <= 2 ? '#c45a36' : clue <= 4 ? '#9c6e18' : '#0b7f8a';
+      ctx.fillStyle = 'rgba(15, 143, 138, 0.09)';
       ctx.beginPath();
       ctx.arc(0, 0, s * 0.36, 0, TAU);
       ctx.fill();
-      ctx.strokeStyle = hexA(tone, 0.18);
+      ctx.strokeStyle = hexA(tone, 0.3);
       ctx.beginPath();
       ctx.arc(0, 0, s * 0.31, 0, TAU);
       ctx.stroke();

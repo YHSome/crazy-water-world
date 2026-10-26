@@ -10,11 +10,11 @@ Pexels License：https://www.pexels.com/license/
 
 | 本地文件 | 用途 | 摄影师 | 来源 |
 | --- | --- | --- | --- |
-| `assets/bg-title.webp` | 标题背景（Aceredo 水淹村庄） | Liane Ferreira | https://www.pexels.com/photo/29144886/ |
-| `assets/bg-hub.webp` | 避难所背景（锈蚀渔船） | Pok Rie | https://www.pexels.com/photo/7099670/ |
-| `assets/bg-hook.webp` | 沉城抓钩背景（海底沉船） | Harvey Clements | https://www.pexels.com/photo/15463400/ |
-| `assets/bg-match.webp` | 废料拼图背景（废弃控制室） | Muhammet Çolak | https://www.pexels.com/photo/7360328/ |
-| `assets/bg-sonar.webp` | 声呐扫掠背景（潜艇控制面板） | Jørgen Larsen | https://www.pexels.com/sk-sk/photo/ovladaci-panel-ponorky-11398989/ |
+| `assets/bg-title.webp` | 标题背景（热带海湾航拍） | Roderick Salatan | https://www.pexels.com/photo/14222334/ |
+| `assets/bg-hub.webp` | 避难所背景（浅湾游艇） | BOVISTAS | https://www.pexels.com/photo/34951695/ |
+| `assets/bg-hook.webp` | 沉城抓钩背景（清澈浅海沉船） | Abdulaziz hasan | https://www.pexels.com/photo/38208451/ |
+| `assets/bg-match.webp` | 废料拼图背景（阳光工坊） | Luis Quintero | https://www.pexels.com/photo/16243257/ |
+| `assets/bg-sonar.webp` | 声呐扫掠背景（木质船舵） | The Bhullar | https://www.pexels.com/photo/36843829/ |
 
 处理方式：裁切、缩放、调色、压缩为 WebP。
 

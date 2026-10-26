@@ -823,7 +823,7 @@
     var html = this.warehouseSwitch() + '<div class="collection-summary">' +
       '<span class="collection-kicker">SUNKEN ARCHIVE · 沉船收藏</span>' +
       '<div class="collection-headline"><b>' + unique + ' / ' + CW.COLLECTIBLES.length + '</b><span>已发现 · 共 ' + total + ' 件</span></div>' +
-      '<p>收藏品不占仓库容量，从打捞结算中随机带回。重复件可以在合成台合并。</p>' +
+      '<p>收藏品不占仓库容量，会在局内作为普通掉落出现。重复件可以分解，也可以合成更高稀有度。</p>' +
       '</div><div class="craft-board">' +
       '<div class="craft-head"><span>合成台</span><small>3 件同级 + 打捞币 → 1 件更高稀有度</small></div><div class="craft-list">';
     for (var r = 0; r < CW.CRAFT_RECIPES.length; r++) {
