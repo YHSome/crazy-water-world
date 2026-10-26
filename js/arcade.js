@@ -139,6 +139,7 @@
       summaryCredits: id('summary-credits'),
       summaryLoot: id('summary-loot'),
       summaryRare: id('summary-rare'),
+      summaryCollect: id('summary-collect'),
       overflow: id('summary-overflow'),
       confirm: id('arcade-confirm')
     };
@@ -446,6 +447,18 @@
       this.dom.summaryRare.innerHTML = '<img class="summary-rare-img" src="assets/seawater-filter-icon.webp" alt=""><span>稀有打捞 · <b>海水过滤器 ×' + this.applied.filters + '</b> 已存入避难所，不占仓库容量。</span>';
     } else {
       this.dom.summaryRare.classList.add('hidden');
+    }
+    var collectibles = this.applied.collectibles || [];
+    if (collectibles.length && this.dom.summaryCollect) {
+      this.dom.summaryCollect.classList.remove('hidden');
+      var collectHtml = '<span>收藏品</span>';
+      for (var ci = 0; ci < collectibles.length; ci++) {
+        var col = collectibles[ci];
+        collectHtml += '<span class="summary-collect-item" style="--tone:' + col.color + '"><img src="' + col.icon + '" alt="">' + col.name + '</span>';
+      }
+      this.dom.summaryCollect.innerHTML = collectHtml;
+    } else if (this.dom.summaryCollect) {
+      this.dom.summaryCollect.classList.add('hidden');
     }
     if (this.applied.overflowUnits > 0) {
       this.dom.overflow.classList.remove('hidden');

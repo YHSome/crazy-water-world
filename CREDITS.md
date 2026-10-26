@@ -50,7 +50,25 @@ Pexels License：https://www.pexels.com/license/
 
 `tile-metal`、`tile-fuel`、`tile-fiber`、`tile-chip`、`tile-medkit` 是上述同源图标的白色重上色版本，用于三消棋盘。
 
-处理方式：通过 Iconify 指定颜色下载为 SVG，未修改图形轮廓。
+沉船收藏（`assets/collectibles/`）：
+
+- `pocket-watch` — 锈蚀怀表
+- `key` — 黄铜钥匙
+- `glass-ball` — 海水玻璃瓶
+- `two-coins` — 旧时代硬币
+- `medal` — 船员徽章
+- `compass` — 黄铜罗盘
+- `photo-camera` — 防水相机
+- `treasure-map` — 航线图筒
+- `telescope` — 铜制望远镜
+- `musical-score` — 银质乐谱盒
+- `diving-helmet` — 深海潜水盔
+- `ringing-bell` — 沉船船钟
+- `book-cover` — 船长航海日志
+- `pocket-radio` — 黑匣子
+- `crown` — 潮汐王冠
+
+处理方式：通过 Iconify 指定象牙金色下载为 SVG，未修改图形轮廓。收藏品图标同样来自网上的 Game-icons.net 素材，不使用项目手绘图案。
 
 ## 海水过滤器
 

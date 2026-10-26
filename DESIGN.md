@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：2.7 · 类型：末日打捞 / 小游戏合集 / 轻经营  
+> 版本：2.8 · 类型：末日打捞 / 小游戏合集 / 轻经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -264,6 +264,17 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 - 收益倍率在进入仓库前应用，再叠加工坊 / 声呐 / 净水舱倍率。
 - 海况不改变过滤器概率，也不提供离线收益。
 
+### 8.7 沉船收藏与合成
+
+- 15 件收藏，5 个稀有度：普通 5 / 精良 4 / 稀有 3 / 史诗 2 / 传说 1；保存为 `collectibles: { id: count }`。
+- 完成任意打捞后按表现roll 1–2 件收藏：基础 55%，抓钩分数 / 三消分数 / 声呐货箱数提高概率；不占仓库容量。
+- 稀有度权重：普通 52 / 精良 27 / 稀有 13 / 史诗 6 / 传说 2。
+- 合成台：3 件同稀有度 + 打捞币 → 1 件下一稀有度；费用 150 / 400 / 1,000 / 2,500。
+- 合成随机产出下一稀有度的任意收藏；重复件优先消耗数量最多的藏品。
+- 契约新增「沉船收藏家」，进度按单局实际带回的收藏件数累计。
+- 收藏图标全部来自 Game-icons.net（CC BY 3.0），下载为本地 SVG；不依赖远程图床。
+- 收集与合成都只由玩家主动打捞触发，不产生离线收益。
+
 ## 9. 扩建
 
 | 项目 | 效果 | 等级 | 造价结构 |
@@ -345,6 +356,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 
 ```text
 audio.js      本地 BGM / 程序化音景 / 音效
+collectibles.js 15 件收藏、稀有度、权重与合成配方
 hub.js        localStorage、经济、仓库、过滤器、扩建、Hub 界面
 hub-scene.js  照片背景合成、雨、光照与暗角
 arcade.js     小游戏外壳 + 沉城抓钩 + 稀有过滤器
@@ -352,6 +364,7 @@ match.js      废料拼图（三消）
 sonar.js      声呐扫掠（6×6 距离推理）
 assets/bg-*.webp                  标题 / 避难所 / 抓钩 / 三消 / 声呐照片
 assets/bgm-floodline.mp3          本地 BGM 循环（RUOK，CC BY 4.0）
+assets/collectibles/*.svg         15 件收藏图标（Game-icons.net）
 assets/icons/*.svg                物件、任务、材料与扩建图标
 assets/seawater-filter.webp       用户提供图片（竖图，已裁水印）
 assets/seawater-filter-icon.webp  方图，水面 / 标签 / 图标
@@ -363,7 +376,7 @@ CREDITS.md                        图片与图标授权
 - 背景与物件均通过 `Image` 预加载后用 `drawImage` 合成；Canvas 不再绘制场景/物件本体。
 - 主循环 `requestAnimationFrame`，`dt` 限制 50ms。
 - 画布总像素预算约 420 万，超过自动降低 DPR。
-- 存档写入 `crazywater.floodline.v1`，包含 `filters` 稀有物、`filterPity` 保底计数、`contracts` 契约进度 / `contractRound` 轮次与 `upgrades.purifier`；仅在开始、结算、扩建、领取契约和页面退出时写入。
+- 存档写入 `crazywater.floodline.v1`，包含 `filters` 稀有物、`filterPity` 保底计数、`collectibles` 收藏、`contracts` 契约进度 / `contractRound` 轮次与 `upgrades.purifier`；仅在开始、结算、扩建、领取契约、合成和页面退出时写入。
 - 音效开关：`crazywater.muted.v1`。
 - **没有**离线收益、最后在线时间结算或后台模拟。
 
@@ -380,6 +393,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 

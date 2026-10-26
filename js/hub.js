@@ -147,6 +147,11 @@
       id: 'sonar', name: '声呐猎手', iconImg: 'assets/icons/sonar.svg', metric: 'sonarFinds', mode: 'max', target: 3,
       desc: '单局声呐扫掠找到 3 个货箱。',
       reward: { credits: 230, mats: { chip: 2 } }
+    },
+    {
+      id: 'collector', name: '沉船收藏家', iconImg: 'assets/collectibles/tide-crown.svg', metric: 'collectibles', mode: 'sum', target: 3,
+      desc: '累计从打捞中带回 3 件收藏品。',
+      reward: { credits: 260, mats: { fiber: 2 } }
     }
   ]);
 
@@ -199,6 +204,7 @@
       materials: { metal: 0, fuel: 0, fiber: 0, chip: 0 },
       filters: 0,
       filterPity: 0,
+      collectibles: {},
       contracts: makeContractSet(),
       contractRound: 1,
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
@@ -216,6 +222,15 @@
     data.credits = Math.max(0, Number(raw.credits) || 0);
     data.filters = Math.max(0, Math.floor(Number(raw.filters) || 0));
     data.filterPity = clamp(Math.floor(Number(raw.filterPity) || 0), 0, 7);
+    data.collectibles = {};
+    if (raw.collectibles && typeof raw.collectibles === 'object') {
+      for (var cid in raw.collectibles) {
+        if (!Object.prototype.hasOwnProperty.call(raw.collectibles, cid)) continue;
+        if (!CW.COLLECTIBLE_MAP[cid]) continue;
+        var cnum = Math.floor(Number(raw.collectibles[cid]) || 0);
+        if (cnum > 0) data.collectibles[cid] = Math.min(9999, cnum);
+      }
+    }
     data.contracts = normalizeContractSet(raw.contracts);
     data.contractRound = Math.max(1, Math.floor(Number(raw.contractRound) || 1));
     data.runs = Math.max(0, Math.floor(Number(raw.runs) || 0));
@@ -470,6 +485,8 @@
       contractTab.classList.toggle('has-ready', readyCount > 0);
       contractTab.setAttribute('data-ready', String(readyCount));
     }
+    var collectionTab = document.querySelector('.panel-tab[data-tab="collection"]');
+    if (collectionTab) collectionTab.classList.toggle('has-ready', this.collectionCanCraftAny());
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
       this.dom.panelTag.textContent = MISSIONS.length + ' 个任务';
@@ -479,6 +496,10 @@
       this.dom.panelTitle.textContent = '打捞契约';
       this.dom.panelTag.textContent = '第 ' + Math.max(1, this.data.contractRound || 1) + ' 轮' + (contractReady ? ' · ' + contractReady + ' 可领' : '');
       this.dom.panelNote.textContent = '完成契约领取打捞币与补给';
+    } else if (this.tab === 'collection') {
+      this.dom.panelTitle.textContent = '沉船收藏';
+      this.dom.panelTag.textContent = this.collectionUnique() + ' / ' + CW.COLLECTIBLES.length;
+      this.dom.panelNote.textContent = '3 件同级 + 打捞币可合成更高稀有度';
     } else if (this.tab === 'warehouse') {
       this.dom.panelTitle.textContent = '避难所仓库';
       this.dom.panelTag.textContent = used + ' / ' + cap;
@@ -496,6 +517,7 @@
     var scroll = this.dom.panelContent.scrollTop;
     if (this.tab === 'tasks') this.renderTasks();
     else if (this.tab === 'contracts') this.renderContracts();
+    else if (this.tab === 'collection') this.renderCollection();
     else if (this.tab === 'warehouse') this.renderWarehouse();
     else this.renderShelter();
     this.dom.panelContent.scrollTop = scroll;
@@ -538,6 +560,7 @@
       case 'runs': return 1;
       case 'chips': return Math.max(0, Number(result.materials && result.materials.chip) || 0);
       case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
+      case 'collectibles': return Array.isArray(result.collectibles) ? result.collectibles.length : 0;
       default: return 0;
     }
   };
@@ -617,6 +640,109 @@
     this.renderPanel();
   };
 
+  Hub.prototype.collectionUnique = function () {
+    var n = 0;
+    for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
+      if ((this.data.collectibles || {})[CW.COLLECTIBLES[i].id] > 0) n++;
+    }
+    return n;
+  };
+
+  Hub.prototype.collectionTotal = function () {
+    var n = 0;
+    var map = this.data.collectibles || {};
+    for (var id in map) {
+      if (Object.prototype.hasOwnProperty.call(map, id)) n += map[id];
+    }
+    return n;
+  };
+
+  Hub.prototype.collectionRarityCount = function (rarity) {
+    var n = 0;
+    var map = this.data.collectibles || {};
+    for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
+      if (CW.COLLECTIBLES[i].rarity === rarity) n += map[CW.COLLECTIBLES[i].id] || 0;
+    }
+    return n;
+  };
+
+  Hub.prototype.collectionCanCraftAny = function () {
+    for (var i = 0; i < CW.CRAFT_RECIPES.length; i++) {
+      var r = CW.CRAFT_RECIPES[i];
+      if (this.collectionRarityCount(r.from) >= 3 && this.data.credits >= r.cost) return true;
+    }
+    return false;
+  };
+
+  Hub.prototype.rollCollectibles = function (result) {
+    if (!CW.COLLECTIBLES || !CW.COLLECTIBLES.length) return [];
+    if (!this.data.collectibles) this.data.collectibles = {};
+    var dropChance = 0.55;
+    if (result.type === 'hook') dropChance += clamp((Number(result.score) || 0) / 4000, 0, 0.3);
+    else if (result.type === 'match') dropChance += clamp((Number(result.score) || 0) / 6000, 0, 0.3);
+    else dropChance += Math.max(0, Number(result.found) || 0) * 0.07;
+    dropChance = Math.min(0.95, dropChance);
+    var count = Math.random() < dropChance ? 1 : 0;
+    if (count && dropChance > 0.85 && chance(0.28)) count += 1;
+    var out = [];
+    for (var d = 0; d < count; d++) {
+      var total = 0;
+      for (var w = 0; w < CW.COLLECTIBLE_WEIGHTS.length; w++) total += CW.COLLECTIBLE_WEIGHTS[w].weight;
+      var roll = Math.random() * total;
+      var rarity = CW.COLLECTIBLE_WEIGHTS[0].rarity;
+      for (var j = 0; j < CW.COLLECTIBLE_WEIGHTS.length; j++) {
+        roll -= CW.COLLECTIBLE_WEIGHTS[j].weight;
+        if (roll <= 0) { rarity = CW.COLLECTIBLE_WEIGHTS[j].rarity; break; }
+      }
+      var pool = CW.collectiblesOfRarity(rarity);
+      if (!pool.length) continue;
+      var def = pool[(Math.random() * pool.length) | 0];
+      this.data.collectibles[def.id] = (this.data.collectibles[def.id] || 0) + 1;
+      out.push({
+        id: def.id,
+        name: def.name,
+        rarity: def.rarity,
+        color: CW.COLLECTIBLE_RARITY_MAP[def.rarity].color,
+        icon: def.icon
+      });
+    }
+    return out;
+  };
+
+  Hub.prototype.craft = function (fromRarity) {
+    if (!this.data.collectibles) this.data.collectibles = {};
+    var recipe = null;
+    for (var i = 0; i < CW.CRAFT_RECIPES.length; i++) {
+      if (CW.CRAFT_RECIPES[i].from === fromRarity) recipe = CW.CRAFT_RECIPES[i];
+    }
+    if (!recipe || this.collectionRarityCount(fromRarity) < 3 || this.data.credits < recipe.cost) return;
+    var source = [];
+    for (var s = 0; s < CW.COLLECTIBLES.length; s++) {
+      var item = CW.COLLECTIBLES[s];
+      if (item.rarity === fromRarity && (this.data.collectibles[item.id] || 0) > 0) {
+        source.push({ id: item.id, count: this.data.collectibles[item.id] });
+      }
+    }
+    source.sort(function (a, b) { return b.count - a.count; });
+    var left = 3;
+    for (var k = 0; k < source.length && left > 0; k++) {
+      var take = Math.min(left, source[k].count);
+      this.data.collectibles[source[k].id] -= take;
+      if (this.data.collectibles[source[k].id] <= 0) delete this.data.collectibles[source[k].id];
+      left -= take;
+    }
+    var pool = CW.collectiblesOfRarity(recipe.to);
+    var result = pool[(Math.random() * pool.length) | 0];
+    this.data.collectibles[result.id] = (this.data.collectibles[result.id] || 0) + 1;
+    this.data.credits -= recipe.cost;
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    this.audio.record();
+    var rarity = CW.COLLECTIBLE_RARITY_MAP[result.rarity];
+    this.showToast('COLLECTION CRAFTED', result.name, '合成消耗 3 件 · ' + rarity.name + '级收藏');
+  };
+
   Hub.prototype.renderContracts = function () {
     var round = Math.max(1, this.data.contractRound || 1);
     var ready = this.contractsReadyCount();
@@ -651,6 +777,54 @@
       '</article>';
     }
     html += '</div><p class="contract-footnote">契约进度在每次打捞结算时更新，关闭页面不会自动增长。</p>';
+    this.dom.panelContent.innerHTML = html;
+  };
+
+  Hub.prototype.renderCollection = function () {
+    var unique = this.collectionUnique();
+    var total = this.collectionTotal();
+    var map = this.data.collectibles || {};
+    var html = '<div class="collection-summary">' +
+      '<span class="collection-kicker">SUNKEN ARCHIVE · 沉船收藏</span>' +
+      '<div class="collection-headline"><b>' + unique + ' / ' + CW.COLLECTIBLES.length + '</b><span>已发现 · 共 ' + total + ' 件</span></div>' +
+      '<p>收藏品不占仓库容量，从打捞结算中随机带回。重复件可以在合成台合并。</p>' +
+      '</div><div class="craft-board">' +
+      '<div class="craft-head"><span>合成台</span><small>3 件同级 + 打捞币 → 1 件更高稀有度</small></div><div class="craft-list">';
+    for (var r = 0; r < CW.CRAFT_RECIPES.length; r++) {
+      var rec = CW.CRAFT_RECIPES[r];
+      var from = CW.COLLECTIBLE_RARITY_MAP[rec.from];
+      var to = CW.COLLECTIBLE_RARITY_MAP[rec.to];
+      var have = this.collectionRarityCount(rec.from);
+      var can = have >= 3 && this.data.credits >= rec.cost;
+      html += '<div class="craft-row">' +
+        '<span class="craft-source" style="--rarity:' + from.color + '">3 × ' + from.name + '</span>' +
+        '<span class="craft-arrow">→</span>' +
+        '<span class="craft-target" style="--rarity:' + to.color + '">1 × ' + to.name + '</span>' +
+        '<button class="craft-btn' + (can ? ' ready' : '') + '" data-action="craft" data-rarity="' + rec.from + '"' + (can ? '' : ' disabled') + '>' +
+          (can ? '合成 · ' + fmt(rec.cost) : (have < 3 ? '缺 ' + (3 - have) + ' 件' : '缺打捞币')) +
+        '</button>' +
+      '</div>';
+    }
+    html += '</div></div>';
+    for (var q = 0; q < CW.COLLECTIBLE_RARITIES.length; q++) {
+      var rarity = CW.COLLECTIBLE_RARITIES[q];
+      var group = [];
+      for (var i = 0; i < CW.COLLECTIBLES.length; i++) if (CW.COLLECTIBLES[i].rarity === rarity.id) group.push(CW.COLLECTIBLES[i]);
+      var discovered = 0;
+      for (var d = 0; d < group.length; d++) if ((map[group[d].id] || 0) > 0) discovered++;
+      html += '<section class="collection-group" style="--rarity:' + rarity.color + '">' +
+        '<header><b>' + rarity.name + '</b><span>' + discovered + ' / ' + group.length + '</span></header><div class="collectible-grid">';
+      for (var g = 0; g < group.length; g++) {
+        var item = group[g];
+        var n = map[item.id] || 0;
+        html += '<article class="collectible-card' + (n ? '' : ' unknown') + '" title="' + item.desc + '" style="--rarity:' + rarity.color + '">' +
+          '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
+          '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em></span>' +
+        '</article>';
+      }
+      html += '</div></section>';
+    }
+    html += '<p class="collection-note">打捞结算时按表现提高收藏掉落率；史诗与传说也可以由低级收藏逐级合成。</p>';
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -832,6 +1006,8 @@
     this.data.runs += 1;
     var key = result.type === 'match' ? 'match' : result.type === 'sonar' ? 'sonar' : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
+    var collectibles = this.rollCollectibles(result);
+    result.collectibles = collectibles;
     this.applyContractProgress(result);
     this.saveGame();
     this.updateUI();
@@ -845,7 +1021,8 @@
       filters: filtersGained,
       filtersTotal: this.data.filters,
       capacity: cap,
-      used: cap - storeSpace
+      used: cap - storeSpace,
+      collectibles: collectibles
     };
   };
 
@@ -973,6 +1150,7 @@
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
+        else if (action === 'craft') self.craft(actionEl.getAttribute('data-rarity'));
         return;
       }
       var tabEl = e.target.closest ? e.target.closest('[data-tab]') : null;

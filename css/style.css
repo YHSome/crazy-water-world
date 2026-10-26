@@ -493,6 +493,43 @@ body.muted .ic-mute { display: block; }
 .contract-footnote { margin: 10px 2px 0; font-family: var(--mono); font-size: 6px; line-height: 1.6; color: rgba(144, 196, 205, 0.4); }
 .panel-tab.has-ready::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 4px; border-radius: 50%; background: #ffd166; box-shadow: 0 0 7px rgba(255, 209, 102, 0.9); vertical-align: middle; }
 
+/* ── collection & crafting ─────────────────────────────────── */
+.collection-summary { padding: 2px 2px 10px; border-bottom: 1px solid rgba(122, 207, 205, 0.12); }
+.collection-kicker { display: block; font-family: var(--mono); font-size: 7px; letter-spacing: 0.15em; color: var(--aqua); }
+.collection-headline { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.collection-headline b { font-family: var(--display); font-size: 25px; letter-spacing: -0.03em; color: #f1fbf5; }
+.collection-headline span { font-family: var(--mono); font-size: 8px; color: rgba(164, 199, 200, 0.55); }
+.collection-summary p { margin: 4px 0 0; font-size: 9px; line-height: 1.55; color: rgba(164, 199, 200, 0.6); }
+.craft-board { margin: 10px 0 13px; padding: 10px; border: 1px solid rgba(255, 209, 102, 0.18); border-radius: 9px; background: linear-gradient(135deg, rgba(44, 33, 16, 0.42), rgba(4, 22, 29, 0.72)); }
+.craft-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.craft-head span { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; color: #ffd166; }
+.craft-head small { font-size: 7px; color: rgba(189, 184, 150, 0.55); }
+.craft-list { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
+.craft-row { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; gap: 6px; }
+.craft-source, .craft-target { font-family: var(--mono); font-size: 7px; color: var(--rarity); white-space: nowrap; }
+.craft-arrow { font-family: var(--mono); font-size: 8px; color: rgba(198, 232, 227, 0.3); }
+.craft-btn { justify-self: end; min-width: 70px; min-height: 25px; padding: 0 7px; border: 1px solid rgba(122, 207, 205, 0.16); border-radius: 5px; background: rgba(3, 20, 28, 0.6); color: rgba(164, 199, 200, 0.4); font-family: var(--mono); font-size: 7px; }
+.craft-btn.ready { border-color: rgba(255, 206, 128, 0.48); color: #ffd166; background: rgba(255, 175, 84, 0.1); cursor: pointer; }
+.craft-btn.ready:hover { background: rgba(255, 175, 84, 0.18); }
+.collection-group { margin-bottom: 11px; }
+.collection-group > header { display: flex; align-items: baseline; justify-content: space-between; padding: 0 2px 5px; border-bottom: 1px solid rgba(122, 207, 205, 0.1); }
+.collection-group > header b { font-family: var(--mono); font-size: 8px; letter-spacing: 0.12em; color: var(--rarity); }
+.collection-group > header span { font-family: var(--mono); font-size: 7px; color: rgba(164, 199, 200, 0.4); }
+.collectible-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.collectible-card { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px; border: 1px solid color-mix(in srgb, var(--rarity) 30%, transparent); border-radius: 7px; background: linear-gradient(135deg, rgba(6, 32, 40, 0.8), rgba(3, 18, 25, 0.9)); }
+.collectible-card.unknown { opacity: 0.42; filter: grayscale(0.7); }
+.collectible-art { display: grid; place-items: center; flex: 0 0 auto; width: 29px; height: 29px; border: 1px solid color-mix(in srgb, var(--rarity) 24%, transparent); border-radius: 5px; background: rgba(1, 12, 18, 0.5); }
+.collectible-art img { width: 23px; height: 23px; object-fit: contain; }
+.collectible-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.collectible-copy b { overflow: hidden; font-size: 8px; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; color: rgba(239, 250, 244, 0.9); }
+.collectible-copy em { font-family: var(--mono); font-size: 6px; font-style: normal; color: var(--rarity); }
+.collection-note { margin: 2px 2px 0; font-family: var(--mono); font-size: 6px; line-height: 1.6; color: rgba(144, 196, 205, 0.4); }
+.summary-collect { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 8px; padding: 7px 9px; border: 1px solid rgba(201, 166, 255, 0.22); border-radius: 7px; background: rgba(45, 29, 62, 0.15); font-family: var(--mono); font-size: 7px; color: rgba(210, 191, 238, 0.65); }
+.summary-collect > span:first-child { color: rgba(201, 166, 255, 0.75); }
+.summary-collect-item { display: inline-flex; align-items: center; gap: 3px; color: var(--tone); }
+.summary-collect-item img { width: 14px; height: 14px; object-fit: contain; }
+
+
 .rare-link { grid-column: 1 / -1; min-height: 31px; font-size: 8px; color: #a6efff; border-color: rgba(112, 220, 255, 0.22); background: rgba(12, 91, 120, 0.18); }
 .rare-link:hover { background: rgba(16, 119, 151, 0.3); border-color: rgba(112, 220, 255, 0.42); }
 .upgrade-card.rare { border-color: rgba(112, 220, 255, 0.16); background: linear-gradient(100deg, rgba(14, 80, 103, 0.22), rgba(1, 18, 27, 0.4)); }

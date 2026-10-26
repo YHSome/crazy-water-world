@@ -18,6 +18,7 @@
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/audio.js" defer></script>
+  <script src="js/collectibles.js" defer></script>
   <script src="js/hub.js" defer></script>
   <script src="js/hub-scene.js" defer></script>
   <script src="js/arcade.js" defer></script>
@@ -78,6 +79,7 @@
       <nav class="panel-tabs" role="tablist" aria-label="避难所分类">
         <button class="panel-tab active" data-tab="tasks" role="tab" aria-selected="true">打捞任务</button>
         <button class="panel-tab" data-tab="contracts" role="tab" aria-selected="false">契约</button>
+        <button class="panel-tab" data-tab="collection" role="tab" aria-selected="false">收藏</button>
         <button class="panel-tab" data-tab="warehouse" role="tab" aria-selected="false">仓库</button>
         <button class="panel-tab" data-tab="shelter" role="tab" aria-selected="false">避难所</button>
       </nav>
@@ -131,7 +133,7 @@
       </div>
       <div class="title-footer">
         <span>末日实景素材 · 本地图片 · 无离线收益</span>
-        <span>v2.7 · FLOODLINE SALVAGE</span>
+        <span>v2.8 · FLOODLINE SALVAGE</span>
       </div>
     </section>
 
@@ -216,7 +218,7 @@
         <button class="btn ghost wide" data-action="guide">查看玩法说明</button>
         <button id="reset-save" class="btn danger wide" data-action="reset-save">清空避难所</button>
         <p class="modal-note">清空会删除打捞币、物资和所有扩建，无法撤销。再次点击确认。</p>
-        <p class="version">疯狂水世界 · v2.7 · 本地图片素材 + 程序化特效，无远程依赖</p>
+        <p class="version">疯狂水世界 · v2.8 · 本地图片素材 + 程序化特效，无远程依赖</p>
       </div>
     </section>
 
@@ -270,6 +272,7 @@
         <div class="summary-credits"><span class="credit-coin"></span><b id="summary-credits">0</b><span>打捞币</span></div>
         <div id="summary-loot" class="summary-loot"></div>
         <p id="summary-rare" class="summary-rare hidden"></p>
+        <p id="summary-collect" class="summary-collect hidden"></p>
         <p id="summary-overflow" class="summary-overflow hidden"></p>
         <button class="btn primary wide" data-action="arcade-close">返回避难所</button>
         <button class="text-btn" data-action="arcade-again">再来一局</button>
@@ -288,6 +291,7 @@
   </main>
 </body>
 </html>
+
 
 
 
