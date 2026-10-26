@@ -104,6 +104,11 @@
       id: 'match', name: '废料拼图', icon: '消', iconImg: 'assets/icons/puzzle.svg', kicker: 'MISSION 02',
       desc: '在反应堆控制室里分拣废料。滑动交换，四连扫线、五连清同色。',
       tags: ['30 步', '三消', '稀有过滤器']
+    },
+    {
+      id: 'sonar', name: '声呐扫掠', icon: '声', iconImg: 'assets/icons/sonar.svg', kicker: 'MISSION 03',
+      desc: '在锈蚀控制台前发射声呐，用距离回波定位隐藏货箱。每格只能探测一次，声呐次数有限。',
+      tags: ['10 次声呐', '探索', '稀有过滤器']
     }
   ]);
 
@@ -137,6 +142,11 @@
       id: 'gold', name: '金条猎人', iconImg: 'assets/icons/gold.svg', metric: 'gold', mode: 'sum', target: 2,
       desc: '抓钩累计抓回 2 根金条。',
       reward: { credits: 220, mats: { chip: 1 } }
+    },
+    {
+      id: 'sonar', name: '声呐猎手', iconImg: 'assets/icons/sonar.svg', metric: 'sonarFinds', mode: 'max', target: 3,
+      desc: '单局声呐扫掠找到 3 个货箱。',
+      reward: { credits: 230, mats: { chip: 2 } }
     }
   ]);
 
@@ -192,7 +202,7 @@
       contracts: makeContractSet(),
       contractRound: 1,
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
-      best: { hook: 0, match: 0 },
+      best: { hook: 0, match: 0, sonar: 0 },
       runs: 0
     };
   }
@@ -220,6 +230,7 @@
     if (raw.best) {
       data.best.hook = Math.max(0, Number(raw.best.hook) || 0);
       data.best.match = Math.max(0, Number(raw.best.match) || 0);
+      data.best.sonar = Math.max(0, Number(raw.best.sonar) || 0);
     }
     return data;
   }
@@ -322,6 +333,7 @@
   };
   Hub.prototype.hookTime = function () { return 60 + (this.data.upgrades.core || 0) * 5; };
   Hub.prototype.matchMoves = function () { return 30 + (this.data.upgrades.core || 0) * 2; };
+  Hub.prototype.sonarProbes = function () { return 10 + Math.floor((this.data.upgrades.core || 0) / 2); };
   Hub.prototype.dayNumber = function () { return 1281 + this.data.runs * 2; };
 
   /* ── resize / layout ─────────────────────────────────────── */
@@ -460,7 +472,7 @@
     }
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
-      this.dom.panelTag.textContent = '2 个任务';
+      this.dom.panelTag.textContent = MISSIONS.length + ' 个任务';
       this.dom.panelNote.textContent = '物资会存进避难所仓库';
     } else if (this.tab === 'contracts') {
       var contractReady = this.contractsReadyCount();
@@ -498,6 +510,7 @@
       var tags = m.tags.slice();
       if (m.id === 'hook') tags[0] = this.hookTime() + ' 秒';
       if (m.id === 'match') tags[0] = this.matchMoves() + ' 步';
+      if (m.id === 'sonar') tags[0] = this.sonarProbes() + ' 次声呐';
       html += '<article class="mission-card">' +
         '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt=""></div>' +
         '<div class="mission-copy">' +
@@ -524,6 +537,7 @@
       case 'matchScore': return result.type === 'match' ? Math.max(0, Number(result.score) || 0) : 0;
       case 'runs': return 1;
       case 'chips': return Math.max(0, Number(result.materials && result.materials.chip) || 0);
+      case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
       default: return 0;
     }
   };
@@ -816,7 +830,7 @@
     if (filtersGained > 0) this.data.filterPity = 0;
     else this.data.filterPity = Math.min(7, (this.data.filterPity || 0) + 1);
     this.data.runs += 1;
-    var key = result.type === 'match' ? 'match' : 'hook';
+    var key = result.type === 'match' ? 'match' : result.type === 'sonar' ? 'sonar' : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
     this.applyContractProgress(result);
     this.saveGame();

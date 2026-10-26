@@ -7,7 +7,7 @@
   <meta name="description" content="海平面吞没了世界。经营一座会漂的避难所，在沉城抓钩与废料拼图里打捞物资，把旧世界一点点捞回来。" />
   <meta name="theme-color" content="#04131b" />
   <meta property="og:title" content="疯狂水世界 · 末日打捞站" />
-  <meta property="og:description" content="海淹没了世界，我们把家捞回来。两个打捞小游戏，一座会漂的避难所。" />
+  <meta property="og:description" content="海淹没了世界，我们把家捞回来。三个打捞小游戏，一座会漂的避难所。" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="./docs/preview-title.webp" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -22,6 +22,7 @@
   <script src="js/hub-scene.js" defer></script>
   <script src="js/arcade.js" defer></script>
   <script src="js/match.js" defer></script>
+  <script src="js/sonar.js" defer></script>
 </head>
 <body>
   <main id="app">
@@ -72,7 +73,7 @@
           <p class="eyebrow">SALVAGE OPERATIONS</p>
           <h2 id="panel-title">打捞任务</h2>
         </div>
-        <div id="panel-tag" class="panel-tag">2 个任务</div>
+        <div id="panel-tag" class="panel-tag">3 个任务</div>
       </div>
       <nav class="panel-tabs" role="tablist" aria-label="避难所分类">
         <button class="panel-tab active" data-tab="tasks" role="tab" aria-selected="true">打捞任务</button>
@@ -130,7 +131,7 @@
       </div>
       <div class="title-footer">
         <span>末日实景素材 · 本地图片 · 无离线收益</span>
-        <span>v2.6 · FLOODLINE SALVAGE</span>
+        <span>v2.7 · FLOODLINE SALVAGE</span>
       </div>
     </section>
 
@@ -171,6 +172,11 @@
             <h3>海况词条</h3>
             <p>每次出发会随机一种海况：静水、雷区、富氧或油污。它们改变水雷数量、时间、步数或收益。任务简报和 HUD 会显示本局海况。</p>
           </article>
+          <article>
+            <span class="guide-no">07</span>
+            <h3>声呐扫掠</h3>
+            <p>探测 6×6 海床，每格声呐会回显离最近货箱的曼哈顿距离。找到 4 个货箱，数字越小越接近。声呐次数有限，先建立热区再收网。</p>
+          </article>
         </div>
         <div class="guide-rare">
           <img src="assets/seawater-filter-icon.webp" alt="海水过滤器" />
@@ -210,7 +216,7 @@
         <button class="btn ghost wide" data-action="guide">查看玩法说明</button>
         <button id="reset-save" class="btn danger wide" data-action="reset-save">清空避难所</button>
         <p class="modal-note">清空会删除打捞币、物资和所有扩建，无法撤销。再次点击确认。</p>
-        <p class="version">疯狂水世界 · v2.6 · 本地图片素材 + 程序化特效，无远程依赖</p>
+        <p class="version">疯狂水世界 · v2.7 · 本地图片素材 + 程序化特效，无远程依赖</p>
       </div>
     </section>
 
@@ -282,6 +288,7 @@
   </main>
 </body>
 </html>
+
 
 
 

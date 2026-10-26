@@ -14,6 +14,7 @@ Pexels License：https://www.pexels.com/license/
 | `assets/bg-hub.webp` | 避难所背景（锈蚀渔船） | Pok Rie | https://www.pexels.com/photo/7099670/ |
 | `assets/bg-hook.webp` | 沉城抓钩背景（海底沉船） | Harvey Clements | https://www.pexels.com/photo/15463400/ |
 | `assets/bg-match.webp` | 废料拼图背景（废弃控制室） | Muhammet Çolak | https://www.pexels.com/photo/7360328/ |
+| `assets/bg-sonar.webp` | 声呐扫掠背景（潜艇控制面板） | Jørgen Larsen | https://www.pexels.com/sk-sk/photo/ovladaci-panel-ponorky-11398989/ |
 
 处理方式：裁切、缩放、调色、压缩为 WebP。
 

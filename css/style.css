@@ -1003,6 +1003,7 @@ body.muted .toggle i { transform: translateX(3px); background: linear-gradient(1
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 720px) {
+  :root { --panel-height: clamp(360px, 70vh, 620px); }
   .title-screen { justify-content: center; padding-top: calc(var(--safe-top) + 5vh); }
   .title-brief { display: none; }
   .title-footer { display: none; }

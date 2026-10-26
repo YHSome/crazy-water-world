@@ -22,25 +22,25 @@
       id: 'calm', name: '静水', color: '#79d8ff',
       desc: '水面平稳：抓钩没有水雷，三消 +2 步；全收益 -10%',
       short: '无水雷 · +2 步 · 收益 -10%',
-      credit: 0.9, mat: 0.9, mines: -1, time: 0, moves: 2, reel: 1
+      credit: 0.9, mat: 0.9, mines: -1, time: 0, moves: 2, probes: 1, reel: 1
     },
     {
       id: 'storm', name: '雷区', color: '#ff8a5c',
       desc: '水雷密集：抓钩额外 3 颗水雷，三消 -2 步；打捞币 +30%',
       short: '水雷 +3 · -2 步 · 打捞币 +30%',
-      credit: 1.3, mat: 1, mines: 3, time: 0, moves: -2, reel: 1
+      credit: 1.3, mat: 1, mines: 3, time: 0, moves: -2, probes: -1, reel: 1
     },
     {
       id: 'rich', name: '富氧', color: '#9be2a9',
       desc: '海水富氧：抓钩 +2 秒，三消 +3 步；全收益 -8%',
       short: '+2 秒 / +3 步 · 收益 -8%',
-      credit: 0.92, mat: 0.92, mines: 0, time: 2, moves: 3, reel: 1
+      credit: 0.92, mat: 0.92, mines: 0, time: 2, moves: 3, probes: 1, reel: 1
     },
     {
       id: 'oil', name: '油污', color: '#ffb15e',
       desc: '海面浮油：抓钩回收 -12%，三消 -1 步；物资 +18%',
       short: '回收 -12% · -1 步 · 物资 +18%',
-      credit: 1, mat: 1.18, mines: 0, time: 0, moves: -1, reel: 0.88
+      credit: 1, mat: 1.18, mines: 0, time: 0, moves: -1, probes: -1, reel: 0.88
     }
   ]);
 
@@ -255,10 +255,12 @@
       h: this.h,
       duration: this.hub.hookTime() + this.condition.time,
       moves: this.hub.matchMoves() + this.condition.moves,
+      probes: this.hub.sonarProbes() + this.condition.probes,
       capacity: this.hub.capacity(),
       condition: this.condition
     };
     if (this.type === 'match' && CW.MatchGame) this.game = new CW.MatchGame(this, config);
+    else if (this.type === 'sonar' && CW.SonarGame) this.game = new CW.SonarGame(this, config);
     else this.game = new CW.HookGame(this, config);
     if (this.condition && this.dom.kicker) {
       var mission = null;
@@ -295,7 +297,11 @@
     this.dom.briefKicker.textContent = mission.kicker + (cond ? ' · ' + cond.name : '');
     this.dom.briefTitle.textContent = mission.name;
     this.dom.briefCopy.textContent = mission.desc;
-    this.dom.briefTime.textContent = isHook ? (this.hub.hookTime() + (cond ? cond.time : 0)) + ' 秒' : (this.hub.matchMoves() + (cond ? cond.moves : 0)) + ' 步';
+    if (this.type === 'sonar') {
+      this.dom.briefTime.textContent = (this.hub.sonarProbes() + (cond ? cond.probes : 0)) + ' 次';
+    } else {
+      this.dom.briefTime.textContent = isHook ? (this.hub.hookTime() + (cond ? cond.time : 0)) + ' 秒' : (this.hub.matchMoves() + (cond ? cond.moves : 0)) + ' 步';
+    }
     if (this.dom.briefCondition && cond) {
       this.dom.briefCondition.classList.remove('hidden');
       this.dom.briefCondition.style.setProperty('--cond', cond.color);
@@ -304,7 +310,7 @@
     var used = this.hub.used();
     var cap = this.hub.capacity();
     this.dom.briefCapacity.textContent = used + ' / ' + cap + (used >= cap ? ' · 满' : '');
-    this.dom.briefGoal.textContent = isHook ? '废铁 / 燃料 / 纤维 / 芯片' : '废铁 / 燃料 / 纤维 / 芯片';
+    this.dom.briefGoal.textContent = this.type === 'sonar' ? '4 个隐藏货箱' : '废铁 / 燃料 / 纤维 / 芯片';
     var html = '<span class="reward-chip" style="--tone:var(--amber)">打捞币</span>';
     for (var m = 0; m < MATERIALS.length; m++) {
       html += '<span class="reward-chip" style="--tone:' + MATERIALS[m].color + '">' + MATERIALS[m].name + '</span>';
