@@ -21,7 +21,8 @@
     { name: '燃料', color: '#ffb15e', dark: '#78401f', key: 'fuel' },
     { name: '纤维', color: '#93dda3', dark: '#2f6248', key: 'fiber' },
     { name: '芯片', color: '#7ed7ff', dark: '#1e566e', key: 'chip' },
-    { name: '医疗包', color: '#f6e7c7', dark: '#715445', key: 'med' }
+    { name: '医疗包', color: '#f6e7c7', dark: '#715445', key: 'med' },
+    { name: '收藏品', color: '#d9b8ff', dark: '#4b2f68', key: 'collectible' }
   ];
 
   var MATCH_BG = new Image();
@@ -29,7 +30,7 @@
   MATCH_BG.src = 'assets/bg-match.webp';
 
   var TILE_IMAGES = [];
-  ['assets/real/scrap.webp', 'assets/real/fuel.webp', 'assets/real/fiber.webp', 'assets/real/chip.webp', 'assets/real/medkit.webp'].forEach(function (src) {
+  ['assets/real/scrap.webp', 'assets/real/fuel.webp', 'assets/real/fiber.webp', 'assets/real/chip.webp', 'assets/real/medkit.webp', 'assets/collectibles/tide-crown.webp'].forEach(function (src) {
     var img = new Image();
     img.src = src;
     TILE_IMAGES.push(img);
@@ -85,10 +86,9 @@
     this.score = 0;
     this.combo = 0;
     this.moves = 0;
-    this.counts = [0, 0, 0, 0, 0];
+    this.counts = [0, 0, 0, 0, 0, 0];
     this.matched = [];
     this.collectibles = [];
-    this.collectibleCell = null;
     this.particles = [];
     this.popups = [];
     this.done = false;
@@ -125,13 +125,12 @@
     this.movesLeft = this.movesStart;
     this.score = 0;
     this.combo = 0;
-    this.counts = [0, 0, 0, 0, 0];
+    this.counts = [0, 0, 0, 0, 0, 0];
     this.matched = [];
     this.selected = null;
     this.dragStart = null;
     this.specialFx = [];
     this.collectibles = [];
-    this.collectibleCell = null;
     this.fallCells = {};
     this.fallTimer = 0;
     this.flash = 0;
@@ -149,25 +148,20 @@
       for (var r = 0; r < this.rows; r++) {
         var row = [];
         for (var c = 0; c < this.cols; c++) {
-          var t = (Math.random() * TILES.length) | 0;
+          var t = (Math.random() * 5) | 0;
           var guard = 0;
-          while (this.wouldImmediate(row, r, c, t) && guard++ < 30) t = (Math.random() * TILES.length) | 0;
+          while (this.wouldImmediate(row, r, c, t) && guard++ < 30) t = (Math.random() * 5) | 0;
           row.push(t);
         }
         this.grid.push(row);
       }
+      for (var k = 0; k < 2; k++) {
+        var cr = (Math.random() * this.rows) | 0;
+        var cc = (Math.random() * this.cols) | 0;
+        if (this.grid[cr][cc] !== 5) this.grid[cr][cc] = 5;
+      }
       tries++;
     } while (!this.hasPossibleMove() && tries < 30);
-    this.collectibleCell = null;
-    if (CW.rollCollectibleDef && chance(0.3)) {
-      var cdef = CW.rollCollectibleDef();
-      this.collectibleCell = {
-        r: (Math.random() * this.rows) | 0,
-        c: (Math.random() * this.cols) | 0,
-        id: cdef.id,
-        def: cdef
-      };
-    }
   };
 
   MatchGame.prototype.wouldImmediate = function (row, r, c, t) {
@@ -423,27 +417,14 @@
     this.phase = 'pop';
     this.popTimer = 0.24;
     this.matched = cells;
-    if (this.collectibleCell) {
-      for (var mc = 0; mc < cells.length; mc++) {
-        if (cells[mc].r === this.collectibleCell.r && cells[mc].c === this.collectibleCell.c) {
-          this.collectibles.push(this.collectibleCell.id);
-          this.popups.push({
-            x: this.boardX + this.collectibleCell.c * this.cell + this.cell / 2,
-            y: this.boardY + this.collectibleCell.r * this.cell,
-            text: '收藏品！' + this.collectibleCell.def.name,
-            life: 1.5, maxLife: 1.5,
-            color: CW.COLLECTIBLE_RARITY_MAP[this.collectibleCell.def.rarity].color,
-            size: 10
-          });
-          this.audio.relic();
-          this.collectibleCell = null;
-          break;
-        }
-      }
-    }
+    var collectCell = null;
     for (var m = 0; m < cells.length; m++) {
       var cell = cells[m];
-      this.counts[cell.t] += 1;
+      if (cell.t === 5) {
+        if (!collectCell) collectCell = cell;
+      } else {
+        this.counts[cell.t] += 1;
+      }
       this.score += 10 * this.combo;
       if (chance(0.15)) {
         this.spawnBurst(
@@ -452,6 +433,19 @@
           TILES[cell.t].color, 4
         );
       }
+    }
+    if (collectCell && CW.rollCollectibleDef) {
+      var cdef = CW.rollCollectibleDef();
+      this.collectibles.push(cdef.id);
+      this.popups.push({
+        x: this.boardX + collectCell.c * this.cell + this.cell / 2,
+        y: this.boardY + collectCell.r * this.cell,
+        text: '收藏品！' + cdef.name,
+        life: 1.6, maxLife: 1.6,
+        color: CW.COLLECTIBLE_RARITY_MAP[cdef.rarity].color,
+        size: 10
+      });
+      this.audio.relic();
     }
     if (this.combo > 1) {
       this.popups.push({
@@ -496,7 +490,7 @@
         write--;
       }
       while (write >= 0) {
-        this.grid[write][c] = (Math.random() * TILES.length) | 0;
+        this.grid[write][c] = (Math.random() * 5) | 0;
         this.fallCells[write + ':' + c] = { from: write - 2.2, fresh: true };
         write--;
       }
@@ -697,9 +691,6 @@
         }
         if (this.invalidTimer > 0) tx += invalidX;
         this.drawTile(ctx, tx, ty, cell, val, popScale, popAlpha);
-        if (this.collectibleCell && this.collectibleCell.r === rr && this.collectibleCell.c === cc) {
-          this.drawCollectibleMini(ctx, tx, ty, cell, this.collectibleCell.def);
-        }
       }
     }
 
@@ -854,32 +845,6 @@
       ctx.arc(dx, dy, 0.5 + hash(d * 3.2) * 1.2, 0, TAU);
       ctx.fill();
     }
-    ctx.restore();
-  };
-
-  MatchGame.prototype.drawCollectibleMini = function (ctx, cx, cy, cell, def) {
-    var s = cell * 0.36;
-    var img = collectibleImage(def.icon);
-    var color = CW.COLLECTIBLE_RARITY_MAP[def.rarity].color;
-    ctx.save();
-    ctx.translate(cx + cell * 0.24, cy - cell * 0.24);
-    ctx.fillStyle = 'rgba(1, 10, 15, 0.82)';
-    ctx.beginPath();
-    ctx.roundRect(-s / 2 - 2, -s / 2 - 2, s + 4, s + 4, 3);
-    ctx.fill();
-    if (img.complete && img.naturalWidth) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(-s / 2, -s / 2, s, s, 2);
-      ctx.clip();
-      ctx.drawImage(img, -s / 2, -s / 2, s, s);
-      ctx.restore();
-    }
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(-s / 2, -s / 2, s, s, 2);
-    ctx.stroke();
     ctx.restore();
   };
 

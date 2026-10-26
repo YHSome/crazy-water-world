@@ -627,7 +627,7 @@
     this.swingTime = 0;
     this.angle = 0;
     this.itemScale = clamp(Math.min(this.w, this.h) / 520, 0.7, 1.15);
-    var pool = ['scrap', 'scrap', 'scrap', 'barrel', 'barrel', 'barrel', 'tarp', 'tarp', 'tarp', 'chip', 'chip', 'safe', 'safe', 'gold', 'mine', 'mine', 'mine', 'scrap'];
+    var pool = ['scrap', 'scrap', 'scrap', 'barrel', 'barrel', 'barrel', 'tarp', 'tarp', 'tarp', 'chip', 'chip', 'safe', 'safe', 'gold', 'mine', 'mine', 'mine', 'scrap', 'collectible'];
     if (this.condition) {
       if (this.condition.mines < 0) pool = pool.filter(function (key) { return key !== 'mine'; });
       else for (var extraMine = 0; extraMine < this.condition.mines; extraMine++) pool.push('mine');
@@ -651,8 +651,7 @@
       }
       if (tooClose) continue;
       var key = pool[(Math.random() * pool.length) | 0];
-      var data = ITEM_TYPES[key];
-      this.items.push({
+      var item = {
         key: key,
         x: x,
         y: y,
@@ -660,40 +659,17 @@
         phase: Math.random() * TAU,
         grabbed: false,
         dead: false
-      });
-    }
-
-    // In-run collectible: a real salvage object sits on the seabed and must be hooked.
-    if (chance(0.22) && CW.rollCollectibleDef) {
-      var cdef = CW.rollCollectibleDef();
-      var cx = this.w * 0.5;
-      var cy = (top + bottom) * 0.58;
-      for (var ca = 0; ca < 70; ca++) {
-        var ctx2 = rand(left, right);
-        var cty = rand(top, bottom);
-        var clear2 = true;
-        for (var ci = 0; ci < this.items.length; ci++) {
-          var oi = this.items[ci];
-          var odx = oi.x - ctx2;
-          var ody = oi.y - cty;
-          if (odx * odx + ody * ody < 64 * 64 * this.itemScale * this.itemScale) { clear2 = false; break; }
-        }
-        if (clear2) { cx = ctx2; cy = cty; break; }
+      };
+      if (key === 'collectible' && CW.rollCollectibleDef) {
+        var cdef = CW.rollCollectibleDef();
+        item.collectibleId = cdef.id;
+        item.name = cdef.name;
+        item.icon = cdef.icon;
+        item.color = CW.COLLECTIBLE_RARITY_MAP[cdef.rarity].color;
+        item.rarity = cdef.rarity;
+        item.r = 18 * this.itemScale;
       }
-      this.items.push({
-        key: 'collectible',
-        collectibleId: cdef.id,
-        name: cdef.name,
-        icon: cdef.icon,
-        color: CW.COLLECTIBLE_RARITY_MAP[cdef.rarity].color,
-        rarity: cdef.rarity,
-        x: cx,
-        y: cy,
-        r: 18 * this.itemScale,
-        phase: Math.random() * TAU,
-        grabbed: false,
-        dead: false
-      });
+      this.items.push(item);
     }
 
     // Rare salvage: one seawater filter appears in roughly 12% of dives,

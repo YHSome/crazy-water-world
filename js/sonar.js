@@ -23,6 +23,7 @@
     barrel: { name: '燃料桶', icon: 'assets/real/fuel.webp', credits: 80, mats: { fuel: 3 }, color: '#ffb15e' },
     chip: { name: '芯片箱', icon: 'assets/real/chip.webp', credits: 110, mats: { chip: 3 }, color: '#79d8ff' },
     gold: { name: '金条', icon: 'assets/real/gold.webp', credits: 230, mats: {}, color: '#ffd166' },
+    collectible: { name: '收藏品', icon: 'assets/collectibles/tide-crown.webp', credits: 0, mats: {}, color: '#d9b8ff' },
     filter: { name: '海水过滤器', icon: 'assets/seawater-filter-icon.webp', credits: 0, mats: {}, color: '#9feeff', rare: true }
   };
   var CARGO_IMAGES = {};
@@ -126,12 +127,16 @@
         c: Number(parts[1])
       };
     }
-    if (CW.rollCollectibleDef && chance(0.3)) {
-      var keys = Object.keys(this.cargo);
-      var pick = keys[(Math.random() * keys.length) | 0];
-      var cdef = CW.rollCollectibleDef();
-      this.cargo[pick].collectible = cdef.id;
-      this.cargo[pick].collectibleName = cdef.name;
+    var cargoKeys = Object.keys(this.cargo);
+    for (var ck = 0; ck < cargoKeys.length; ck++) {
+      var cargoItem = this.cargo[cargoKeys[ck]];
+      if (cargoItem.key === 'filter' || !CW.rollCollectibleDef) continue;
+      if (chance(0.15)) {
+        var cdef = CW.rollCollectibleDef();
+        cargoItem.key = 'collectible';
+        cargoItem.collectible = cdef.id;
+        cargoItem.collectibleName = cdef.name;
+      }
     }
   };
 
