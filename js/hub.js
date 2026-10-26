@@ -155,6 +155,66 @@
     }
   ]);
 
+  var DAILY_CHALLENGES = (CW.DAILY_CHALLENGES = [
+    {
+      id: 'daily-safe', name: '保险箱大丰收', iconImg: 'assets/real/safe.webp',
+      metric: 'safe', mode: 'max', target: 4,
+      desc: '单局抓钩带回 4 个保险箱。',
+      reward: { credits: 320, mats: { metal: 5, fiber: 3 } }
+    },
+    {
+      id: 'daily-combo', name: '潮汐连击', iconImg: 'assets/real/hook.webp',
+      metric: 'bestCombo', mode: 'max', target: 6,
+      desc: '单局抓钩最高连击达到 6。',
+      reward: { credits: 340, mats: { chip: 3 } }
+    },
+    {
+      id: 'daily-score', name: '高分分拣', iconImg: 'assets/real/puzzle.webp',
+      metric: 'matchScore', mode: 'max', target: 1800,
+      desc: '单局废料拼图达到 1,800 分。',
+      reward: { credits: 360, mats: { fiber: 4 } }
+    },
+    {
+      id: 'daily-sonar', name: '全货箱回收', iconImg: 'assets/real/sonar.webp',
+      metric: 'sonarFinds', mode: 'max', target: 4,
+      desc: '单局声呐扫掠找回全部 4 个货箱。',
+      reward: { credits: 340, mats: { chip: 3 } }
+    },
+    {
+      id: 'daily-runs', name: '三次出航', iconImg: 'assets/real/storage.webp',
+      metric: 'runs', mode: 'sum', target: 3,
+      desc: '今天完成 3 次打捞。',
+      reward: { credits: 260, mats: { fuel: 4 } }
+    },
+    {
+      id: 'daily-collect', name: '海边拾遗', iconImg: 'assets/collectibles/tide-crown.webp',
+      metric: 'collectibles', mode: 'sum', target: 2,
+      desc: '今天从局内带回 2 件收藏品。',
+      reward: { credits: 300, mats: { fiber: 3, chip: 1 } }
+    }
+  ]);
+
+  function dailyDef(dailyId) {
+    for (var i = 0; i < DAILY_CHALLENGES.length; i++) if (DAILY_CHALLENGES[i].id === dailyId) return DAILY_CHALLENGES[i];
+    return null;
+  }
+
+  function dayKey(date) {
+    var d = date || new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+
+  function dayNumber(date) {
+    var d = date || new Date();
+    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  }
+
+  function parseDayKey(key) {
+    var parts = String(key || '').split('-');
+    if (parts.length !== 3) return new Date();
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
   function contractDef(contractId) {
     for (var i = 0; i < CONTRACTS.length; i++) if (CONTRACTS[i].id === contractId) return CONTRACTS[i];
     return null;
@@ -207,6 +267,9 @@
       collectibles: {},
       contracts: makeContractSet(),
       contractRound: 1,
+      daily: null,
+      dailyStreak: 0,
+      lastDailyClaim: '',
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0, sonar: 0 },
       runs: 0
@@ -233,6 +296,19 @@
     }
     data.contracts = normalizeContractSet(raw.contracts);
     data.contractRound = Math.max(1, Math.floor(Number(raw.contractRound) || 1));
+    data.dailyStreak = clamp(Math.floor(Number(raw.dailyStreak) || 0), 0, 999);
+    data.lastDailyClaim = typeof raw.lastDailyClaim === 'string' ? raw.lastDailyClaim : '';
+    if (raw.daily && typeof raw.daily === 'object') {
+      var ddef = dailyDef(String(raw.daily.id || ''));
+      if (ddef && raw.daily.date === dayKey()) {
+        data.daily = {
+          date: raw.daily.date,
+          id: ddef.id,
+          progress: clamp(Math.floor(Number(raw.daily.progress) || 0), 0, ddef.target),
+          claimed: !!raw.daily.claimed
+        };
+      }
+    }
     data.runs = Math.max(0, Math.floor(Number(raw.runs) || 0));
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
@@ -262,6 +338,7 @@
     var loaded = loadSave();
     this.hasSave = !!loaded;
     this.data = loaded || makeDefault();
+    this.ensureDaily();
     this.state = 'title';
     this.tab = 'tasks';
     this.warehouseView = 'materials';
@@ -492,10 +569,12 @@
     }
     var warehouseTab = document.querySelector('.panel-tab[data-tab="warehouse"]');
     if (warehouseTab) warehouseTab.classList.toggle('has-ready', this.collectionCanCraftAny());
+    var tasksTab = document.querySelector('.panel-tab[data-tab="tasks"]');
+    if (tasksTab) tasksTab.classList.toggle('has-ready', this.dailyReady() || this.contractsReadyCount() > 0);
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
       this.dom.panelTag.textContent = MISSIONS.length + ' 个任务';
-      this.dom.panelNote.textContent = '物资会存进避难所仓库';
+      this.dom.panelNote.textContent = '今日挑战与物资都会存进避难所';
     } else if (this.tab === 'contracts') {
       var contractReady = this.contractsReadyCount();
       this.dom.panelTitle.textContent = '打捞契约';
@@ -529,8 +608,41 @@
     this.updatePanelMeta();
   };
 
+  Hub.prototype.renderDailyCard = function () {
+    var daily = this.ensureDaily();
+    var def = dailyDef(daily.id);
+    if (!def) return '';
+    var progress = Math.min(def.target, daily.progress || 0);
+    var ready = !daily.claimed && progress >= def.target;
+    var pct = clamp(progress / def.target, 0, 1);
+    var streak = this.data.dailyStreak || 0;
+    var reward = def.reward;
+    var mats = [];
+    for (var i = 0; i < MATERIALS.length; i++) {
+      var m = MATERIALS[i];
+      var amount = reward.mats && reward.mats[m.id];
+      if (amount) mats.push('<span><img src="' + m.iconImg + '" alt="">' + m.name + ' +' + amount + '</span>');
+    }
+    var stateText = daily.claimed ? '今日已领取' : ready ? '可领取' : '进行中';
+    return '<article class="daily-card' + (ready ? ' ready' : '') + (daily.claimed ? ' claimed' : '') + '">' +
+      '<div class="daily-top"><span>DAILY TIDE · 今日潮汐</span><em>连续 ' + streak + ' 天</em></div>' +
+      '<div class="daily-main">' +
+        '<div class="daily-icon"><img src="' + def.iconImg + '" alt=""></div>' +
+        '<div class="daily-copy"><b>' + def.name + '</b><p>' + def.desc + '</p></div>' +
+      '</div>' +
+      '<div class="daily-progress"><i style="width:' + (pct * 100).toFixed(1) + '%"></i></div>' +
+      '<div class="daily-foot">' +
+        '<span class="daily-count">' + progress + ' / ' + def.target + ' · ' + stateText + '</span>' +
+        '<div class="daily-rewards"><span class="daily-credit">打捞币 +' + reward.credits + '</span>' + mats.join('') + '</div>' +
+      '</div>' +
+      '<button class="daily-claim' + (ready ? ' ready' : '') + '" data-action="claim-daily"' + (ready ? '' : ' disabled') + '>' +
+        (daily.claimed ? '今日已完成' : ready ? '领取今日奖励' : '继续打捞') +
+      '</button>' +
+    '</article>';
+  };
+
   Hub.prototype.renderTasks = function () {
-    var html = '<div class="mission-list">';
+    var html = this.renderDailyCard() + '<div class="mission-list">';
     for (var i = 0; i < MISSIONS.length; i++) {
       var m = MISSIONS[i];
       var best = this.data.best[m.id] || 0;
@@ -595,6 +707,73 @@
       if (c && def && !c.claimed && c.progress >= def.target) n++;
     }
     return n;
+  };
+
+  Hub.prototype.ensureDaily = function () {
+    var today = dayKey();
+    if (!this.data.daily || this.data.daily.date !== today) {
+      var def = DAILY_CHALLENGES[mod(dayNumber(), DAILY_CHALLENGES.length)];
+      this.data.daily = { date: today, id: def.id, progress: 0, claimed: false };
+    }
+    return this.data.daily;
+  };
+
+  Hub.prototype.dailyReady = function () {
+    var daily = this.ensureDaily();
+    var def = dailyDef(daily.id);
+    return !!(def && !daily.claimed && daily.progress >= def.target);
+  };
+
+  Hub.prototype.dailyValue = function (def, result) {
+    switch (def.metric) {
+      case 'safe': return Math.max(0, Number(result.safeCount) || 0);
+      case 'bestCombo': return Math.max(0, Number(result.bestCombo) || 0);
+      case 'matchScore': return result.type === 'match' ? Math.max(0, Number(result.score) || 0) : 0;
+      case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
+      case 'runs': return 1;
+      case 'collectibles': return Array.isArray(result.collectibles) ? result.collectibles.length : 0;
+      default: return 0;
+    }
+  };
+
+  Hub.prototype.applyDailyProgress = function (result) {
+    var daily = this.ensureDaily();
+    if (daily.claimed) return;
+    var def = dailyDef(daily.id);
+    if (!def) return;
+    var value = this.dailyValue(def, result);
+    if (def.mode === 'max') daily.progress = Math.max(daily.progress || 0, value);
+    else daily.progress = Math.min(def.target, (daily.progress || 0) + value);
+  };
+
+  Hub.prototype.claimDaily = function () {
+    var daily = this.ensureDaily();
+    var def = dailyDef(daily.id);
+    if (!def || daily.claimed || daily.progress < def.target) return;
+    daily.claimed = true;
+    var today = dayKey();
+    var last = this.data.lastDailyClaim;
+    var streak = this.data.dailyStreak || 0;
+    if (last) {
+      var diff = dayNumber() - dayNumber(parseDayKey(last));
+      if (diff === 1) streak += 1;
+      else if (diff <= 0) streak = Math.max(1, streak);
+      else streak = 1;
+    } else {
+      streak = 1;
+    }
+    var bonus = Math.min(3, Math.max(0, streak - 1)) * 40;
+    this.data.dailyStreak = streak;
+    this.data.lastDailyClaim = today;
+    var reward = this.grantContractReward({
+      credits: (def.reward.credits || 0) + bonus,
+      mats: def.reward.mats || {}
+    });
+    this.audio.claim();
+    this.showToast('DAILY TIDE', '连续 ' + streak + ' 天 · ' + def.name, '+' + fmt(reward.credits) + ' 打捞币' + (reward.overflow ? ' · 仓库溢出已折算' : ''));
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
   };
 
   Hub.prototype.grantContractReward = function (reward) {
@@ -1064,6 +1243,7 @@
     var collectibles = this.registerCollectibles(result);
     result.collectibles = collectibles;
     this.applyContractProgress(result);
+    this.applyDailyProgress(result);
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1205,6 +1385,7 @@
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
+        else if (action === 'claim-daily') self.claimDaily();
         else if (action === 'craft') self.craft(actionEl.getAttribute('data-rarity'));
         else if (action === 'warehouse-view') {
           self.warehouseView = actionEl.getAttribute('data-view');
