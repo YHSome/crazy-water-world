@@ -17,14 +17,14 @@
   var fmt = CW.fmt;
 
   var TILES = [
-    { name: '废铁', color: '#9fb2b4', dark: '#40585d', key: 'metal' },
-    { name: '燃料', color: '#ffb15e', dark: '#78401f', key: 'fuel' },
-    { name: '纤维', color: '#93dda3', dark: '#2f6248', key: 'fiber' },
-    { name: '芯片', color: '#7ed7ff', dark: '#1e566e', key: 'chip' },
-    { name: '玻璃', color: '#8fe0d8', dark: '#2c6664', key: 'glass' },
-    { name: '铜', color: '#e2a06a', dark: '#6e4327', key: 'copper' },
-    { name: '医疗包', color: '#f6e7c7', dark: '#715445', key: 'med' },
-    { name: '收藏品', color: '#d9b8ff', dark: '#4b2f68', key: 'collectible' }
+    { name: '废铁', glyph: '铁', color: '#9fb2b4', dark: '#40585d', key: 'metal' },
+    { name: '燃料', glyph: '油', color: '#ffb15e', dark: '#78401f', key: 'fuel' },
+    { name: '纤维', glyph: '纤', color: '#93dda3', dark: '#2f6248', key: 'fiber' },
+    { name: '芯片', glyph: '芯', color: '#7ed7ff', dark: '#1e566e', key: 'chip' },
+    { name: '玻璃', glyph: '玻', color: '#8fe0d8', dark: '#2c6664', key: 'glass' },
+    { name: '铜', glyph: '铜', color: '#e2a06a', dark: '#6e4327', key: 'copper' },
+    { name: '医疗包', glyph: '医', color: '#f6e7c7', dark: '#715445', key: 'med' },
+    { name: '收藏品', glyph: '藏', color: '#d9b8ff', dark: '#4b2f68', key: 'collectible' }
   ];
   var NORMAL_TILE_COUNT = 7;
   var MED_TILE = 6;
@@ -94,6 +94,9 @@
     this.counts = [0, 0, 0, 0, 0, 0, 0, 0];
     this.matched = [];
     this.collectibles = [];
+    this.specials = [];
+    this.giftMeter = 0;
+    this.bonusCredits = 0;
     this.particles = [];
     this.popups = [];
     this.done = false;
@@ -136,6 +139,9 @@
     this.dragStart = null;
     this.specialFx = [];
     this.collectibles = [];
+    this.specials = [];
+    this.giftMeter = 0;
+    this.bonusCredits = 0;
     this.fallCells = {};
     this.fallTimer = 0;
     this.flash = 0;
@@ -160,7 +166,7 @@
         }
         this.grid.push(row);
       }
-      for (var k = 0; k < 2; k++) {
+      for (var k = 0; k < 3; k++) {
         var cr = (Math.random() * this.rows) | 0;
         var cc = (Math.random() * this.cols) | 0;
         if (this.grid[cr][cc] !== COLLECTIBLE_TILE) this.grid[cr][cc] = COLLECTIBLE_TILE;
@@ -419,6 +425,41 @@
     }
 
     this.combo += 1;
+    if (this.combo === 4 || this.combo === 6 || this.combo === 8) {
+      var comboBonus = this.combo === 4 ? 30 : this.combo === 6 ? 60 : 100;
+      this.bonusCredits += comboBonus;
+      this.flash = Math.max(this.flash, 0.2);
+      this.popups.push({
+        x: this.w / 2, y: this.boardY + this.boardH * 0.36,
+        text: '连锁 ' + this.combo + ' · 奖励 +' + comboBonus,
+        life: 1.3, maxLife: 1.3, color: '#ffd166', size: 16
+      });
+      this.audio.matchLine();
+    }
+    this.giftMeter += 1;
+    if (this.giftMeter >= 4 && CW.rollCollectibleDef) {
+      this.giftMeter = 0;
+      var gift = CW.rollCollectibleDef();
+      this.collectibles.push(gift.id);
+      this.flash = Math.max(this.flash, 0.24);
+      this.popups.push({
+        x: this.w / 2, y: this.boardY + this.boardH * 0.5,
+        text: '深海馈赠 · ' + gift.name,
+        life: 1.8, maxLife: 1.8,
+        color: CW.COLLECTIBLE_RARITY_MAP[gift.rarity].color, size: 17
+      });
+      this.audio.relic();
+      if (Math.random() < 0.18 && CW.rollSpecialMaterial) {
+        var msid = CW.rollSpecialMaterial();
+        var msdef = CW.COLLECTIBLE_MAP[msid];
+        this.specials.push(msid);
+        this.popups.push({
+          x: this.w / 2, y: this.boardY + this.boardH * 0.58,
+          text: '稀有升级件！' + msdef.name,
+          life: 2.0, maxLife: 2.0, color: '#d9b8ff', size: 15
+        });
+      }
+    }
     this.phase = 'pop';
     this.popTimer = 0.24;
     this.matched = cells;
@@ -586,7 +627,7 @@
       stat: String(this.movesLeft),
       loot: this.materialCounts(),
       hasAction: false,
-      hint: '滑动相邻废料箱，或点选两格交换 · 四连扫线、五连同色清除'
+      hint: '四连扫线、五连清色 · 每 4 次消除触发深海馈赠'
     };
   };
 
@@ -595,11 +636,17 @@
     this.done = true;
     this.phase = 'done';
     this.popups = [];
-    var credits = 50 + Math.round(this.score * 0.22) + this.counts[MED_TILE] * 12;
+    if (this.score >= 1200 && CW.rollCollectibleDef) this.collectibles.push(CW.rollCollectibleDef().id);
+    if (this.score >= 2400 && CW.rollCollectibleDef) this.collectibles.push(CW.rollCollectibleDef().id);
+    if (this.score >= 1800 && Math.random() < 0.3 && CW.rollSpecialMaterial) this.specials.push(CW.rollSpecialMaterial());
+    if (this.score >= 2400 && !this.specials.length && CW.rollSpecialMaterial) this.specials.push(CW.rollSpecialMaterial());
+    if (this.score >= 3200 && CW.rollSpecialMaterial) this.specials.push(CW.rollSpecialMaterial());
+    var credits = 50 + Math.round(this.score * 0.22) + this.counts[MED_TILE] * 12 + this.bonusCredits;
     this.result = {
       type: 'match',
       score: this.score,
       collectibles: this.collectibles.slice(),
+      specials: this.specials.slice(),
       credits: credits,
       filters: (((this.arcade.hub.data.filterPity || 0) >= 7) || (this.score >= 1200 && chance(0.05))) ? 1 : 0,
       materials: this.materialCounts()
@@ -900,23 +947,32 @@
       g.fillRect(-s / 2, s * 0.32, s, s * 0.18);
       g.restore();
 
-      g.fillStyle = 'rgba(1, 14, 20, 0.42)';
+      g.fillStyle = 'rgba(1, 14, 20, 0.38)';
       g.beginPath();
-      g.arc(0, 0, s * 0.315, 0, TAU);
+      g.arc(0, -s * 0.09, s * 0.255, 0, TAU);
       g.fill();
-      g.strokeStyle = 'rgba(225, 255, 251, 0.18)';
+      g.strokeStyle = 'rgba(225, 255, 251, 0.25)';
       g.lineWidth = 1;
       g.stroke();
 
       var icon = TILE_IMAGES[type];
       g.save();
       g.beginPath();
-      g.arc(0, 0, s * 0.30, 0, TAU);
+      g.arc(0, -s * 0.09, s * 0.235, 0, TAU);
       g.clip();
-      g.drawImage(icon, -s * 0.31, -s * 0.31, s * 0.62, s * 0.62);
-      g.fillStyle = 'rgba(0, 9, 14, 0.12)';
+      g.drawImage(icon, -s * 0.26, -s * 0.35, s * 0.52, s * 0.52);
+      g.fillStyle = 'rgba(0, 9, 14, 0.1)';
       g.fillRect(-s, -s, s * 2, s * 2);
       g.restore();
+
+      g.fillStyle = '#f5fff8';
+      g.font = '800 ' + Math.round(s * 0.28) + 'px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.shadowColor = 'rgba(0, 12, 18, 0.8)';
+      g.shadowBlur = 4;
+      g.fillText(data.glyph, 0, s * 0.30);
+      g.shadowBlur = 0;
 
       g.fillStyle = 'rgba(255, 217, 158, 0.38)';
       var dots = [[-s * 0.37, -s * 0.37], [s * 0.37, -s * 0.37], [-s * 0.37, s * 0.37], [s * 0.37, s * 0.37]];
@@ -926,8 +982,8 @@
         g.fill();
       }
 
-      g.strokeStyle = 'rgba(223, 255, 249, 0.24)';
-      g.lineWidth = 1;
+      g.strokeStyle = type === COLLECTIBLE_TILE ? '#ffe18a' : data.color;
+      g.lineWidth = type === COLLECTIBLE_TILE ? 3 : 1.6;
       g.beginPath();
       g.roundRect(-s / 2, -s / 2, s, s, s * 0.15);
       g.stroke();
