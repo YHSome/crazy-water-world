@@ -31,7 +31,8 @@
     { id: 'ship-bell', name: '沉船船钟', rarity: 'rare', icon: 'assets/collectibles/ship-bell.webp', desc: '敲响时，声音像从很深的地方传来。' },
     { id: 'captain-log', name: '船长航海日志', rarity: 'epic', icon: 'assets/collectibles/captain-log.webp', desc: '最后一页只写了两个字：上浮。' },
     { id: 'black-box', name: '黑匣子', rarity: 'epic', icon: 'assets/collectibles/black-box.webp', desc: '记录着沉没前最后十七分钟的无线电。' },
-    { id: 'tide-crown', name: '潮汐王冠', rarity: 'legendary', icon: 'assets/collectibles/tide-crown.webp', desc: '不是黄金，是被海水压成王冠形状的月光。' }
+    { id: 'tide-crown', name: '潮汐王冠', rarity: 'legendary', icon: 'assets/collectibles/tide-crown.webp', desc: '不是黄金，是被海水压成王冠形状的月光。' },
+    { id: 'seawater-filter', name: '海水过滤器', rarity: 'legendary', icon: 'assets/seawater-filter-icon.webp', desc: '沉船医疗舱里的净水核心，也是净水舱的升级材料。', special: 'filter' }
   ]);
 
   var MAP = (CW.COLLECTIBLE_MAP = {});
@@ -101,7 +102,7 @@
   CW.collectiblesOfRarity = function (rarity) {
     var out = [];
     for (var k = 0; k < COLLECTIBLES.length; k++) {
-      if (COLLECTIBLES[k].rarity === rarity) out.push(COLLECTIBLES[k]);
+      if (COLLECTIBLES[k].rarity === rarity && !COLLECTIBLES[k].special) out.push(COLLECTIBLES[k]);
     }
     return out;
   };
