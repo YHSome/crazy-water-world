@@ -577,6 +577,9 @@
     if (this.hub.data.equipped && this.hub.data.equipped.length) {
       chips += '<span class="summary-chip relic" style="--tone:#18b8b0">藏品 · ' + this.hub.data.equipped.length + ' 件</span>';
     }
+    if (this.applied.chain >= 2) {
+      chips += '<span class="summary-chip chain" style="--tone:#e0a13c">环线 · ' + this.applied.chain + '/6' + (this.applied.chainBonus > 0 ? ' · +' + Math.round((this.applied.chainMult - 1) * 100) + '%' : '') + '</span>';
+    }
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
       var n = this.applied.stored[m.id] || 0;

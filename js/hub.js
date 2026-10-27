@@ -444,6 +444,8 @@
       },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0 },
+      taskChain: 0,
+      lastTask: '',
       runs: 0
     };
   }
@@ -526,6 +528,8 @@
       data.best.cut = Math.max(0, Number(raw.best.cut) || 0);
       data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
+      data.taskChain = clamp(Math.floor(Number(raw.taskChain) || 0), 0, 6);
+      data.lastTask = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon'].indexOf(raw.lastTask) >= 0 ? raw.lastTask : '';
     }
     return data;
   }
@@ -921,8 +925,20 @@
     '</article>';
   };
 
+  Hub.prototype.renderTaskChain = function () {
+    var chain = clamp(Math.floor(Number(this.data.taskChain) || 0), 0, 6);
+    var msg;
+    if (chain >= 6) msg = '环线全开 · 换任务仍保持 +20% 打捞币';
+    else if (chain >= 3) msg = '再换 ' + (6 - chain) + ' 种任务到达 +20% · 重复同一任务会重置';
+    else msg = '再换 ' + (3 - chain) + ' 种不同任务到达 +10% · 重复同一任务会重置';
+    var pips = '';
+    for (var i = 0; i < 6; i++) pips += '<i class="' + (i < chain ? 'on' : '') + '"></i>';
+    return '<div class="chain-card"><div class="chain-head"><span>ROUTE LINK · 环线连携</span><b>' + chain + ' / 6</b></div>' +
+      '<p>' + msg + '</p><div class="chain-pips">' + pips + '</div></div>';
+  };
+
   Hub.prototype.renderTasks = function () {
-    var html = this.renderDailyCard() + '<div class="mission-list">';
+    var html = this.renderDailyCard() + this.renderTaskChain() + '<div class="mission-list">';
     for (var i = 0; i < MISSIONS.length; i++) {
       var m = MISSIONS[i];
       var best = this.data.best[m.id] || 0;
@@ -1709,10 +1725,16 @@
   };
 
   Hub.prototype.applyRunResult = function (result) {
+    var taskType = result.type || 'hook';
+    var chain = taskType !== this.data.lastTask ? Math.min(6, (this.data.taskChain || 0) + 1) : 1;
+    this.data.taskChain = chain;
+    this.data.lastTask = taskType;
+    var chainMult = chain >= 6 ? 1.2 : chain >= 3 ? 1.1 : 1;
     var cap = this.capacity();
     var used = this.used();
     var storeSpace = Math.max(0, cap - used);
     var creditGain = Math.round((result.credits || 0) * this.creditMult());
+    var chainBonus = Math.round(creditGain * (chainMult - 1));
     var stored = {};
     var overflowUnits = 0;
     var overflowCredits = 0;
@@ -1731,7 +1753,7 @@
       }
       this.data.materials[m.id] = (this.data.materials[m.id] || 0) + store;
     }
-    this.data.credits += creditGain + overflowCredits;
+    this.data.credits += creditGain + overflowCredits + chainBonus;
     var filtersGained = Math.max(0, Math.floor(Number(result.filters) || 0));
     this.data.filters = (this.data.filters || 0) + filtersGained;
     if (filtersGained > 0) this.data.filterPity = 0;
@@ -1752,15 +1774,18 @@
     stats.goldTotal = (stats.goldTotal || 0) + Math.max(0, Math.floor(Number(result.goldCount) || 0));
     stats.filtersFound = (stats.filtersFound || 0) + filtersGained;
     stats.collectiblesFound = (stats.collectiblesFound || 0) + collectibles.length;
-    stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits;
+    stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits + chainBonus;
     if (result.type === 'sonar' && Number(result.found || 0) >= 4) stats.sonarPerfect = (stats.sonarPerfect || 0) + 1;
     this.saveGame();
     this.updateUI();
     this.renderPanel();
     return {
       creditGain: creditGain,
+      chain: chain,
+      chainMult: chainMult,
+      chainBonus: chainBonus,
       overflowCredits: overflowCredits,
-      totalCredits: creditGain + overflowCredits,
+      totalCredits: creditGain + overflowCredits + chainBonus,
       stored: stored,
       overflowUnits: overflowUnits,
       filters: filtersGained,

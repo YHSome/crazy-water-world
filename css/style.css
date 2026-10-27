@@ -1449,6 +1449,22 @@ body::after {
 .panel-foot i { width: 6px; height: 6px; background: #16b8a9; box-shadow: 0 0 7px rgba(22, 184, 169, 0.5); }
 
 /* Tasks */
+.chain-card {
+  margin: 12px 0 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  background: linear-gradient(135deg, #effaf3, #fff8e9);
+  box-shadow: 0 5px 0 -2px #e1d3bb, 0 12px 20px rgba(31, 84, 84, 0.08), inset 0 1px 0 #fff;
+}
+.chain-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.chain-head span { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: #0d7774; }
+.chain-head b { font-family: var(--mono); font-size: 13px; color: #b06b28; }
+.chain-card p { margin: 4px 0 7px; font-size: 10px; line-height: 1.5; color: #638284; }
+.chain-pips { display: flex; gap: 5px; }
+.chain-pips i { width: 100%; height: 7px; border-radius: 99px; background: #dfe9e2; box-shadow: inset 0 1px 2px rgba(24, 81, 82, 0.1); }
+.chain-pips i.on { background: linear-gradient(90deg, #18b8b0, #ffb04e); box-shadow: 0 1px 3px rgba(24, 184, 176, 0.25); }
+.summary-chip.chain { border: 1px solid var(--tone); color: var(--tone); }
 .mission-list { gap: 12px; }
 .mission-card {
   grid-template-columns: 74px minmax(0, 1fr);
