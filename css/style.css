@@ -2385,6 +2385,27 @@ body:not(.is-title) #scene { clip-path: none !important; }
   .panel-tabs { flex-direction: row; }
 }
 
+/* ── Shelter level ───────────────────────────────────────── */
+.shelter-level-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 17px; background: linear-gradient(135deg, #fff8e9, #eefaf6); box-shadow: 0 7px 0 -3px #e1d2b8, 0 16px 26px rgba(31, 84, 84, 0.1), inset 0 1px 0 #fff; }
+.shelter-level-copy { min-width: 0; }
+.shelter-level-copy > span { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: #b06b28; }
+.shelter-level-copy > b { display: block; margin-top: 3px; font-family: var(--display); font-size: 27px; color: #173f47; }
+.shelter-level-copy > p { margin: 4px 0 7px; font-size: 10px; line-height: 1.5; color: #617f80; }
+.shelter-req { display: flex; flex-wrap: wrap; gap: 4px; }
+.shelter-req span { padding: 3px 6px; border-radius: 6px; background: #f5e3df; color: #b34d3b; font-family: var(--mono); font-size: 8px; }
+.shelter-req span.ok { background: #e4f7ee; color: #0b7774; }
+.shelter-unlock { margin-top: 7px; font-size: 9px; color: #8a6b3e; }
+.shelter-up-btn { flex: 0 0 auto; min-height: 42px; padding: 0 12px; border: 1px solid transparent; border-radius: 10px; background: linear-gradient(135deg, #0f8f8a, #18b8b0); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 800; box-shadow: 0 4px 0 #0b6f6b; }
+.shelter-up-btn:disabled { background: #e9e3d7; color: #9a9183; box-shadow: none; }
+.upgrade-card.locked { opacity: 0.62; }
+.upgrade-card.locked .upgrade-costs { filter: grayscale(0.4); }
+.crew-card.locked { opacity: 0.58; }
+.crew-card.locked .crew-photo img { filter: grayscale(0.8); }
+@media (max-width: 720px) {
+  .shelter-level-card { flex-direction: column; }
+  .shelter-up-btn { width: 100%; }
+}
+
 /* Daily tide contract */
 .daily-card {
   position: relative;
