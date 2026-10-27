@@ -1465,6 +1465,25 @@ body::after {
 .chain-pips i { width: 100%; height: 7px; border-radius: 99px; background: #dfe9e2; box-shadow: inset 0 1px 2px rgba(24, 81, 82, 0.1); }
 .chain-pips i.on { background: linear-gradient(90deg, #18b8b0, #ffb04e); box-shadow: 0 1px 3px rgba(24, 184, 176, 0.25); }
 .summary-chip.chain { border: 1px solid var(--tone); color: var(--tone); }
+.capacity-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.capacity-actions span { font-size: 8px; color: #80999a; }
+.mat-sell-btn { min-height: 34px; padding: 0 10px; border: 1px solid rgba(15, 143, 138, 0.22); border-radius: 9px; background: #eaf9f4; color: #0b7774; font-family: var(--mono); font-size: 9px; font-weight: 700; }
+.mat-sell-btn:disabled { background: #eee9de; color: #9b917f; border-color: rgba(19, 93, 96, 0.08); }
+.auction-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 13px; padding: 11px 12px; border: 1px solid rgba(255, 186, 96, 0.28); border-radius: 14px; background: linear-gradient(135deg, #fffaf0, #fff4df); box-shadow: 0 5px 0 -2px #e8d5b4, 0 10px 16px rgba(173, 117, 39, 0.08), inset 0 1px 0 #fff; }
+.auction-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.auction-copy b { font-size: 12px; color: #7c4c19; }
+.auction-copy span { font-size: 9px; line-height: 1.45; color: #8f775d; }
+.auction-btn { flex: 0 0 auto; min-height: 36px; padding: 0 9px; border: 1px solid rgba(180, 118, 31, 0.25); border-radius: 9px; background: linear-gradient(135deg, #ffdc91, #ffb547); color: #73450e; font-family: var(--mono); font-size: 9px; font-weight: 800; box-shadow: 0 3px 0 #d2943a, inset 0 1px 0 rgba(255, 255, 255, 0.55); }
+.auction-btn:disabled { background: #eee9de; color: #9b917f; box-shadow: none; border-color: rgba(19, 93, 96, 0.08); }
+.collectible-special-mark { flex: 0 0 auto; padding: 4px 6px; border-radius: 6px; background: #eaf9f4; color: #0b7774; font-family: var(--mono); font-size: 8px; }
+.upgrade-actions { display: flex; flex-direction: column; gap: 4px; align-items: stretch; justify-self: end; min-width: 82px; }
+.upgrade-salvage { min-height: 30px; padding: 0 8px; border: 1px solid rgba(180, 118, 31, 0.25); border-radius: 8px; background: #fff4df; color: #8a5a1f; font-family: var(--mono); font-size: 9px; font-weight: 700; }
+.upgrade-salvage:hover { background: #ffe9c0; }
+@media (max-width: 380px) {
+  .capacity-actions { align-items: flex-start; flex-direction: column; }
+  .auction-bar { align-items: flex-start; flex-direction: column; }
+  .auction-btn { width: 100%; }
+}
 .mission-list { gap: 12px; }
 .mission-card {
   grid-template-columns: 74px minmax(0, 1fr);
