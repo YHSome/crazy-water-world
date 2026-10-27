@@ -129,6 +129,27 @@
     }
   ]);
 
+  var MISSION_GRADES = (CW.MISSION_GRADES = {
+    hook: { S: 1100, A: 750, B: 400 },
+    match: { S: 2400, A: 1600, B: 800 },
+    sonar: { S: 520, A: 380, B: 220 },
+    cut: { S: 800, A: 550, B: 300 },
+    sort: { S: 1050, A: 750, B: 400 },
+    beacon: { S: 560, A: 400, B: 250 }
+  });
+  var GRADE_RANK = { C: 0, B: 1, A: 2, S: 3 };
+
+  function gradeFor(type, score) {
+    var lines = MISSION_GRADES[type] || MISSION_GRADES.hook;
+    score = Math.max(0, Number(score) || 0);
+    if (score >= lines.S) return 'S';
+    if (score >= lines.A) return 'A';
+    if (score >= lines.B) return 'B';
+    return 'C';
+  }
+
+  function gradeRank(grade) { return GRADE_RANK[grade] || 0; }
+
   var CONTRACTS = (CW.CONTRACTS = [
     {
       id: 'safe', name: '保险箱回收', iconImg: 'assets/real/safe.webp', metric: 'safe', mode: 'sum', target: 5,
@@ -334,6 +355,16 @@
       id: 'all-six', name: '六面手', iconImg: 'assets/real/sonar.webp',
       metric: 'missionsPlayed', target: 6, desc: '六种打捞任务都至少完成一次。',
       reward: { credits: 900, mats: { metal: 6, fuel: 4, fiber: 4, chip: 4, glass: 4, copper: 4 } }
+    },
+    {
+      id: 'first-s', name: '第一枚 S', iconImg: 'assets/real/gold.webp',
+      metric: 'sGradesCount', target: 1, desc: '任意任务首次拿到 S 评级。',
+      reward: { credits: 500, mats: { glass: 3, copper: 2 } }
+    },
+    {
+      id: 'all-s', name: '六项全能 S', iconImg: 'assets/collectibles/tide-crown.webp',
+      metric: 'sGradesCount', target: 6, desc: '六个打捞任务都拿到 S 评级。',
+      reward: { credits: 1500, mats: { metal: 8, fuel: 6, fiber: 6, chip: 6, glass: 6, copper: 6 } }
     }
   ]);
 
@@ -444,6 +475,8 @@
       },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0 },
+      grades: {},
+      sGrades: {},
       taskChain: 0,
       taskChainTypes: [],
       lastTask: '',
@@ -529,6 +562,20 @@
       data.best.cut = Math.max(0, Number(raw.best.cut) || 0);
       data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
+      data.grades = {};
+      data.sGrades = {};
+      if (raw.grades && typeof raw.grades === 'object') {
+        for (var gk in raw.grades) {
+          if (!Object.prototype.hasOwnProperty.call(raw.grades, gk)) continue;
+          var gv = String(raw.grades[gk] || '');
+          if (MISSION_GRADES[gk] && GRADE_RANK[gv] !== undefined) data.grades[gk] = gv;
+        }
+      }
+      if (raw.sGrades && typeof raw.sGrades === 'object') {
+        for (var sk in raw.sGrades) {
+          if (Object.prototype.hasOwnProperty.call(raw.sGrades, sk) && MISSION_GRADES[sk] && raw.sGrades[sk]) data.sGrades[sk] = true;
+        }
+      }
       data.taskChain = clamp(Math.floor(Number(raw.taskChain) || 0), 0, 6);
       data.lastTask = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon'].indexOf(raw.lastTask) >= 0 ? raw.lastTask : '';
       data.taskChainTypes = [];
@@ -960,7 +1007,9 @@
         '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt=""></div>' +
         '<div class="mission-copy">' +
           '<span class="mission-kicker">' + m.kicker + '</span>' +
-          '<div class="mission-name">' + m.name + ' <span class="mission-best">最佳 ' + fmt(best) + '</span></div>' +
+          '<div class="mission-name">' + m.name +
+            (this.data.grades[m.id] ? ' <span class="mission-grade grade-' + this.data.grades[m.id].toLowerCase() + '">' + this.data.grades[m.id] + '</span>' : '') +
+            ' <span class="mission-best">最佳 ' + fmt(best) + '</span></div>' +
           '<p class="mission-desc">' + m.desc + '</p>' +
           '<div class="mission-tags">' + tags.map(function (t) {
             if (t === '稀有过滤器') return '<span class="mission-tag rare"><img src="assets/seawater-filter-icon.webp" alt="">稀有过滤器</span>';
@@ -1530,6 +1579,11 @@
       case 'cutRuns': return this.data.stats.cutRuns || 0;
       case 'sortRuns': return this.data.stats.sortRuns || 0;
       case 'beaconRuns': return this.data.stats.beaconRuns || 0;
+      case 'sGradesCount': {
+        var sc = 0;
+        for (var sk2 in this.data.sGrades) if (Object.prototype.hasOwnProperty.call(this.data.sGrades, sk2) && this.data.sGrades[sk2]) sc++;
+        return sc;
+      }
       case 'missionsPlayed': {
         var n = 0;
         if ((this.data.best.hook || 0) > 0) n++;
@@ -1779,6 +1833,14 @@
     else if (result.type === 'beacon') this.data.stats.beaconRuns = (this.data.stats.beaconRuns || 0) + 1;
     var key = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon'].indexOf(result.type) >= 0 ? result.type : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
+    var grade = gradeFor(key, result.score);
+    if (gradeRank(grade) > gradeRank(this.data.grades[key])) this.data.grades[key] = grade;
+    var sBonus = 0;
+    if (grade === 'S' && !this.data.sGrades[key]) {
+      this.data.sGrades[key] = true;
+      sBonus = 300;
+      this.data.credits += sBonus;
+    }
     var collectibles = this.registerCollectibles(result);
     result.collectibles = collectibles;
     this.applyContractProgress(result);
@@ -1789,7 +1851,7 @@
     stats.goldTotal = (stats.goldTotal || 0) + Math.max(0, Math.floor(Number(result.goldCount) || 0));
     stats.filtersFound = (stats.filtersFound || 0) + filtersGained;
     stats.collectiblesFound = (stats.collectiblesFound || 0) + collectibles.length;
-    stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits + chainBonus;
+    stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits + chainBonus + sBonus;
     if (result.type === 'sonar' && Number(result.found || 0) >= 4) stats.sonarPerfect = (stats.sonarPerfect || 0) + 1;
     this.saveGame();
     this.updateUI();
@@ -1799,8 +1861,10 @@
       chain: chain,
       chainMult: chainMult,
       chainBonus: chainBonus,
+      grade: grade,
+      sBonus: sBonus,
       overflowCredits: overflowCredits,
-      totalCredits: creditGain + overflowCredits + chainBonus,
+      totalCredits: creditGain + overflowCredits + chainBonus + sBonus,
       stored: stored,
       overflowUnits: overflowUnits,
       filters: filtersGained,
