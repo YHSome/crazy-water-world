@@ -32,7 +32,10 @@
     { id: 'captain-log', name: '船长航海日志', rarity: 'epic', icon: 'assets/collectibles/captain-log.webp', desc: '最后一页只写了两个字：上浮。' },
     { id: 'black-box', name: '黑匣子', rarity: 'epic', icon: 'assets/collectibles/black-box.webp', desc: '记录着沉没前最后十七分钟的无线电。' },
     { id: 'tide-crown', name: '潮汐王冠', rarity: 'legendary', icon: 'assets/collectibles/tide-crown.webp', desc: '不是黄金，是被海水压成王冠形状的月光。' },
-    { id: 'seawater-filter', name: '海水过滤器', rarity: 'legendary', icon: 'assets/seawater-filter-icon.webp', desc: '沉船医疗舱里的净水核心，也是净水舱的升级材料。', special: 'filter' }
+    { id: 'seawater-filter', name: '海水过滤器', rarity: 'legendary', icon: 'assets/seawater-filter-icon.webp', desc: '沉船医疗舱里的净水核心，也是净水舱的升级材料。', special: 'filter' },
+    { id: 'sonar-core', name: '声呐核心', rarity: 'epic', icon: 'assets/real/sonar.webp', desc: '旧声呐阵列的主控核心，避难所升级的关键部件。', special: 'material' },
+    { id: 'pressure-valve', name: '耐压阀', rarity: 'epic', icon: 'assets/collectibles/brass-compass.webp', desc: '能承受深海压力的黄铜阀门，用于扩建船体。', special: 'material' },
+    { id: 'tide-cell', name: '潮汐电池', rarity: 'legendary', icon: 'assets/real/core.webp', desc: '仍在缓慢放电的旧时代电池，避难所终极扩建的核心。', special: 'material' }
   ]);
 
   var MAP = (CW.COLLECTIBLE_MAP = {});
@@ -113,6 +116,22 @@
     rare: { metal: 4, fuel: 1, chip: 2, glass: 2, copper: 1 },
     epic: { metal: 6, fuel: 2, fiber: 2, chip: 3, glass: 2, copper: 2 },
     legendary: { metal: 10, fuel: 4, fiber: 4, chip: 5, glass: 4, copper: 4 }
+  };
+
+  CW.rollSpecialMaterial = function () {
+    var pool = [
+      { id: 'sonar-core', weight: 52 },
+      { id: 'pressure-valve', weight: 33 },
+      { id: 'tide-cell', weight: 15 }
+    ];
+    var total = 0;
+    for (var i = 0; i < pool.length; i++) total += pool[i].weight;
+    var roll = Math.random() * total;
+    for (var j = 0; j < pool.length; j++) {
+      roll -= pool[j].weight;
+      if (roll <= 0) return pool[j].id;
+    }
+    return pool[0].id;
   };
 
   CW.rollCollectibleDef = function () {
