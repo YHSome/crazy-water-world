@@ -373,6 +373,9 @@
     };
     if (this.type === 'match' && CW.MatchGame) this.game = new CW.MatchGame(this, config);
     else if (this.type === 'sonar' && CW.SonarGame) this.game = new CW.SonarGame(this, config);
+    else if (this.type === 'cut' && CW.CutGame) this.game = new CW.CutGame(this, config);
+    else if (this.type === 'sort' && CW.SortGame) this.game = new CW.SortGame(this, config);
+    else if (this.type === 'beacon' && CW.BeaconGame) this.game = new CW.BeaconGame(this, config);
     else this.game = new CW.HookGame(this, config);
     if (this.condition && this.dom.kicker) {
       var mission = null;
@@ -406,7 +409,7 @@
     var mission = null;
     for (var i = 0; i < MISSIONS.length; i++) if (MISSIONS[i].id === this.type) mission = MISSIONS[i];
     if (!mission) return;
-    var isHook = this.type === 'hook';
+    var mode = mission.stat || (this.type === 'sonar' ? 'probes' : this.type === 'match' ? 'moves' : 'time');
     var cond = this.condition;
     this.dom.kicker.textContent = mission.kicker + (cond ? ' · ' + cond.name : '');
     this.dom.name.textContent = mission.name;
@@ -417,12 +420,12 @@
     var permitTime = permit ? permit.time : 0;
     var permitMoves = permit ? permit.moves : 0;
     var permitProbes = permit ? permit.probes : 0;
-    if (this.type === 'sonar') {
+    if (mode === 'probes') {
       this.dom.briefTime.textContent = (this.hub.sonarProbes() + (cond ? cond.probes : 0) + permitProbes) + ' 次';
+    } else if (mode === 'moves') {
+      this.dom.briefTime.textContent = (this.hub.matchMoves() + (cond ? cond.moves : 0) + permitMoves) + ' 步';
     } else {
-      this.dom.briefTime.textContent = isHook
-        ? (this.hub.hookTime() + (cond ? cond.time : 0) + permitTime) + ' 秒'
-        : (this.hub.matchMoves() + (cond ? cond.moves : 0) + permitMoves) + ' 步';
+      this.dom.briefTime.textContent = (this.hub.hookTime() + (cond ? cond.time : 0) + permitTime) + ' 秒';
     }
     if (this.dom.briefCondition && cond) {
       this.dom.briefCondition.classList.remove('hidden');
@@ -444,7 +447,7 @@
     var used = this.hub.used();
     var cap = this.hub.capacity();
     this.dom.briefCapacity.textContent = used + ' / ' + cap + (used >= cap ? ' · 满' : '');
-    this.dom.briefGoal.textContent = this.type === 'sonar' ? '4 个隐藏货箱' : '废铁 / 燃料 / 纤维 / 芯片';
+    this.dom.briefGoal.textContent = mission.goal || (this.type === 'sonar' ? '4 个隐藏货箱' : '废铁 / 燃料 / 纤维 / 芯片 / 玻璃 / 铜');
     var html = '<span class="reward-chip" style="--tone:var(--amber)">打捞币</span>';
     for (var m = 0; m < MATERIALS.length; m++) {
       html += '<span class="reward-chip" style="--tone:' + MATERIALS[m].color + '">' + MATERIALS[m].name + '</span>';

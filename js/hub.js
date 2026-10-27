@@ -111,6 +111,21 @@
       id: 'sonar', name: '声呐扫掠', icon: '声', iconImg: 'assets/real/sonar.webp', kicker: 'MISSION 03',
       desc: '在锈蚀控制台前发射声呐，用距离回波定位隐藏货箱。有些货箱埋在深层，需要二次探测；找到货箱会连锁揭示一格。',
       tags: ['10 次声呐', '探索', '稀有过滤器']
+    },
+    {
+      id: 'cut', name: '沉船切割', icon: '切', iconImg: 'assets/real/workshop.webp', kicker: 'MISSION 04',
+      desc: '把锈死的船壳拖上拆解台，在切割线进入安全区时下手。切得越准，玻璃和铜件越完整。',
+      tags: ['60 秒', '节奏', '玻璃 / 铜'], stat: 'time', goal: '6 个精准切口'
+    },
+    {
+      id: 'sort', name: '分拣传送带', icon: '拣', iconImg: 'assets/real/storage.webp', kicker: 'MISSION 05',
+      desc: '旧码头的传送带又转起来了。看清中央货物，点选底部对应材料箱，别把铜线丢进玻璃箱。',
+      tags: ['12 件', '反应', '六种材料'], stat: 'time', goal: '分拣 12 件货物'
+    },
+    {
+      id: 'beacon', name: '灯塔信号', icon: '灯', iconImg: 'assets/real/core.webp', kicker: 'MISSION 06',
+      desc: '外海灯塔还在发送最后的坐标。记住四座信号灯的闪烁顺序，复现三轮就能带回导航核心。',
+      tags: ['3 组', '记忆', '芯片 / 玻璃'], stat: 'time', goal: '复现 3 组信号'
     }
   ]);
 
@@ -372,7 +387,7 @@
         goldTotal: 0
       },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
-      best: { hook: 0, match: 0, sonar: 0 },
+      best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0 },
       runs: 0
     };
   }
@@ -449,6 +464,9 @@
       data.best.hook = Math.max(0, Number(raw.best.hook) || 0);
       data.best.match = Math.max(0, Number(raw.best.match) || 0);
       data.best.sonar = Math.max(0, Number(raw.best.sonar) || 0);
+      data.best.cut = Math.max(0, Number(raw.best.cut) || 0);
+      data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
+      data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
     }
     return data;
   }
@@ -850,7 +868,7 @@
       var m = MISSIONS[i];
       var best = this.data.best[m.id] || 0;
       var tags = m.tags.slice();
-      if (m.id === 'hook') tags[0] = this.hookTime() + ' 秒';
+      if (m.id === 'hook' || m.stat === 'time') tags[0] = this.hookTime() + ' 秒';
       if (m.id === 'match') tags[0] = this.matchMoves() + ' 步';
       if (m.id === 'sonar') tags[0] = this.sonarProbes() + ' 次声呐';
       html += '<article class="mission-card">' +
@@ -1641,7 +1659,7 @@
     if (filtersGained > 0) this.data.filterPity = 0;
     else this.data.filterPity = Math.min(7, (this.data.filterPity || 0) + 1);
     this.data.runs += 1;
-    var key = result.type === 'match' ? 'match' : result.type === 'sonar' ? 'sonar' : 'hook';
+    var key = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon'].indexOf(result.type) >= 0 ? result.type : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
     var collectibles = this.registerCollectibles(result);
     result.collectibles = collectibles;

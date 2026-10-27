@@ -73,7 +73,12 @@
   };
 
   AudioEngine.prototype.setScene = function (scene) {
-    if (!this.bgmTracks[scene]) scene = 'hub';
+    if (!this.bgmTracks[scene]) {
+      if (scene === 'cut') scene = 'floodline';
+      else if (scene === 'sort') scene = 'match';
+      else if (scene === 'beacon') scene = 'sonar';
+      else scene = 'hub';
+    }
     if (this.scene === scene && this.bgm) return;
     this.scene = scene;
     var previous = this.bgm;
