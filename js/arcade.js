@@ -148,6 +148,8 @@
     copper: 'assets/collectibles/brass-compass.webp',
     safe: 'assets/real/safe.webp',
     gold: 'assets/real/gold.webp',
+    relic: 'assets/collectibles/captain-log.webp',
+    treasure: 'assets/collectibles/tide-crown.webp',
     mine: 'assets/real/mine.webp'
   };
   for (var ik in ITEM_IMAGES) {
@@ -589,6 +591,12 @@
     if (this.applied.sBonus > 0) {
       chips += '<span class="summary-chip grade-bonus" style="--tone:#b77b22">首次 ' + this.applied.grade + ' · +' + this.applied.sBonus + '</span>';
     }
+    if (this.applied.specials && this.applied.specials.length) {
+      for (var si = 0; si < this.applied.specials.length; si++) {
+        var sdef = CW.COLLECTIBLE_MAP[this.applied.specials[si]];
+        if (sdef) chips += '<span class="summary-chip special" style="--tone:' + CW.COLLECTIBLE_RARITY_MAP[sdef.rarity].color + '">稀有升级件 · ' + sdef.name + ' +1</span>';
+      }
+    }
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
       var n = this.applied.stored[m.id] || 0;
@@ -690,15 +698,17 @@
      沉城抓钩
      ═══════════════════════════════════════════════════════════ */
   var ITEM_TYPES = {
-    scrap: { name: '废钢', credits: 35, mats: { metal: 2 }, weight: 1.1, color: '#b8c5c6' },
-    barrel: { name: '燃料桶', credits: 55, mats: { fuel: 2 }, weight: 1.55, color: '#ffb15e' },
-    tarp: { name: '纤维捆', credits: 40, mats: { fiber: 2 }, weight: 0.9, color: '#9be2a9' },
-    chip: { name: '芯片箱', credits: 85, mats: { chip: 2 }, weight: 1.75, color: '#79d8ff' },
-    glass: { name: '玻璃瓶', credits: 45, mats: { glass: 2 }, weight: 1.0, color: '#8fe0d8' },
-    copper: { name: '铜线圈', credits: 70, mats: { copper: 2 }, weight: 1.25, color: '#e2a06a' },
-    safe: { name: '保险箱', credits: 170, mats: { metal: 3, chip: 1 }, weight: 2.75, color: '#d9c7a1' },
-    gold: { name: '金条', credits: 280, mats: {}, weight: 2.2, color: '#ffd166' },
-    filter: { name: '海水过滤器', credits: 0, mats: {}, weight: 2.45, color: '#9feeff', rare: true },
+    scrap: { name: '废钢', credits: 35, mats: { metal: 2 }, weight: 1.1, color: '#b8c5c6', tier: 'low' },
+    barrel: { name: '燃料桶', credits: 55, mats: { fuel: 2 }, weight: 1.55, color: '#ffb15e', tier: 'low' },
+    tarp: { name: '纤维捆', credits: 40, mats: { fiber: 2 }, weight: 0.9, color: '#9be2a9', tier: 'low' },
+    glass: { name: '玻璃瓶', credits: 45, mats: { glass: 2 }, weight: 1.0, color: '#8fe0d8', tier: 'low' },
+    copper: { name: '铜线圈', credits: 70, mats: { copper: 2 }, weight: 1.25, color: '#e2a06a', tier: 'low' },
+    chip: { name: '芯片箱', credits: 85, mats: { chip: 2 }, weight: 1.75, color: '#79d8ff', tier: 'mid' },
+    safe: { name: '保险箱', credits: 170, mats: { metal: 3, chip: 1 }, weight: 2.75, color: '#d9c7a1', tier: 'high' },
+    gold: { name: '金条', credits: 280, mats: {}, weight: 2.2, color: '#ffd166', tier: 'high' },
+    relic: { name: '沉船秘宝', credits: 420, mats: { chip: 2, glass: 2, copper: 2 }, weight: 3.0, color: '#d9b8ff', tier: 'high', specialDrop: 0.35 },
+    treasure: { name: '黄金宝箱', credits: 680, mats: { chip: 3, glass: 3, copper: 3 }, weight: 3.4, color: '#ffe18a', tier: 'high', specialDrop: 0.6 },
+    filter: { name: '海水过滤器', credits: 0, mats: {}, weight: 2.45, color: '#9feeff', rare: true, tier: 'special' },
     mine: { name: '水雷', credits: 0, mats: {}, weight: 0, color: '#ff6c55', mine: true }
   };
 
@@ -727,7 +737,10 @@
     this.safeCount = 0;
     this.goldCount = 0;
     this.collectibles = [];
+    this.specials = [];
     this.filters = 0;
+    this.lowStreak = 0;
+    this.highCaught = 0;
     this.rareFound = false;
     this.hasFilter = false;
     this.counts = emptyMaterialCounts();
@@ -774,11 +787,18 @@
     this.safeCount = 0;
     this.goldCount = 0;
     this.collectibles = [];
+    this.specials = [];
+    this.lowStreak = 0;
+    this.highCaught = 0;
     this.length = 62;
     this.swingTime = 0;
     this.angle = 0;
     this.itemScale = clamp(Math.min(this.w, this.h) / 400, 0.9, 1.2);
-    var pool = ['scrap', 'scrap', 'scrap', 'barrel', 'barrel', 'barrel', 'tarp', 'tarp', 'tarp', 'chip', 'chip', 'glass', 'glass', 'copper', 'copper', 'safe', 'safe', 'gold', 'mine', 'mine', 'mine', 'scrap', 'collectible'];
+    var pool = [
+      'scrap', 'scrap', 'barrel', 'barrel', 'tarp', 'tarp', 'glass', 'copper',
+      'chip', 'chip', 'safe', 'safe', 'gold', 'gold', 'relic', 'relic', 'treasure',
+      'mine', 'mine', 'collectible', 'collectible'
+    ];
     if (this.condition) {
       if (this.condition.mines < 0) pool = pool.filter(function (key) { return key !== 'mine'; });
       else for (var extraMine = 0; extraMine < this.condition.mines; extraMine++) pool.push('mine');
@@ -806,7 +826,7 @@
         key: key,
         x: x,
         y: y,
-        r: (key === 'safe' ? 20 : key === 'gold' ? 17 : 16) * this.itemScale,
+        r: (key === 'treasure' ? 22 : key === 'safe' ? 20 : key === 'relic' ? 19 : key === 'gold' ? 18 : 16) * this.itemScale,
         phase: Math.random() * TAU,
         grabbed: false,
         dead: false
@@ -869,6 +889,9 @@
     this.safeCount = 0;
     this.goldCount = 0;
     this.collectibles = [];
+    this.specials = [];
+    this.lowStreak = 0;
+    this.highCaught = 0;
     this.buildItemSprites();
     this.audio.click();
   };
@@ -1030,14 +1053,57 @@
       this.bestCombo = Math.max(this.bestCombo, this.combo);
       if (it.key === 'safe') this.safeCount += 1;
       if (it.key === 'gold') this.goldCount += 1;
+      var highTier = data.tier === 'high';
+      this.lowStreak = highTier ? 0 : this.lowStreak + 1;
+      if (highTier) this.highCaught += 1;
       var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.08));
+      var crit = Math.random() < 0.15;
+      if (crit) gained *= 2;
       this.credits += gained;
       for (var key in data.mats) {
         if (Object.prototype.hasOwnProperty.call(data.mats, key)) this.counts[key] = (this.counts[key] || 0) + data.mats[key];
       }
-      this.popups.push({ x: it.x, y: it.y - 20, text: '+' + gained, color: '#ffd166', life: 1.2, maxLife: 1.2 });
+      this.popups.push({ x: it.x, y: it.y - 20, text: '+' + gained + (crit ? ' 暴击×2' : ''), color: crit ? '#ff9a5c' : '#ffd166', life: crit ? 1.5 : 1.2, maxLife: crit ? 1.5 : 1.2 });
       if (this.combo > 1) this.popups.push({ x: it.x, y: it.y - 40, text: '连击 ×' + this.combo, color: '#9feeff', life: 1.2, maxLife: 1.2 });
-      this.spawnBurst(it.x, it.y, data.color, 16, 110);
+      if (this.combo === 4 || this.combo === 7) {
+        var comboBonus = this.combo === 4 ? 80 : 180;
+        this.credits += comboBonus;
+        this.flash = 0.2;
+        this.popups.push({ x: it.x, y: it.y - 61, text: '连击奖励 +' + comboBonus, color: '#ffcf72', life: 1.6, maxLife: 1.6 });
+      }
+      if (data.specialDrop && Math.random() < data.specialDrop) {
+        var sid = CW.rollSpecialMaterial();
+        var sdef = CW.COLLECTIBLE_MAP[sid];
+        this.specials.push(sid);
+        this.flash = 0.38;
+        this.popups.push({ x: it.x, y: it.y - 78, text: '稀有升级件！' + sdef.name, color: '#d9b8ff', life: 2.2, maxLife: 2.2 });
+        this.spawnBurst(it.x, it.y, '#d9b8ff', 34, 170);
+      } else if (highTier && this.highCaught >= 4 && !this.specials.length) {
+        var gsid = CW.rollSpecialMaterial();
+        var gsdef = CW.COLLECTIBLE_MAP[gsid];
+        this.specials.push(gsid);
+        this.flash = 0.35;
+        this.popups.push({ x: it.x, y: it.y - 78, text: '打捞保底 · ' + gsdef.name, color: '#d9b8ff', life: 2.2, maxLife: 2.2 });
+        this.spawnBurst(it.x, it.y, '#d9b8ff', 30, 160);
+      }
+      if (this.lowStreak >= 4) {
+        this.lowStreak = 0;
+        var converted = false;
+        for (var li = 0; li < this.items.length; li++) {
+          var litem = this.items[li];
+          if (litem === it || litem.grabbed) continue;
+          if (ITEM_TYPES[litem.key] && ITEM_TYPES[litem.key].tier === 'low') {
+            litem.key = 'treasure';
+            litem.r = 22 * this.itemScale;
+            converted = true;
+            this.popups.push({ x: litem.x, y: litem.y - 24, text: '深海馈赠 · 宝箱出现', color: '#ffe18a', life: 2.0, maxLife: 2.0 });
+            this.spawnBurst(litem.x, litem.y, '#ffd166', 20, 120);
+            break;
+          }
+        }
+        if (!converted) this.credits += 120;
+      }
+      this.spawnBurst(it.x, it.y, data.color, highTier ? 30 : 16, highTier ? 160 : 110);
       this.audio.coin();
     }
     var idx = this.items.indexOf(it);
@@ -1101,6 +1167,7 @@
       safeCount: this.safeCount,
       goldCount: this.goldCount,
       collectibles: this.collectibles.slice(),
+      specials: this.specials.slice(),
       materials: this.counts
     };
   };
@@ -1154,8 +1221,8 @@
       var g = c.getContext('2d');
       g.translate(size / 2, size / 2);
       var glow = g.createRadialGradient(0, 0, 0, 0, 0, s * 2.3);
-      glow.addColorStop(0, data.mine ? 'rgba(255, 90, 65, 0.2)' : data.color + '22');
-      glow.addColorStop(1, data.mine ? 'rgba(255, 90, 65, 0)' : data.color + '00');
+      glow.addColorStop(0, data.mine ? 'rgba(255, 90, 65, 0.2)' : data.tier === 'high' ? hexA(data.color, 0.38) : hexA(data.color, 0.15));
+      glow.addColorStop(1, data.mine ? 'rgba(255, 90, 65, 0)' : hexA(data.color, 0));
       g.fillStyle = glow;
       g.beginPath();
       g.arc(0, 0, s * 2.3, 0, TAU);
@@ -1172,8 +1239,8 @@
       g.fillStyle = data.mine ? 'rgba(255, 48, 34, 0.28)' : 'rgba(0, 10, 15, 0.12)';
       g.fillRect(-s, -s, s * 2, s * 2);
       g.restore();
-      g.strokeStyle = data.mine ? 'rgba(255, 108, 85, 0.6)' : 'rgba(218, 255, 249, 0.2)';
-      g.lineWidth = 1;
+      g.strokeStyle = data.mine ? 'rgba(255, 108, 85, 0.65)' : data.tier === 'high' ? data.color : data.tier === 'mid' ? 'rgba(121, 216, 255, 0.65)' : 'rgba(218, 255, 249, 0.28)';
+      g.lineWidth = data.tier === 'high' ? 3 : data.tier === 'mid' ? 2 : 1;
       g.beginPath();
       g.arc(0, 0, s * 1.08, 0, TAU);
       g.stroke();
@@ -1373,7 +1440,7 @@
     if (sprite) {
       ctx.drawImage(sprite, -sprite.width / 2, -sprite.height / 2);
       ctx.restore();
-      this.drawItemLabel(ctx, x, y + s + 9, data.name, data.mine ? '#ff8a6b' : data.color);
+      this.drawItemLabel(ctx, x, y + s + 13, (data.tier === 'high' ? '★ ' : '') + data.name, data.mine ? '#ff8a6b' : data.color);
       return;
     }
 
@@ -1535,14 +1602,14 @@
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '700 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+    ctx.font = '800 11px "Noto Sans SC", "Microsoft YaHei", sans-serif';
     var tw = ctx.measureText(text).width;
-    ctx.fillStyle = 'rgba(255, 252, 244, 0.88)';
+    ctx.fillStyle = 'rgba(255, 252, 244, 0.96)';
     ctx.beginPath();
-    ctx.roundRect(x - tw / 2 - 5, y - 8, tw + 10, 16, 8);
+    ctx.roundRect(x - tw / 2 - 6, y - 9, tw + 12, 18, 9);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(23, 78, 82, 0.12)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.fillStyle = color === '#ff8a6b' ? '#b9472c' : '#24555a';
     ctx.fillText(text, x, y + 0.5);
