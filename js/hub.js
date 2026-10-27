@@ -42,56 +42,71 @@
     {
       id: 'storage', name: '仓库扩容', icon: '仓', iconImg: 'assets/real/storage.webp', tone: '#ffc46b',
       desc: '仓库容量 +30',
-      max: 5,
+      max: 7,
+      shelter: [1, 1, 1, 1, 1, 2, 4],
       costs: [
         { credits: 120, metal: 8, fiber: 4 },
         { credits: 300, metal: 16, fiber: 9, glass: 4 },
         { credits: 750, metal: 26, fiber: 15, copper: 6 },
         { credits: 1800, metal: 40, fiber: 24, glass: 10, copper: 8 },
-        { credits: 4200, metal: 60, fiber: 36, glass: 18, copper: 14 }
+        { credits: 4200, metal: 60, fiber: 36, glass: 18, copper: 14 },
+        { credits: 9000, metal: 70, fiber: 45, glass: 22, copper: 18 },
+        { credits: 20000, metal: 100, fiber: 60, glass: 35, copper: 30, chip: 20 }
       ]
     },
     {
       id: 'workshop', name: '打捞工坊', icon: '工', iconImg: 'assets/real/workshop.webp', tone: '#9dffc7',
       desc: '所有打捞币收益 +10%',
-      max: 5,
+      max: 7,
+      shelter: [1, 1, 1, 1, 1, 2, 4],
       costs: [
         { credits: 180, metal: 6, chip: 2 },
         { credits: 450, metal: 12, chip: 5, copper: 4 },
         { credits: 1000, metal: 20, chip: 9, glass: 5 },
         { credits: 2200, metal: 32, chip: 15, glass: 8, copper: 10 },
-        { credits: 4800, metal: 50, chip: 24, glass: 16, copper: 16 }
+        { credits: 4800, metal: 50, chip: 24, glass: 16, copper: 16 },
+        { credits: 10000, metal: 65, chip: 30, glass: 20, copper: 22 },
+        { credits: 24000, metal: 90, chip: 45, glass: 30, copper: 35 }
       ]
     },
     {
       id: 'sonar', name: '声呐阵列', icon: '声', iconImg: 'assets/real/sonar.webp', tone: '#79d8ff',
       desc: '所有物资收益 +12%',
-      max: 4,
+      max: 6,
+      shelter: [1, 1, 1, 1, 2, 4],
       costs: [
         { credits: 260, fuel: 6, chip: 3 },
         { credits: 650, fuel: 12, chip: 7, glass: 3 },
         { credits: 1500, fuel: 20, chip: 12, copper: 5 },
-        { credits: 3400, fuel: 32, chip: 20, glass: 8, copper: 8 }
+        { credits: 3400, fuel: 32, chip: 20, glass: 8, copper: 8 },
+        { credits: 7000, fuel: 50, chip: 30, glass: 20, copper: 18 },
+        { credits: 16000, fuel: 75, chip: 50, glass: 30, copper: 30 }
       ]
     },
     {
       id: 'core', name: '聚变核心', icon: '核', iconImg: 'assets/real/core.webp', tone: '#ff8a5c',
       desc: '抓钩 +5 秒 · 三消 +2 步',
-      max: 3,
+      max: 5,
+      shelter: [1, 1, 1, 3, 5],
       costs: [
         { credits: 600, metal: 10, fuel: 8, fiber: 8, chip: 6 },
         { credits: 1600, metal: 18, fuel: 15, fiber: 15, chip: 11, copper: 5 },
-        { credits: 3800, metal: 30, fuel: 26, fiber: 26, chip: 20, glass: 6, copper: 8 }
+        { credits: 3800, metal: 30, fuel: 26, fiber: 26, chip: 20, glass: 6, copper: 8 },
+        { credits: 8000, metal: 50, fuel: 40, fiber: 40, chip: 30, glass: 15, copper: 15 },
+        { credits: 18000, metal: 80, fuel: 60, fiber: 60, chip: 45, glass: 25, copper: 25 }
       ]
     },
     {
       id: 'purifier', name: '净水舱', icon: '水', tone: '#79d8ff',
       desc: '打捞币收益 +10% · 物资收益 +5%',
-      max: 3, iconImg: 'assets/seawater-filter-icon.webp',
+      max: 5, iconImg: 'assets/seawater-filter-icon.webp',
+      shelter: [1, 1, 1, 3, 5],
       costs: [
         { credits: 500, filters: 1, metal: 8, fiber: 6, chip: 4 },
         { credits: 1400, filters: 1, metal: 14, fiber: 10, chip: 8, glass: 5 },
-        { credits: 3200, filters: 1, metal: 22, fiber: 16, chip: 12, glass: 10, copper: 6 }
+        { credits: 3200, filters: 1, metal: 22, fiber: 16, chip: 12, glass: 10, copper: 6 },
+        { credits: 7000, filters: 1, metal: 35, fiber: 25, chip: 20, glass: 20, copper: 12 },
+        { credits: 16000, filters: 1, metal: 55, fiber: 40, chip: 35, glass: 35, copper: 25 }
       ]
     }
   ]);
@@ -187,10 +202,27 @@
       id: 'sonar', name: '老陈', role: '声呐员', iconImg: 'assets/real/sonar.webp',
       duration: 900, cost: 1500, desc: '用旧声呐扫描外海，偶尔能带回净水核心。',
       credits: [700, 1300], mats: { chip: [3, 6], fuel: [2, 4] }, collectibleChance: 0, filterChance: 0.1
+    },
+    {
+      id: 'navigator', name: '阿岚', role: '海图师', iconImg: 'assets/collectibles/chart-tube.webp', unlockLevel: 3,
+      duration: 1200, cost: 2600, desc: '沿着旧海图找沉船，专带稀有收藏与玻璃铜件。',
+      credits: [400, 700], mats: { glass: [5, 9], copper: [4, 7], chip: [2, 4] }, collectibleChance: 0.65
+    },
+    {
+      id: 'captain', name: '老周', role: '打捞长', iconImg: 'assets/collectibles/captain-log.webp', unlockLevel: 5,
+      duration: 2100, cost: 5200, desc: '指挥整支打捞队，带回大批物资，偶尔有净水核心。',
+      credits: [1500, 2600], mats: { metal: [8, 14], fiber: [6, 10], chip: [4, 8] }, collectibleChance: 0.2, filterChance: 0.18
     }
   ]);
 
   var CREW_LEVEL_XP = [0, 1, 3, 6, 10];
+  var SHELTER_LEVELS = (CW.SHELTER_LEVELS = [
+    null,
+    { level: 2, credits: 4000, mats: { metal: 20, fiber: 20 }, unique: 4, runs: 10, unlock: '开放高级扩建等级' },
+    { level: 3, credits: 12000, mats: { glass: 24, copper: 24 }, unique: 8, runs: 25, unlock: '解锁「阿岚」与高级扩建' },
+    { level: 4, credits: 30000, mats: { chip: 30, fuel: 24 }, unique: 12, runs: 50, unlock: '开放更多高级扩建' },
+    { level: 5, credits: 80000, mats: { metal: 30, fiber: 30, chip: 20, glass: 20, copper: 20 }, unique: 15, runs: 100, unlock: '解锁「老周」与终极扩建' }
+  ]);
 
   function crewDef(id) {
     for (var i = 0; i < CREW.length; i++) if (CREW[i].id === id) return CREW[i];
@@ -519,6 +551,7 @@
       collectibles: {},
       equipped: [],
       contracts: makeContractSet(),
+      shelterLevel: 1,
       crew: {},
       crewXp: {},
       contractRound: 1,
@@ -628,6 +661,7 @@
       data.best.cut = Math.max(0, Number(raw.best.cut) || 0);
       data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
+      data.shelterLevel = clamp(Math.floor(Number(raw.shelterLevel) || 1), 1, 5);
       data.crewXp = {};
       if (raw.crewXp && typeof raw.crewXp === 'object') {
         for (var cx in raw.crewXp) {
@@ -768,7 +802,19 @@
     for (var i = 0; i < UPGRADES.length; i++) sum += this.data.upgrades[UPGRADES[i].id] || 0;
     return 1 + sum;
   };
-  Hub.prototype.capacity = function () { return 72 + (this.data.upgrades.storage || 0) * 30; };
+  Hub.prototype.shelterLevel = function () { return clamp(Math.floor(Number(this.data.shelterLevel) || 1), 1, 5); };
+  Hub.prototype.shelterNext = function () { return SHELTER_LEVELS[this.shelterLevel()] || null; };
+  Hub.prototype.shelterCollectibleChance = function () { return Math.min(0.2, (this.shelterLevel() - 1) * 0.045); };
+  Hub.prototype.collectionArtifactUnique = function () {
+    var n = 0;
+    var map = this.data.collectibles || {};
+    for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
+      var item = CW.COLLECTIBLES[i];
+      if (!item.special && (map[item.id] || 0) > 0) n++;
+    }
+    return n;
+  };
+  Hub.prototype.capacity = function () { return 72 + (this.data.upgrades.storage || 0) * 30 + (this.shelterLevel() - 1) * 15; };
   Hub.prototype.used = function () {
     var sum = 0;
     for (var i = 0; i < MATERIALS.length; i++) sum += this.data.materials[MATERIALS[i].id] || 0;
@@ -1017,7 +1063,7 @@
   /* ── title / meta ────────────────────────────────────────── */
   Hub.prototype.refreshMeta = function () {
     if (!this.dom) return;
-    var lvl = this.level();
+    var lvl = this.shelterLevel();
     var cap = this.capacity();
     var used = this.used();
     if (this.dom.titleLevel) this.dom.titleLevel.textContent = String(lvl);
@@ -1031,7 +1077,7 @@
     if (!this.dom) return;
     var used = this.used();
     var cap = this.capacity();
-    var lvl = this.level();
+    var lvl = this.shelterLevel();
     if (this.dom.day) this.dom.day.textContent = fmtInt(this.dayNumber());
     if (this.dom.level) this.dom.level.textContent = String(lvl);
     if (this.dom.credits) this.dom.credits.textContent = fmt(this.data.credits);
@@ -1093,8 +1139,8 @@
         this.dom.panelNote.textContent = achievementsReady ? achievementsReady + ' 项成就可领取' : '长期记录与一次性里程碑';
       } else {
         this.dom.panelTitle.textContent = '扩建疯狂号';
-        this.dom.panelTag.textContent = 'Lv.' + this.level();
-        this.dom.panelNote.textContent = '升级消耗打捞币与仓库材料';
+        this.dom.panelTag.textContent = '避难所 Lv.' + this.shelterLevel();
+        this.dom.panelNote.textContent = '提升避难所等级，开放更高扩建与玩法';
       }
     }
   };
@@ -1153,6 +1199,7 @@
     var n = 0;
     var now = Date.now();
     for (var i = 0; i < CREW.length; i++) {
+      if ((CREW[i].unlockLevel || 1) > this.shelterLevel()) continue;
       var job = this.crewJob(CREW[i].id);
       if (job && Number(job.remaining) <= 0) n++;
     }
@@ -1201,6 +1248,11 @@
   Hub.prototype.hireCrew = function (id) {
     var def = crewDef(id);
     if (!def) return;
+    if ((def.unlockLevel || 1) > this.shelterLevel()) {
+      this.audio.warn();
+      this.showToast('LOCKED', def.name + ' 尚未解锁', '需要避难所 Lv.' + def.unlockLevel);
+      return;
+    }
     var job = this.crewJob(id);
     if (job && Number(job.remaining) > 0) return;
     if ((this.data.credits || 0) < def.cost) {
@@ -1250,6 +1302,13 @@
     var html = '<div class="crew-head"><div><span>CREW DOCK · 打捞队</span><b>把等待变成下一船物资</b><p>雇佣后在避难所开启期间倒计时；每个船员一次只能跑一个岗位。</p></div><div class="crew-ready"><b>' + this.crewReadyCount() + '</b><span>可领取</span></div></div><div class="crew-grid">';
     for (var i = 0; i < CREW.length; i++) {
       var def = CREW[i];
+      var locked = (def.unlockLevel || 1) > this.shelterLevel();
+      if (locked) {
+        html += '<article class="crew-card locked"><div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + (def.unlockLevel || 1) + '</em></div>' +
+          '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>未解锁</em></div><p>' + def.desc + '</p><div class="crew-reward">避难所达到 Lv.' + (def.unlockLevel || 1) + ' 后开放</div></div>' +
+          '<div class="crew-action"><button class="crew-btn" disabled>避难所 Lv.' + (def.unlockLevel || 1) + ' 解锁</button></div></article>';
+        continue;
+      }
       var job = this.crewJob(def.id);
       var level = this.crewLevel(def.id);
       var xp = Math.max(0, Number(this.data.crewXp[def.id]) || 0);
@@ -2358,14 +2417,29 @@
 
   Hub.prototype.renderShelter = function () {
     if (this.shelterView === 'log') { this.renderAchievements(); return; }
-    var lvl = this.level();
-    var html = this.shelterSwitch() + '<div class="shelter-head"><span>避难所等级</span><b>Lv.' + lvl + '</b></div><div class="upgrade-list">';
+    var lvl = this.shelterLevel();
+    var next = this.shelterNext();
+    var canLevel = this.shelterRequirementsMet();
+    var levelCard = '<div class="shelter-level-card"><div class="shelter-level-copy"><span>REFUGE LEVEL · 避难所等级</span><b>Lv.' + lvl + (next ? ' / 5' : ' · 满级') + '</b>' +
+      '<p>收藏掉落加成 +' + Math.round(this.shelterCollectibleChance() * 100) + '% · 仓库容量 +' + ((lvl - 1) * 15) + ' 格 · 设施 ' + this.level() + ' 级</p>' +
+      (next ? '<div class="shelter-req"><span class="' + (this.data.credits >= next.credits ? 'ok' : '') + '">币 ' + fmt(next.credits) + '</span>' +
+        Object.keys(next.mats).map(function (id) {
+          var md = null; for (var q = 0; q < MATERIALS.length; q++) if (MATERIALS[q].id === id) md = MATERIALS[q];
+          return '<span class="' + ((this.data.materials[id] || 0) >= next.mats[id] ? 'ok' : '') + '">' + (md ? md.name : id) + ' ' + next.mats[id] + '</span>';
+        }, this).join('') +
+        '<span class="' + (this.collectionArtifactUnique() >= next.unique ? 'ok' : '') + '">收藏 ' + Math.min(this.collectionArtifactUnique(), next.unique) + '/' + next.unique + '</span>' +
+        '<span class="' + (this.data.runs >= next.runs ? 'ok' : '') + '">出航 ' + Math.min(this.data.runs || 0, next.runs) + '/' + next.runs + '</span></div>' : '') +
+      '<div class="shelter-unlock">' + (next ? '下级解锁：' + next.unlock : '全部扩建与船员已解锁') + '</div></div>' +
+      '<button class="shelter-up-btn" data-action="shelter-levelup"' + (!next || !canLevel ? ' disabled' : '') + '>' + (next ? (canLevel ? '升级避难所' : '条件不足') : 'MAX') + '</button></div>';
+    var html = this.shelterSwitch() + levelCard + '<div class="shelter-head"><span>设施等级</span><b>Lv.' + this.level() + '</b></div><div class="upgrade-list">';
     for (var i = 0; i < UPGRADES.length; i++) {
       var up = UPGRADES[i];
       var level = this.data.upgrades[up.id] || 0;
       var maxed = level >= up.max;
       var cost = maxed ? null : up.costs[level];
-      var afford = !maxed && this.canAfford(cost);
+      var needShelter = up.shelter ? (up.shelter[level] || 1) : 1;
+      var locked = !maxed && needShelter > lvl;
+      var afford = !maxed && !locked && this.canAfford(cost);
       var missingFilter = !!(cost && cost.filters && (this.data.filters || 0) < cost.filters);
       var missingMats = false;
       if (cost) {
@@ -2375,7 +2449,7 @@
           }
         }
       }
-      var canSalvage = !maxed && !missingFilter && missingMats && this.collectionDuplicateStats().count > 0;
+      var canSalvage = !maxed && !locked && !missingFilter && missingMats && this.collectionDuplicateStats().count > 0;
       var pips = '';
       for (var p = 0; p < up.max; p++) pips += '<span class="pip ' + (p < level ? 'on' : '') + '"></span>';
       var chips = '';
@@ -2391,7 +2465,7 @@
         }
       }
       var iconHtml = up.iconImg ? '<img src="' + up.iconImg + '" alt="">' : up.icon;
-      html += '<div class="upgrade-card' + (up.id === 'purifier' ? ' rare' : '') + '">' +
+      html += '<div class="upgrade-card' + (up.id === 'purifier' ? ' rare' : '') + (locked ? ' locked' : '') + '">' +
         '<span class="upgrade-icon" style="--tone:' + up.tone + '">' + iconHtml + '</span>' +
         '<div class="upgrade-info">' +
           '<div class="upgrade-name">' + up.name + ' <span class="pips">' + pips + '</span> <span class="upgrade-level">Lv.' + level + '/' + up.max + '</span></div>' +
@@ -2400,13 +2474,46 @@
         '</div>' +
         '<div class="upgrade-actions">' +
           '<button class="buy-btn' + (maxed ? ' max' : '') + '" data-action="upgrade" data-upgrade="' + up.id + '"' +
-            (maxed || !afford ? ' disabled' : '') + '>' + (maxed ? 'MAX' : (afford ? '强化' : (missingFilter ? '缺过滤器' : '材料不足'))) + '</button>' +
+            (maxed || locked || !afford ? ' disabled' : '') + '>' + (maxed ? 'MAX' : (locked ? '需避难所 Lv.' + needShelter : (afford ? '强化' : (missingFilter ? '缺过滤器' : '材料不足')))) + '</button>' +
           (canSalvage ? '<button class="upgrade-salvage" data-action="upgrade-salvage" data-upgrade="' + up.id + '">藏品补料</button>' : '') +
         '</div>' +
       '</div>';
     }
     html += '</div>';
     this.dom.panelContent.innerHTML = html;
+  };
+
+  Hub.prototype.shelterRequirementsMet = function () {
+    var next = this.shelterNext();
+    if (!next) return false;
+    if ((this.data.credits || 0) < next.credits) return false;
+    if ((this.data.runs || 0) < next.runs) return false;
+    if (this.collectionArtifactUnique() < next.unique) return false;
+    for (var i = 0; i < MATERIALS.length; i++) {
+      var m = MATERIALS[i];
+      if (next.mats[m.id] && (this.data.materials[m.id] || 0) < next.mats[m.id]) return false;
+    }
+    return true;
+  };
+
+  Hub.prototype.upgradeShelter = function () {
+    var next = this.shelterNext();
+    if (!next || !this.shelterRequirementsMet()) {
+      this.audio.warn();
+      this.showToast('NOT READY', '避难所升级条件不足', '需要打捞币、材料、收藏与出航次数');
+      return;
+    }
+    this.data.credits -= next.credits;
+    for (var id in next.mats) {
+      if (!Object.prototype.hasOwnProperty.call(next.mats, id)) continue;
+      this.data.materials[id] -= next.mats[id];
+    }
+    this.data.shelterLevel = Math.min(5, this.shelterLevel() + 1);
+    this.audio.claim();
+    this.showToast('SHELTER UPGRADED', '避难所 Lv.' + this.data.shelterLevel, next.unlock + ' · 收藏几率与仓库容量提升');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
   };
 
   Hub.prototype.canAfford = function (cost) {
@@ -2426,6 +2533,11 @@
     if (!up) return;
     var level = this.data.upgrades[up.id] || 0;
     if (level >= up.max) return;
+    if (up.shelter && (up.shelter[level] || 1) > this.shelterLevel()) {
+      this.audio.warn();
+      this.showToast('LOCKED', '需要更高避难所等级', '先提升避难所等级');
+      return;
+    }
     var cost = up.costs[level];
     if (!this.canAfford(cost)) {
       this.audio.warn();
@@ -2527,6 +2639,11 @@
       this.data.sGrades[key] = true;
       sBonus = 300;
       this.data.credits += sBonus;
+    }
+    var shelterChance = this.shelterCollectibleChance();
+    if (shelterChance > 0 && CW.rollCollectibleDef && Math.random() < shelterChance) {
+      if (!Array.isArray(result.collectibles)) result.collectibles = [];
+      result.collectibles.push(CW.rollCollectibleDef().id);
     }
     var collectibles = this.registerCollectibles(result);
     result.collectibles = collectibles;
@@ -2717,6 +2834,7 @@
         else if (action === 'market-modal-close') self.closeMarketModal();
         else if (action === 'crew-hire') self.hireCrew(actionEl.getAttribute('data-id'));
         else if (action === 'crew-claim') self.claimCrew(actionEl.getAttribute('data-id'));
+        else if (action === 'shelter-levelup') self.upgradeShelter();
         return;
       }
       var tabEl = e.target.closest ? e.target.closest('[data-tab]') : null;
