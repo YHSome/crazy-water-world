@@ -1916,6 +1916,18 @@ body::after {
   .mission-desc { font-size: 12px; }
 }
 
+.contract-intro-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.contract-reroll { min-height: 30px; padding: 0 8px; border: 1px solid rgba(15, 143, 138, 0.24); border-radius: 8px; background: #eaf9f4; color: #0b7774; font-family: var(--mono); font-size: 9px; font-weight: 700; }
+.contract-reroll:disabled { border-color: rgba(19, 93, 96, 0.08); background: #eee9de; color: #9b917f; }
+.contract-reroll:not(:disabled):hover { background: #dff7ee; }
+.contract-card.rare { border-color: rgba(255, 174, 80, 0.38); background: linear-gradient(135deg, #fffcf4, #fff5df); }
+.contract-card.rare .contract-icon { border-color: rgba(255, 174, 80, 0.32); }
+.contract-rare { padding: 2px 5px; border-radius: 99px; background: #fff0cc; color: #a4611d; font-family: var(--mono); font-size: 8px; font-style: normal; font-weight: 700; vertical-align: middle; }
+@media (max-width: 380px) {
+  .contract-reroll { min-height: 32px; font-size: 9px; }
+  .contract-intro-foot { gap: 5px; }
+}
+
 /* Ship's log achievements */
 .shelter-switch { margin-bottom: 12px; }
 .achievement-summary { padding: 2px 2px 11px; border-bottom: 1px solid rgba(19, 93, 96, 0.09); }

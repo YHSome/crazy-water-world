@@ -152,6 +152,16 @@
       id: 'collector', name: '沉船收藏家', iconImg: 'assets/collectibles/tide-crown.webp', metric: 'collectibles', mode: 'sum', target: 3,
       desc: '累计从打捞中带回 3 件收藏品。',
       reward: { credits: 260, mats: { fiber: 2 } }
+    },
+    {
+      id: 'perfect-sonar', name: '全图回收', iconImg: 'assets/real/sonar.webp', metric: 'sonarPerfect', mode: 'max', target: 1, rare: true,
+      desc: '单局声呐扫掠找回全部 4 个货箱。',
+      reward: { credits: 520, mats: { chip: 4 } }
+    },
+    {
+      id: 'storm-run', name: '风暴猎手', iconImg: 'assets/real/mine.webp', metric: 'stormRun', mode: 'max', target: 1, rare: true,
+      desc: '在雷区、赤潮或包含它们的双重海况下完成一局。',
+      reward: { credits: 480, mats: { fuel: 4, fiber: 2 } }
     }
   ]);
 
@@ -279,11 +289,20 @@
   }
 
   function makeContractSet() {
-    var pool = CONTRACTS.slice();
+    var normal = [];
+    var rare = [];
+    for (var i = 0; i < CONTRACTS.length; i++) {
+      if (CONTRACTS[i].rare) rare.push(CONTRACTS[i]);
+      else normal.push(CONTRACTS[i]);
+    }
     var out = [];
-    while (out.length < 3 && pool.length) {
-      var idx = (Math.random() * pool.length) | 0;
-      var def = pool.splice(idx, 1)[0];
+    if (rare.length && chance(0.22)) {
+      var r = rare[(Math.random() * rare.length) | 0];
+      out.push({ id: r.id, progress: 0, claimed: false });
+    }
+    while (out.length < 3 && normal.length) {
+      var idx = (Math.random() * normal.length) | 0;
+      var def = normal.splice(idx, 1)[0];
       out.push({ id: def.id, progress: 0, claimed: false });
     }
     return out;
@@ -325,6 +344,7 @@
       collectibles: {},
       contracts: makeContractSet(),
       contractRound: 1,
+      contractRerollUsed: false,
       daily: null,
       dailyStreak: 0,
       lastDailyClaim: '',
@@ -382,6 +402,7 @@
     data.stats.goldTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.goldTotal) || 0));
     data.contracts = normalizeContractSet(raw.contracts);
     data.contractRound = Math.max(1, Math.floor(Number(raw.contractRound) || 1));
+    data.contractRerollUsed = !!raw.contractRerollUsed;
     data.dailyStreak = clamp(Math.floor(Number(raw.dailyStreak) || 0), 0, 999);
     data.lastDailyClaim = typeof raw.lastDailyClaim === 'string' ? raw.lastDailyClaim : '';
     if (raw.daily && typeof raw.daily === 'object') {
@@ -773,6 +794,11 @@
       case 'runs': return 1;
       case 'chips': return Math.max(0, Number(result.materials && result.materials.chip) || 0);
       case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
+      case 'sonarPerfect': return result.type === 'sonar' && Number(result.found || 0) >= 4 ? 1 : 0;
+      case 'stormRun': {
+        var cid = String(result.condition || '');
+        return cid.indexOf('storm') >= 0 || cid.indexOf('redtide') >= 0 ? 1 : 0;
+      }
       case 'collectibles': return Array.isArray(result.collectibles) ? result.collectibles.length : 0;
       default: return 0;
     }
@@ -909,12 +935,56 @@
       if (!this.data.contracts[i].claimed) { allClaimed = false; break; }
     }
     if (allClaimed) {
+      var clearBonus = this.grantContractReward({ credits: 120, mats: { metal: 4, fiber: 2 } });
       this.data.contracts = makeContractSet();
       this.data.contractRound = Math.max(1, this.data.contractRound || 1) + 1;
-      this.showToast('CONTRACT ROUND', '第 ' + this.data.contractRound + ' 轮契约', '新目标已刷新 · 继续打捞');
+      this.data.contractRerollUsed = false;
+      this.showToast('CONTRACT ROUND', '第 ' + this.data.contractRound + ' 轮契约', '全清额外 +' + fmt(clearBonus.credits) + ' 打捞币 · 新目标已刷新');
     } else {
       this.showToast('CONTRACT CLAIMED', def.name, '+' + fmt(reward.credits) + ' 打捞币' + (reward.overflow ? ' · 仓库溢出已折算' : ''));
     }
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.rerollContracts = function () {
+    if (this.data.contractRerollUsed) return;
+    if ((this.data.credits || 0) < 80) {
+      this.audio.warn();
+      this.showToast('NOT ENOUGH', '刷新需要 80 打捞币', '再捞一趟再来换目标');
+      return;
+    }
+    this.data.credits -= 80;
+    var kept = [];
+    for (var i = 0; i < this.data.contracts.length; i++) {
+      if (this.data.contracts[i] && this.data.contracts[i].claimed) kept.push(this.data.contracts[i]);
+    }
+    var fresh = makeContractSet();
+    var chosen = {};
+    var out = [];
+    for (var k = 0; k < kept.length; k++) {
+      out.push(kept[k]);
+      chosen[kept[k].id] = true;
+    }
+    for (var f = 0; f < fresh.length && out.length < 3; f++) {
+      if (chosen[fresh[f].id]) continue;
+      out.push(fresh[f]);
+      chosen[fresh[f].id] = true;
+    }
+    var guard = 0;
+    while (out.length < 3 && guard++ < 30) {
+      var extra = makeContractSet();
+      for (var e = 0; e < extra.length && out.length < 3; e++) {
+        if (chosen[extra[e].id]) continue;
+        out.push(extra[e]);
+        chosen[extra[e].id] = true;
+      }
+    }
+    this.data.contracts = out;
+    this.data.contractRerollUsed = true;
+    this.audio.buy();
+    this.showToast('CONTRACTS REROLLED', '契约已刷新', '已领取的契约保留 · 本轮不能再刷新');
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1057,10 +1127,16 @@
   Hub.prototype.renderContracts = function () {
     var round = Math.max(1, this.data.contractRound || 1);
     var ready = this.contractsReadyCount();
+    var rerollUsed = !!this.data.contractRerollUsed;
+    var canReroll = !rerollUsed && (this.data.credits || 0) >= 80;
     var html = '<div class="contract-intro">' +
       '<span class="contract-kicker">CONTRACT BOARD · 第 ' + round + ' 轮</span>' +
       '<p>完成打捞目标领取额外补给。三项全部领取后自动刷新下一轮，不需要等待时间。</p>' +
-      '<span class="contract-count">' + (ready ? ready + ' 项可领取' : '进行中') + '</span>' +
+      '<div class="contract-intro-foot"><span class="contract-count">' + (ready ? ready + ' 项可领取' : '进行中') + '</span>' +
+        '<button class="contract-reroll" data-action="reroll-contracts"' + (canReroll ? '' : ' disabled') + '>' +
+          (rerollUsed ? '本轮已刷新' : '刷新悬赏 · 80') +
+        '</button>' +
+      '</div>' +
       '</div><div class="contract-list">';
     for (var i = 0; i < this.data.contracts.length; i++) {
       var c = this.data.contracts[i];
@@ -1075,10 +1151,10 @@
         var amount = def.reward.mats && def.reward.mats[mat.id];
         if (amount) rewardHtml += '<span><img src="' + mat.iconImg + '" alt="">' + mat.name + ' +' + amount + '</span>';
       }
-      html += '<article class="contract-card' + (isReady ? ' ready' : '') + (c.claimed ? ' claimed' : '') + '">' +
+      html += '<article class="contract-card' + (def.rare ? ' rare' : '') + (isReady ? ' ready' : '') + (c.claimed ? ' claimed' : '') + '">' +
         '<div class="contract-icon"><img src="' + def.iconImg + '" alt=""></div>' +
         '<div class="contract-body">' +
-          '<div class="contract-title"><b>' + def.name + '</b><span>' + progress + ' / ' + def.target + '</span></div>' +
+          '<div class="contract-title"><b>' + def.name + (def.rare ? ' <em class="contract-rare">稀有</em>' : '') + '</b><span>' + progress + ' / ' + def.target + '</span></div>' +
           '<p class="contract-desc">' + def.desc + '</p>' +
           '<div class="contract-track"><i style="width:' + (pct * 100).toFixed(1) + '%"></i></div>' +
           '<div class="contract-reward">' + rewardHtml + '</div>' +
@@ -1594,6 +1670,7 @@
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
+        else if (action === 'reroll-contracts') self.rerollContracts();
         else if (action === 'claim-daily') self.claimDaily();
         else if (action === 'craft') self.craft(actionEl.getAttribute('data-rarity'));
         else if (action === 'claim-achievement') self.claimAchievement(actionEl.getAttribute('data-id'));
