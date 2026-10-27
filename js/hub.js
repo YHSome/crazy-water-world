@@ -445,6 +445,7 @@
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0 },
       taskChain: 0,
+      taskChainTypes: [],
       lastTask: '',
       runs: 0
     };
@@ -530,6 +531,15 @@
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
       data.taskChain = clamp(Math.floor(Number(raw.taskChain) || 0), 0, 6);
       data.lastTask = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon'].indexOf(raw.lastTask) >= 0 ? raw.lastTask : '';
+      data.taskChainTypes = [];
+      if (Array.isArray(raw.taskChainTypes)) {
+        for (var tc = 0; tc < raw.taskChainTypes.length && data.taskChainTypes.length < 6; tc++) {
+          var tid = raw.taskChainTypes[tc];
+          if (['hook', 'match', 'sonar', 'cut', 'sort', 'beacon'].indexOf(tid) >= 0 && data.taskChainTypes.indexOf(tid) < 0) {
+            data.taskChainTypes.push(tid);
+          }
+        }
+      }
     }
     return data;
   }
@@ -928,9 +938,9 @@
   Hub.prototype.renderTaskChain = function () {
     var chain = clamp(Math.floor(Number(this.data.taskChain) || 0), 0, 6);
     var msg;
-    if (chain >= 6) msg = '环线全开 · 换任务仍保持 +20% 打捞币';
-    else if (chain >= 3) msg = '再换 ' + (6 - chain) + ' 种任务到达 +20% · 重复同一任务会重置';
-    else msg = '再换 ' + (3 - chain) + ' 种不同任务到达 +10% · 重复同一任务会重置';
+    if (chain >= 6) msg = '环线全开 · 本局 +20% 打捞币；下一次任务会重置';
+    else if (chain >= 3) msg = '再完成 ' + (6 - chain) + ' 种新任务到达 +20% · 重复本环线任务会重置';
+    else msg = '再完成 ' + (3 - chain) + ' 种新任务到达 +10% · 重复本环线任务会重置';
     var pips = '';
     for (var i = 0; i < 6; i++) pips += '<i class="' + (i < chain ? 'on' : '') + '"></i>';
     return '<div class="chain-card"><div class="chain-head"><span>ROUTE LINK · 环线连携</span><b>' + chain + ' / 6</b></div>' +
@@ -1726,7 +1736,12 @@
 
   Hub.prototype.applyRunResult = function (result) {
     var taskType = result.type || 'hook';
-    var chain = taskType !== this.data.lastTask ? Math.min(6, (this.data.taskChain || 0) + 1) : 1;
+    var chainTypes = Array.isArray(this.data.taskChainTypes) ? this.data.taskChainTypes.slice() : [];
+    if (chainTypes.indexOf(taskType) >= 0 || taskType === this.data.lastTask) chainTypes = [];
+    chainTypes.push(taskType);
+    if (chainTypes.length > 6) chainTypes = chainTypes.slice(-6);
+    this.data.taskChainTypes = chainTypes;
+    var chain = chainTypes.length;
     this.data.taskChain = chain;
     this.data.lastTask = taskType;
     var chainMult = chain >= 6 ? 1.2 : chain >= 3 ? 1.1 : 1;
