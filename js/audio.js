@@ -345,6 +345,12 @@
     this.tone(880, 0.4, 'sine', 0.045, 0.14);
   };
 
+  AudioEngine.prototype.sonarDeep = function () {
+    this.tone(520, 0.3, 'sine', 0.055, 0, 280);
+    this.tone(260, 0.4, 'triangle', 0.04, 0.08);
+    this.noiseBurst(0.22, 0.03, 1400, 1.6);
+  };
+
   AudioEngine.prototype.matchLine = function () {
     this.tone(420, 0.18, 'sawtooth', 0.055, 0, 1100);
     this.noiseBurst(0.2, 0.04, 1600, 1.1);

@@ -138,6 +138,11 @@
         cargoItem.collectibleName = cdef.name;
       }
     }
+    if (chance(0.55) && cargoKeys.length) {
+      var deepKey = cargoKeys[(Math.random() * cargoKeys.length) | 0];
+      this.cargo[deepKey].deep = true;
+      this.cargo[deepKey].hits = 0;
+    }
   };
 
   SonarGame.prototype.layout = function () {
@@ -213,14 +218,21 @@
   SonarGame.prototype.pointerDown = function (x, y) {
     if (this.phase !== 'playing' || this.done || this.ending > 0) return;
     var cell = this.cellAt(x, y);
-    if (!cell || this.revealed[cell.r][cell.c]) return;
-    this.probesLeft -= 1;
-    this.revealed[cell.r][cell.c] = true;
+    if (!cell) return;
     var key = cell.r + ':' + cell.c;
     var item = this.cargo[key];
+    var canDeepRetry = !!(item && item.deep && !item.found && item.hits > 0);
+    if (this.revealed[cell.r][cell.c] && !canDeepRetry) return;
+    this.probesLeft -= 1;
+    this.revealed[cell.r][cell.c] = true;
     var cx = this.boardX + cell.c * this.cell + this.cell / 2;
     var cy = this.boardY + cell.r * this.cell + this.cell / 2;
-    if (item) {
+    if (item && item.deep && !item.found && !item.hits) {
+      item.hits = 1;
+      this.clues[cell.r][cell.c] = 'deep';
+      this.rings.push({ x: cx, y: cy, life: 0.65, maxLife: 0.65, color: '#ffc857', big: true });
+      this.audio.sonarDeep();
+    } else if (item) {
       item.found = true;
       this.found += 1;
       var data = CARGO[item.key];
@@ -247,6 +259,7 @@
       this.spawnBurst(cx, cy, data.color, item.key === 'filter' ? 28 : 16);
       this.audio.sonarFound();
       if (item.key === 'filter') this.flash = 0.35;
+      this.chainReveal(cell.r, cell.c);
     } else {
       var dist = this.nearest(cell.r, cell.c);
       this.clues[cell.r][cell.c] = dist;
@@ -257,6 +270,27 @@
   };
 
   SonarGame.prototype.pointerUp = function () {};
+
+  SonarGame.prototype.chainReveal = function (r, c) {
+    var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    var options = [];
+    for (var i = 0; i < dirs.length; i++) {
+      var rr = r + dirs[i][0];
+      var cc = c + dirs[i][1];
+      if (rr < 0 || rr >= this.rows || cc < 0 || cc >= this.cols) continue;
+      if (this.revealed[rr][cc]) continue;
+      if (this.cargo[rr + ':' + cc]) continue;
+      options.push({ r: rr, c: cc });
+    }
+    if (!options.length) return;
+    var pick = options[(Math.random() * options.length) | 0];
+    this.revealed[pick.r][pick.c] = true;
+    this.clues[pick.r][pick.c] = this.nearest(pick.r, pick.c);
+    var x = this.boardX + pick.c * this.cell + this.cell / 2;
+    var y = this.boardY + pick.r * this.cell + this.cell / 2;
+    this.rings.push({ x: x, y: y, life: 0.5, maxLife: 0.5, color: '#18b8b0', big: false });
+    this.popups.push({ x: x, y: y - this.cell * 0.55, text: '连锁回波 +1', color: '#0f8f8a', life: 1.2, maxLife: 1.2 });
+  };
 
   SonarGame.prototype.spawnBurst = function (x, y, color, count) {
     for (var i = 0; i < count; i++) {
@@ -324,6 +358,11 @@
   };
 
   SonarGame.prototype.getHud = function () {
+    var deepPending = false;
+    for (var key in this.cargo) {
+      if (!Object.prototype.hasOwnProperty.call(this.cargo, key)) continue;
+      if (this.cargo[key].deep && !this.cargo[key].found) { deepPending = true; break; }
+    }
     return {
       statLabel: '剩余声呐',
       stat: String(this.probesLeft),
@@ -334,7 +373,9 @@
         chip: this.counts.chip
       },
       hasAction: false,
-      hint: '点击格子发射声呐 · 数字是离最近货箱的格数'
+      hint: deepPending
+        ? '深层货箱需要二次探测 · 找到货箱会连锁揭示一格'
+        : '点击格子发射声呐 · 数字是离最近货箱的格数'
     };
   };
 
@@ -505,6 +546,21 @@
         ctx.drawImage(img, -s * 0.34, -s * 0.34, s * 0.68, s * 0.68);
         ctx.restore();
       }
+    } else if (item && item.deep && item.hits) {
+      ctx.fillStyle = 'rgba(255, 197, 87, 0.18)';
+      ctx.beginPath();
+      ctx.arc(0, 0, s * 0.36, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(185, 122, 25, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, s * 0.3, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(150, 94, 17, 0.95)';
+      ctx.font = '800 ' + (s * 0.3) + 'px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('深', 0, 1);
     } else {
       var tone = clue <= 2 ? '#c45a36' : clue <= 4 ? '#9c6e18' : '#0b7f8a';
       ctx.fillStyle = 'rgba(15, 143, 138, 0.09)';
