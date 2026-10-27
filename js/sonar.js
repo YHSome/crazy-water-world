@@ -23,9 +23,17 @@
     barrel: { name: '燃料桶', icon: 'assets/real/fuel.webp', credits: 80, mats: { fuel: 3 }, color: '#ffb15e' },
     chip: { name: '芯片箱', icon: 'assets/real/chip.webp', credits: 110, mats: { chip: 3 }, color: '#79d8ff' },
     gold: { name: '金条', icon: 'assets/real/gold.webp', credits: 230, mats: {}, color: '#ffd166' },
+    glass: { name: '玻璃箱', icon: 'assets/collectibles/sea-bottle.webp', credits: 100, mats: { glass: 3 }, color: '#8fe0d8' },
+    copper: { name: '铜线圈', icon: 'assets/collectibles/brass-compass.webp', credits: 130, mats: { copper: 3 }, color: '#e2a06a' },
     collectible: { name: '收藏品', icon: 'assets/collectibles/tide-crown.webp', credits: 0, mats: {}, color: '#d9b8ff' },
     filter: { name: '海水过滤器', icon: 'assets/seawater-filter-icon.webp', credits: 0, mats: {}, color: '#9feeff', rare: true }
   };
+  function emptyMaterialCounts() {
+    var out = {};
+    for (var i = 0; i < CW.MATERIALS.length; i++) out[CW.MATERIALS[i].id] = 0;
+    return out;
+  }
+
   var CARGO_IMAGES = {};
   for (var ck in CARGO) {
     if (!Object.prototype.hasOwnProperty.call(CARGO, ck)) continue;
@@ -63,7 +71,7 @@
     this.found = 0;
     this.filters = 0;
     this.collectibles = [];
-    this.counts = { metal: 0, fuel: 0, fiber: 0, chip: 0 };
+    this.counts = emptyMaterialCounts();
     this.revealed = [];
     this.clues = [];
     this.cargo = {};
@@ -91,7 +99,7 @@
     this.credits = 0;
     this.filters = 0;
     this.collectibles = [];
-    this.counts = { metal: 0, fuel: 0, fiber: 0, chip: 0 };
+    this.counts = emptyMaterialCounts();
     for (var r = 0; r < this.rows; r++) {
       var row = [];
       var clueRow = [];
@@ -109,13 +117,14 @@
       var key = r2 + ':' + c2;
       if (positions.indexOf(key) < 0) positions.push(key);
     }
-    var types = ['safe', 'barrel', 'chip', 'gold'];
+    var types = ['safe', 'barrel', 'chip', 'gold', 'glass', 'copper'];
     for (var t = types.length - 1; t > 0; t--) {
       var j = (Math.random() * (t + 1)) | 0;
       var tmp = types[t];
       types[t] = types[j];
       types[j] = tmp;
     }
+    types.length = 4;
     var forceFilter = ((this.arcade.hub.data.filterPity || 0) >= 7);
     var filterIndex = (forceFilter || chance(0.08)) ? (Math.random() * 4) | 0 : -1;
     for (var i = 0; i < positions.length; i++) {
@@ -348,12 +357,7 @@
       filters: this.filters,
       found: this.found,
       collectibles: this.collectibles.slice(),
-      materials: {
-        metal: this.counts.metal,
-        fuel: this.counts.fuel,
-        fiber: this.counts.fiber,
-        chip: this.counts.chip
-      }
+      materials: this.counts
     };
   };
 
@@ -366,12 +370,7 @@
     return {
       statLabel: '剩余声呐',
       stat: String(this.probesLeft),
-      loot: {
-        metal: this.counts.metal,
-        fuel: this.counts.fuel,
-        fiber: this.counts.fiber,
-        chip: this.counts.chip
-      },
+      loot: this.counts,
       hasAction: false,
       hint: deepPending
         ? '深层货箱需要二次探测 · 找到货箱会连锁揭示一格'

@@ -108,10 +108,10 @@
 
   CW.DISMANTLE_YIELDS = {
     common: { metal: 2, fiber: 1 },
-    uncommon: { metal: 3, chip: 1 },
-    rare: { metal: 4, fuel: 1, chip: 2 },
-    epic: { metal: 6, fuel: 2, fiber: 2, chip: 3 },
-    legendary: { metal: 10, fuel: 4, fiber: 4, chip: 5 }
+    uncommon: { metal: 3, chip: 1, glass: 1 },
+    rare: { metal: 4, fuel: 1, chip: 2, glass: 2, copper: 1 },
+    epic: { metal: 6, fuel: 2, fiber: 2, chip: 3, glass: 2, copper: 2 },
+    legendary: { metal: 10, fuel: 4, fiber: 4, chip: 5, glass: 4, copper: 4 }
   };
 
   CW.rollCollectibleDef = function () {

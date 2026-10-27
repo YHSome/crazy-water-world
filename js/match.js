@@ -21,16 +21,21 @@
     { name: '燃料', color: '#ffb15e', dark: '#78401f', key: 'fuel' },
     { name: '纤维', color: '#93dda3', dark: '#2f6248', key: 'fiber' },
     { name: '芯片', color: '#7ed7ff', dark: '#1e566e', key: 'chip' },
+    { name: '玻璃', color: '#8fe0d8', dark: '#2c6664', key: 'glass' },
+    { name: '铜', color: '#e2a06a', dark: '#6e4327', key: 'copper' },
     { name: '医疗包', color: '#f6e7c7', dark: '#715445', key: 'med' },
     { name: '收藏品', color: '#d9b8ff', dark: '#4b2f68', key: 'collectible' }
   ];
+  var NORMAL_TILE_COUNT = 7;
+  var MED_TILE = 6;
+  var COLLECTIBLE_TILE = 7;
 
   var MATCH_BG = new Image();
   MATCH_BG.decoding = 'async';
   MATCH_BG.src = 'assets/bg-match.webp';
 
   var TILE_IMAGES = [];
-  ['assets/real/scrap.webp', 'assets/real/fuel.webp', 'assets/real/fiber.webp', 'assets/real/chip.webp', 'assets/real/medkit.webp', 'assets/collectibles/tide-crown.webp'].forEach(function (src) {
+  ['assets/real/scrap.webp', 'assets/real/fuel.webp', 'assets/real/fiber.webp', 'assets/real/chip.webp', 'assets/collectibles/sea-bottle.webp', 'assets/collectibles/brass-compass.webp', 'assets/real/medkit.webp', 'assets/collectibles/tide-crown.webp'].forEach(function (src) {
     var img = new Image();
     img.src = src;
     TILE_IMAGES.push(img);
@@ -86,7 +91,7 @@
     this.score = 0;
     this.combo = 0;
     this.moves = 0;
-    this.counts = [0, 0, 0, 0, 0, 0];
+    this.counts = [0, 0, 0, 0, 0, 0, 0, 0];
     this.matched = [];
     this.collectibles = [];
     this.particles = [];
@@ -125,7 +130,7 @@
     this.movesLeft = this.movesStart;
     this.score = 0;
     this.combo = 0;
-    this.counts = [0, 0, 0, 0, 0, 0];
+    this.counts = [0, 0, 0, 0, 0, 0, 0, 0];
     this.matched = [];
     this.selected = null;
     this.dragStart = null;
@@ -148,9 +153,9 @@
       for (var r = 0; r < this.rows; r++) {
         var row = [];
         for (var c = 0; c < this.cols; c++) {
-          var t = (Math.random() * 5) | 0;
+          var t = (Math.random() * NORMAL_TILE_COUNT) | 0;
           var guard = 0;
-          while (this.wouldImmediate(row, r, c, t) && guard++ < 30) t = (Math.random() * 5) | 0;
+          while (this.wouldImmediate(row, r, c, t) && guard++ < 30) t = (Math.random() * NORMAL_TILE_COUNT) | 0;
           row.push(t);
         }
         this.grid.push(row);
@@ -158,7 +163,7 @@
       for (var k = 0; k < 2; k++) {
         var cr = (Math.random() * this.rows) | 0;
         var cc = (Math.random() * this.cols) | 0;
-        if (this.grid[cr][cc] !== 5) this.grid[cr][cc] = 5;
+        if (this.grid[cr][cc] !== COLLECTIBLE_TILE) this.grid[cr][cc] = COLLECTIBLE_TILE;
       }
       tries++;
     } while (!this.hasPossibleMove() && tries < 30);
@@ -420,7 +425,7 @@
     var collectCell = null;
     for (var m = 0; m < cells.length; m++) {
       var cell = cells[m];
-      if (cell.t === 5) {
+      if (cell.t === COLLECTIBLE_TILE) {
         if (!collectCell) collectCell = cell;
       } else {
         this.counts[cell.t] += 1;
@@ -490,7 +495,7 @@
         write--;
       }
       while (write >= 0) {
-        this.grid[write][c] = (Math.random() * 5) | 0;
+        this.grid[write][c] = (Math.random() * NORMAL_TILE_COUNT) | 0;
         this.fallCells[write + ':' + c] = { from: write - 2.2, fresh: true };
         write--;
       }
@@ -570,16 +575,16 @@
   };
 
   MatchGame.prototype.getScore = function () { return this.score; };
+  MatchGame.prototype.materialCounts = function () {
+    var out = {};
+    for (var i = 0; i < 6; i++) out[TILES[i].key] = Math.floor(this.counts[i] / 4);
+    return out;
+  };
   MatchGame.prototype.getHud = function () {
     return {
       statLabel: '剩余步数',
       stat: String(this.movesLeft),
-      loot: {
-        metal: Math.floor(this.counts[0] / 4),
-        fuel: Math.floor(this.counts[1] / 4),
-        fiber: Math.floor(this.counts[2] / 4),
-        chip: Math.floor(this.counts[3] / 4)
-      },
+      loot: this.materialCounts(),
       hasAction: false,
       hint: '滑动相邻废料箱，或点选两格交换 · 四连扫线、五连同色清除'
     };
@@ -590,19 +595,14 @@
     this.done = true;
     this.phase = 'done';
     this.popups = [];
-    var credits = 50 + Math.round(this.score * 0.22) + this.counts[4] * 12;
+    var credits = 50 + Math.round(this.score * 0.22) + this.counts[MED_TILE] * 12;
     this.result = {
       type: 'match',
       score: this.score,
       collectibles: this.collectibles.slice(),
       credits: credits,
       filters: (((this.arcade.hub.data.filterPity || 0) >= 7) || (this.score >= 1200 && chance(0.05))) ? 1 : 0,
-      materials: {
-        metal: Math.floor(this.counts[0] / 4),
-        fuel: Math.floor(this.counts[1] / 4),
-        fiber: Math.floor(this.counts[2] / 4),
-        chip: Math.floor(this.counts[3] / 4)
-      }
+      materials: this.materialCounts()
     };
   };
 

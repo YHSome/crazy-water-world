@@ -33,7 +33,9 @@
     { id: 'metal', name: '废铁', icon: '铁', iconImg: 'assets/real/scrap.webp', color: '#a9bec2', sell: 8, desc: '锈蚀的船板、钢梁和齿轮' },
     { id: 'fuel', name: '燃料', icon: '油', iconImg: 'assets/real/fuel.webp', color: '#ffb15e', sell: 10, desc: '旧世界的柴油、丙烷和火种' },
     { id: 'fiber', name: '纤维', icon: '纤', iconImg: 'assets/real/fiber.webp', color: '#9be2a9', sell: 8, desc: '尼龙、帆布和还能用的绳索' },
-    { id: 'chip', name: '芯片', icon: '芯', iconImg: 'assets/real/chip.webp', color: '#79d8ff', sell: 16, desc: '控制板、电池和文明残片' }
+    { id: 'chip', name: '芯片', icon: '芯', iconImg: 'assets/real/chip.webp', color: '#79d8ff', sell: 16, desc: '控制板、电池和文明残片' },
+    { id: 'glass', name: '玻璃', icon: '玻', iconImg: 'assets/collectibles/sea-bottle.webp', color: '#8fe0d8', sell: 12, desc: '完整瓶身、镜片和还能透光的舷窗' },
+    { id: 'copper', name: '铜', icon: '铜', iconImg: 'assets/collectibles/brass-compass.webp', color: '#e2a06a', sell: 14, desc: '线圈、阀门和旧仪器里的铜件' }
   ]);
 
   var UPGRADES = (CW.UPGRADES = [
@@ -43,10 +45,10 @@
       max: 5,
       costs: [
         { credits: 120, metal: 8, fiber: 4 },
-        { credits: 300, metal: 16, fiber: 9 },
-        { credits: 750, metal: 26, fiber: 15 },
-        { credits: 1800, metal: 40, fiber: 24 },
-        { credits: 4200, metal: 60, fiber: 36 }
+        { credits: 300, metal: 16, fiber: 9, glass: 4 },
+        { credits: 750, metal: 26, fiber: 15, copper: 6 },
+        { credits: 1800, metal: 40, fiber: 24, glass: 10, copper: 8 },
+        { credits: 4200, metal: 60, fiber: 36, glass: 18, copper: 14 }
       ]
     },
     {
@@ -55,10 +57,10 @@
       max: 5,
       costs: [
         { credits: 180, metal: 6, chip: 2 },
-        { credits: 450, metal: 12, chip: 5 },
-        { credits: 1000, metal: 20, chip: 9 },
-        { credits: 2200, metal: 32, chip: 15 },
-        { credits: 4800, metal: 50, chip: 24 }
+        { credits: 450, metal: 12, chip: 5, copper: 4 },
+        { credits: 1000, metal: 20, chip: 9, glass: 5 },
+        { credits: 2200, metal: 32, chip: 15, glass: 8, copper: 10 },
+        { credits: 4800, metal: 50, chip: 24, glass: 16, copper: 16 }
       ]
     },
     {
@@ -67,9 +69,9 @@
       max: 4,
       costs: [
         { credits: 260, fuel: 6, chip: 3 },
-        { credits: 650, fuel: 12, chip: 7 },
-        { credits: 1500, fuel: 20, chip: 12 },
-        { credits: 3400, fuel: 32, chip: 20 }
+        { credits: 650, fuel: 12, chip: 7, glass: 3 },
+        { credits: 1500, fuel: 20, chip: 12, copper: 5 },
+        { credits: 3400, fuel: 32, chip: 20, glass: 8, copper: 8 }
       ]
     },
     {
@@ -78,8 +80,8 @@
       max: 3,
       costs: [
         { credits: 600, metal: 10, fuel: 8, fiber: 8, chip: 6 },
-        { credits: 1600, metal: 18, fuel: 15, fiber: 15, chip: 11 },
-        { credits: 3800, metal: 30, fuel: 26, fiber: 26, chip: 20 }
+        { credits: 1600, metal: 18, fuel: 15, fiber: 15, chip: 11, copper: 5 },
+        { credits: 3800, metal: 30, fuel: 26, fiber: 26, chip: 20, glass: 6, copper: 8 }
       ]
     },
     {
@@ -88,8 +90,8 @@
       max: 3, iconImg: 'assets/seawater-filter-icon.webp',
       costs: [
         { credits: 500, filters: 1, metal: 8, fiber: 6, chip: 4 },
-        { credits: 1400, filters: 1, metal: 14, fiber: 10, chip: 8 },
-        { credits: 3200, filters: 1, metal: 22, fiber: 16, chip: 12 }
+        { credits: 1400, filters: 1, metal: 14, fiber: 10, chip: 8, glass: 5 },
+        { credits: 3200, filters: 1, metal: 22, fiber: 16, chip: 12, glass: 10, copper: 6 }
       ]
     }
   ]);
@@ -152,6 +154,16 @@
       id: 'collector', name: '沉船收藏家', iconImg: 'assets/collectibles/tide-crown.webp', metric: 'collectibles', mode: 'sum', target: 3,
       desc: '累计从打捞中带回 3 件收藏品。',
       reward: { credits: 260, mats: { fiber: 2 } }
+    },
+    {
+      id: 'glass-stock', name: '玻璃储备', iconImg: 'assets/collectibles/sea-bottle.webp', metric: 'glass', mode: 'sum', target: 8,
+      desc: '累计带回 8 单位玻璃。',
+      reward: { credits: 220, mats: { fiber: 2 } }
+    },
+    {
+      id: 'copper-stock', name: '铜线储备', iconImg: 'assets/collectibles/brass-compass.webp', metric: 'copper', mode: 'sum', target: 8,
+      desc: '累计带回 8 单位铜。',
+      reward: { credits: 240, mats: { fuel: 2 } }
     },
     {
       id: 'perfect-sonar', name: '全图回收', iconImg: 'assets/real/sonar.webp', metric: 'sonarPerfect', mode: 'max', target: 1, rare: true,
@@ -338,7 +350,7 @@
       v: 1,
       started: false,
       credits: 0,
-      materials: { metal: 0, fuel: 0, fiber: 0, chip: 0 },
+      materials: { metal: 0, fuel: 0, fiber: 0, chip: 0, glass: 0, copper: 0 },
       filters: 0,
       filterPity: 0,
       collectibles: {},
@@ -528,7 +540,7 @@
     for (var i = 0; i < UPGRADES.length; i++) sum += this.data.upgrades[UPGRADES[i].id] || 0;
     return 1 + sum;
   };
-  Hub.prototype.capacity = function () { return 60 + (this.data.upgrades.storage || 0) * 30; };
+  Hub.prototype.capacity = function () { return 72 + (this.data.upgrades.storage || 0) * 30; };
   Hub.prototype.used = function () {
     var sum = 0;
     for (var i = 0; i < MATERIALS.length; i++) sum += this.data.materials[MATERIALS[i].id] || 0;
@@ -867,6 +879,8 @@
       case 'matchScore': return result.type === 'match' ? Math.max(0, Number(result.score) || 0) : 0;
       case 'runs': return 1;
       case 'chips': return Math.max(0, Number(result.materials && result.materials.chip) || 0);
+      case 'glass': return Math.max(0, Number(result.materials && result.materials.glass) || 0);
+      case 'copper': return Math.max(0, Number(result.materials && result.materials.copper) || 0);
       case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
       case 'sonarPerfect': return result.type === 'sonar' && Number(result.found || 0) >= 4 ? 1 : 0;
       case 'stormRun': {

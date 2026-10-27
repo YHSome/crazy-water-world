@@ -144,6 +144,8 @@
     barrel: 'assets/real/fuel.webp',
     tarp: 'assets/real/fiber.webp',
     chip: 'assets/real/chip.webp',
+    glass: 'assets/collectibles/sea-bottle.webp',
+    copper: 'assets/collectibles/brass-compass.webp',
     safe: 'assets/real/safe.webp',
     gold: 'assets/real/gold.webp',
     mine: 'assets/real/mine.webp'
@@ -677,11 +679,19 @@
     barrel: { name: '燃料桶', credits: 55, mats: { fuel: 2 }, weight: 1.55, color: '#ffb15e' },
     tarp: { name: '纤维捆', credits: 40, mats: { fiber: 2 }, weight: 0.9, color: '#9be2a9' },
     chip: { name: '芯片箱', credits: 85, mats: { chip: 2 }, weight: 1.75, color: '#79d8ff' },
+    glass: { name: '玻璃瓶', credits: 45, mats: { glass: 2 }, weight: 1.0, color: '#8fe0d8' },
+    copper: { name: '铜线圈', credits: 70, mats: { copper: 2 }, weight: 1.25, color: '#e2a06a' },
     safe: { name: '保险箱', credits: 170, mats: { metal: 3, chip: 1 }, weight: 2.75, color: '#d9c7a1' },
     gold: { name: '金条', credits: 280, mats: {}, weight: 2.2, color: '#ffd166' },
     filter: { name: '海水过滤器', credits: 0, mats: {}, weight: 2.45, color: '#9feeff', rare: true },
     mine: { name: '水雷', credits: 0, mats: {}, weight: 0, color: '#ff6c55', mine: true }
   };
+
+  function emptyMaterialCounts() {
+    var out = {};
+    for (var i = 0; i < MATERIALS.length; i++) out[MATERIALS[i].id] = 0;
+    return out;
+  }
 
   function HookGame(arcade, config) {
     this.arcade = arcade;
@@ -705,7 +715,7 @@
     this.filters = 0;
     this.rareFound = false;
     this.hasFilter = false;
-    this.counts = { metal: 0, fuel: 0, fiber: 0, chip: 0 };
+    this.counts = emptyMaterialCounts();
     this.items = [];
     this.particles = [];
     this.popups = [];
@@ -737,7 +747,7 @@
 
   HookGame.prototype.buildField = function () {
     this.items = [];
-    this.counts = { metal: 0, fuel: 0, fiber: 0, chip: 0 };
+    this.counts = emptyMaterialCounts();
     this.filters = 0;
     this.rareFound = false;
     this.hasFilter = false;
@@ -753,7 +763,7 @@
     this.swingTime = 0;
     this.angle = 0;
     this.itemScale = clamp(Math.min(this.w, this.h) / 400, 0.9, 1.2);
-    var pool = ['scrap', 'scrap', 'scrap', 'barrel', 'barrel', 'barrel', 'tarp', 'tarp', 'tarp', 'chip', 'chip', 'safe', 'safe', 'gold', 'mine', 'mine', 'mine', 'scrap', 'collectible'];
+    var pool = ['scrap', 'scrap', 'scrap', 'barrel', 'barrel', 'barrel', 'tarp', 'tarp', 'tarp', 'chip', 'chip', 'glass', 'glass', 'copper', 'copper', 'safe', 'safe', 'gold', 'mine', 'mine', 'mine', 'scrap', 'collectible'];
     if (this.condition) {
       if (this.condition.mines < 0) pool = pool.filter(function (key) { return key !== 'mine'; });
       else for (var extraMine = 0; extraMine < this.condition.mines; extraMine++) pool.push('mine');
@@ -1076,12 +1086,7 @@
       safeCount: this.safeCount,
       goldCount: this.goldCount,
       collectibles: this.collectibles.slice(),
-      materials: {
-        metal: this.counts.metal,
-        fuel: this.counts.fuel,
-        fiber: this.counts.fiber,
-        chip: this.counts.chip
-      }
+      materials: this.counts
     };
   };
 
