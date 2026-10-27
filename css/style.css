@@ -1593,6 +1593,32 @@ body::after {
 .collectible-copy em { font-size: 9px; }
 .collectible-dismantle { min-width: 36px; min-height: 32px; border-radius: 8px; font-size: 9px; border-color: rgba(255, 122, 89, 0.24); background: #fff2ec; color: #c46042; }
 .collection-note { font-size: 9px; color: #86a2a3; }
+.relic-board { margin: 10px 0 13px; padding: 11px; border: 1px solid rgba(19, 93, 96, 0.11); border-radius: 14px; background: #eefaf6; }
+.relic-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.relic-head span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: #0d7774; }
+.relic-head small { font-size: 9px; color: #7f9b9c; }
+.relic-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.relic-slot { min-width: 0; min-height: 66px; padding: 6px 5px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 10px; background: #fffdf8; text-align: center; color: #3f6468; }
+.relic-slot.filled { border-color: rgba(15, 143, 138, 0.26); background: #fff; }
+.relic-slot img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; display: block; margin: 0 auto 3px; }
+.relic-slot b { display: block; overflow: hidden; font-size: 9px; color: #173f47; white-space: nowrap; text-overflow: ellipsis; }
+.relic-slot span { display: block; margin-top: 2px; font-size: 7px; line-height: 1.35; color: #6e8d8f; }
+.relic-slot.empty { display: grid; place-items: center; align-content: center; border-style: dashed; background: rgba(255, 253, 248, 0.5); color: #9ab0ae; }
+.relic-slot.empty b { font-family: var(--mono); font-size: 18px; color: #a8bcb8; }
+.relic-bonus { margin-top: 7px; font-size: 9px; line-height: 1.5; color: #567a7d; }
+.collectible-card.equipped { border-color: #18b8b0; background: #f0fbf6; box-shadow: 0 0 0 1px rgba(24, 184, 176, 0.18) inset; }
+.collectible-power { overflow: hidden; font-size: 8px; line-height: 1.35; color: #8a6a33; white-space: nowrap; text-overflow: ellipsis; }
+.collectible-actions { display: flex; flex: 0 0 auto; flex-direction: column; gap: 3px; }
+.collectible-equip { min-width: 36px; min-height: 27px; padding: 0 4px; border: 1px solid rgba(15, 143, 138, 0.22); border-radius: 7px; background: #eaf9f4; color: #0b7774; font-family: var(--mono); font-size: 8px; font-weight: 700; }
+.collectible-equip.active { border-color: #18b8b0; background: #18b8b0; color: #fff; }
+.collectible-equip:hover { background: #dff7ee; }
+.collectible-equip.active:hover { background: #0f8f8a; }
+.collectible-actions .collectible-dismantle { min-width: 36px; min-height: 27px; }
+@media (max-width: 380px) {
+  .relic-slot { min-height: 62px; }
+  .collectible-power { font-size: 7px; }
+  .collectible-equip, .collectible-actions .collectible-dismantle { min-width: 32px; min-height: 26px; font-size: 7px; }
+}
 
 /* Shelter */
 .shelter-head { margin-bottom: 12px; padding: 12px 14px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 15px; background: #eefaf6; }

@@ -342,6 +342,7 @@
       filters: 0,
       filterPity: 0,
       collectibles: {},
+      equipped: [],
       contracts: makeContractSet(),
       contractRound: 1,
       contractRerollUsed: false,
@@ -380,6 +381,13 @@
         if (!CW.COLLECTIBLE_MAP[cid]) continue;
         var cnum = Math.floor(Number(raw.collectibles[cid]) || 0);
         if (cnum > 0) data.collectibles[cid] = Math.min(9999, cnum);
+      }
+    }
+    data.equipped = [];
+    if (Array.isArray(raw.equipped)) {
+      for (var eq = 0; eq < raw.equipped.length && data.equipped.length < 3; eq++) {
+        var eid = raw.equipped[eq];
+        if (data.collectibles[eid] > 0 && data.equipped.indexOf(eid) < 0) data.equipped.push(eid);
       }
     }
     data.achievements = {};
@@ -526,17 +534,78 @@
     for (var i = 0; i < MATERIALS.length; i++) sum += this.data.materials[MATERIALS[i].id] || 0;
     return sum;
   };
+  Hub.prototype.collectionRelicBonuses = function () {
+    var out = { credit: 0, mat: 0, time: 0, moves: 0, probes: 0 };
+    var list = this.data.equipped || [];
+    for (var i = 0; i < list.length && i < 3; i++) {
+      var id = list[i];
+      if (!(this.data.collectibles[id] > 0)) continue;
+      var relic = CW.COLLECTIBLE_RELICS[id];
+      if (!relic) continue;
+      out.credit += relic.bonus.credit || 0;
+      out.mat += relic.bonus.mat || 0;
+      out.time += relic.bonus.time || 0;
+      out.moves += relic.bonus.moves || 0;
+      out.probes += relic.bonus.probes || 0;
+    }
+    return out;
+  };
+
+  Hub.prototype.collectionEquip = function (id) {
+    var def = CW.COLLECTIBLE_MAP[id];
+    if (!def || !((this.data.collectibles || {})[id] > 0)) return;
+    if (!Array.isArray(this.data.equipped)) this.data.equipped = [];
+    if (this.data.equipped.indexOf(id) >= 0) {
+      this.collectionUnequip(id);
+      return;
+    }
+    if (this.data.equipped.length >= 3) {
+      this.audio.warn();
+      this.showToast('ARCHIVE FULL', '藏品栏已满', '先卸下一件藏品再装备');
+      return;
+    }
+    this.data.equipped.push(id);
+    this.audio.craft();
+    this.showToast('RELIC EQUIPPED', def.name, CW.COLLECTIBLE_RELICS[id] ? CW.COLLECTIBLE_RELICS[id].label : '已装备');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.collectionUnequip = function (id) {
+    if (!Array.isArray(this.data.equipped)) return;
+    var at = this.data.equipped.indexOf(id);
+    if (at < 0) return;
+    this.data.equipped.splice(at, 1);
+    this.audio.click();
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.collectionCleanupEquipped = function () {
+    if (!Array.isArray(this.data.equipped)) { this.data.equipped = []; return; }
+    var out = [];
+    for (var i = 0; i < this.data.equipped.length && out.length < 3; i++) {
+      var id = this.data.equipped[i];
+      if ((this.data.collectibles[id] || 0) > 0 && out.indexOf(id) < 0) out.push(id);
+    }
+    this.data.equipped = out;
+  };
+
   Hub.prototype.creditMult = function () {
     var setBonus = this.collectionSetBonuses();
-    return 1 + (this.data.upgrades.workshop || 0) * 0.1 + (this.data.upgrades.purifier || 0) * 0.1 + setBonus.credit;
+    var relic = this.collectionRelicBonuses();
+    return 1 + (this.data.upgrades.workshop || 0) * 0.1 + (this.data.upgrades.purifier || 0) * 0.1 + setBonus.credit + relic.credit;
   };
   Hub.prototype.materialMult = function () {
     var setBonus = this.collectionSetBonuses();
-    return 1 + (this.data.upgrades.sonar || 0) * 0.12 + (this.data.upgrades.purifier || 0) * 0.05 + setBonus.mat;
+    var relic = this.collectionRelicBonuses();
+    return 1 + (this.data.upgrades.sonar || 0) * 0.12 + (this.data.upgrades.purifier || 0) * 0.05 + setBonus.mat + relic.mat;
   };
-  Hub.prototype.hookTime = function () { return 60 + (this.data.upgrades.core || 0) * 5; };
-  Hub.prototype.matchMoves = function () { return 30 + (this.data.upgrades.core || 0) * 2; };
-  Hub.prototype.sonarProbes = function () { return 10 + Math.floor((this.data.upgrades.core || 0) / 2); };
+  Hub.prototype.hookTime = function () { return 60 + (this.data.upgrades.core || 0) * 5 + this.collectionRelicBonuses().time; };
+  Hub.prototype.matchMoves = function () { return 30 + (this.data.upgrades.core || 0) * 2 + this.collectionRelicBonuses().moves; };
+  Hub.prototype.sonarProbes = function () { return 10 + Math.floor((this.data.upgrades.core || 0) / 2) + this.collectionRelicBonuses().probes; };
   Hub.prototype.dayNumber = function () { return 1281 + this.data.runs * 2; };
 
   /* ── resize / layout ─────────────────────────────────────── */
@@ -699,7 +768,7 @@
       this.dom.panelTitle.textContent = this.warehouseView === 'collection' ? '仓库 · 收藏' : '仓库 · 物资';
       if (this.warehouseView === 'collection') {
         this.dom.panelTag.textContent = this.collectionUnique() + ' / ' + CW.COLLECTIBLES.length;
-        this.dom.panelNote.textContent = '分解重复件 / 合成更高稀有度';
+        this.dom.panelNote.textContent = '装备 3 件藏品 / 分解 / 合成';
       } else {
         this.dom.panelTag.textContent = used + ' / ' + cap;
         this.dom.panelNote.textContent = '超出容量的物资会折算成打捞币';
@@ -1081,6 +1150,7 @@
     this.data.collectibles[id] -= 1;
     if (this.data.collectibles[id] <= 0) delete this.data.collectibles[id];
     var gained = this.grantContractReward({ credits: 0, mats: yieldMats });
+    this.collectionCleanupEquipped();
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1109,7 +1179,13 @@
         source.push({ id: item.id, count: this.data.collectibles[item.id] });
       }
     }
-    source.sort(function (a, b) { return b.count - a.count; });
+    var equippedNow = Array.isArray(this.data.equipped) ? this.data.equipped : [];
+    source.sort(function (a, b) {
+      var ae = equippedNow.indexOf(a.id) >= 0 ? 1 : 0;
+      var be = equippedNow.indexOf(b.id) >= 0 ? 1 : 0;
+      if (ae !== be) return ae - be;
+      return b.count - a.count;
+    });
     var left = 3;
     for (var k = 0; k < source.length && left > 0; k++) {
       var take = Math.min(left, source[k].count);
@@ -1121,6 +1197,7 @@
     var result = pool[(Math.random() * pool.length) | 0];
     this.data.collectibles[result.id] = (this.data.collectibles[result.id] || 0) + 1;
     this.data.credits -= recipe.cost;
+    this.collectionCleanupEquipped();
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1176,11 +1253,35 @@
     var unique = this.collectionUnique();
     var total = this.collectionTotal();
     var map = this.data.collectibles || {};
+    var equipped = Array.isArray(this.data.equipped) ? this.data.equipped : [];
+    var relic = this.collectionRelicBonuses();
+    var bonusParts = [];
+    if (relic.credit) bonusParts.push('打捞币 +' + Math.round(relic.credit * 100) + '%');
+    if (relic.mat) bonusParts.push('物资 +' + Math.round(relic.mat * 100) + '%');
+    if (relic.time) bonusParts.push('抓钩 +' + relic.time + ' 秒');
+    if (relic.moves) bonusParts.push('三消 +' + relic.moves + ' 步');
+    if (relic.probes) bonusParts.push('声呐 +' + relic.probes + ' 次');
+    var relicHtml = '<div class="relic-board"><div class="relic-head"><span>藏品栏 · 3 格</span><small>装备后本局生效</small></div><div class="relic-slots">';
+    for (var rs = 0; rs < 3; rs++) {
+      var rid = equipped[rs];
+      var rdef = rid ? CW.COLLECTIBLE_MAP[rid] : null;
+      if (rdef) {
+        var rpower = CW.COLLECTIBLE_RELICS[rid];
+        relicHtml += '<button class="relic-slot filled" data-action="equip-collectible" data-id="' + rid + '" title="点击卸下">' +
+          '<img src="' + rdef.icon + '" alt=""><b>' + rdef.name + '</b><span>' + (rpower ? rpower.label : '') + '</span>' +
+        '</button>';
+      } else {
+        relicHtml += '<div class="relic-slot empty"><b>+</b><span>空槽</span></div>';
+      }
+    }
+    relicHtml += '</div><div class="relic-bonus">' +
+      (bonusParts.length ? '本局加成 · ' + bonusParts.join(' · ') : '尚未装备藏品 · 在下方收藏卡点击「装备」') +
+      '</div></div>';
     var html = this.warehouseSwitch() + '<div class="collection-summary">' +
       '<span class="collection-kicker">SUNKEN ARCHIVE · 沉船收藏</span>' +
       '<div class="collection-headline"><b>' + unique + ' / ' + CW.COLLECTIBLES.length + '</b><span>已发现 · 共 ' + total + ' 件</span></div>' +
-      '<p>收藏品不占仓库容量，会在局内作为普通掉落出现。重复件可以分解，也可以合成更高稀有度。</p>' +
-      '</div><div class="craft-board">' +
+      '<p>收藏品不占仓库容量，会在局内作为普通掉落出现。装备最多 3 件可激活本局加成，重复件还能分解或合成更高稀有度。</p>' +
+      '</div>' + relicHtml + '<div class="craft-board">' +
       '<div class="craft-head"><span>合成台</span><small>3 件同级 + 打捞币 → 1 件更高稀有度</small></div><div class="craft-list">';
     for (var r = 0; r < CW.CRAFT_RECIPES.length; r++) {
       var rec = CW.CRAFT_RECIPES[r];
@@ -1226,10 +1327,16 @@
       for (var g = 0; g < group.length; g++) {
         var item = group[g];
         var n = map[item.id] || 0;
-        html += '<article class="collectible-card' + (n ? '' : ' unknown') + '" title="' + item.desc + '" style="--rarity:' + rarity.color + '">' +
+        var isEquipped = equipped.indexOf(item.id) >= 0;
+        var relicInfo = CW.COLLECTIBLE_RELICS[item.id];
+        html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + '" title="' + item.desc + (relicInfo ? ' · ' + relicInfo.label : '') + '" style="--rarity:' + rarity.color + '">' +
           '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
-          '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em></span>' +
-          (n ? '<button class="collectible-dismantle" data-action="dismantle" data-id="' + item.id + '" title="分解 1 件为材料">分解</button>' : '') +
+          '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em>' +
+            (n && relicInfo ? '<span class="collectible-power">' + relicInfo.label + '</span>' : '') + '</span>' +
+          (n ? '<span class="collectible-actions">' +
+            '<button class="collectible-equip' + (isEquipped ? ' active' : '') + '" data-action="equip-collectible" data-id="' + item.id + '">' + (isEquipped ? '卸下' : '装备') + '</button>' +
+            '<button class="collectible-dismantle" data-action="dismantle" data-id="' + item.id + '" title="分解 1 件为材料">分解</button>' +
+          '</span>' : '') +
         '</article>';
       }
       html += '</div></section>';
@@ -1688,7 +1795,8 @@
           self.warehouseView = actionEl.getAttribute('data-view');
           self.audio.click();
           self.renderPanel();
-        } else if (action === 'dismantle') self.dismantle(actionEl.getAttribute('data-id'));
+        } else if (action === 'equip-collectible') self.collectionEquip(actionEl.getAttribute('data-id'));
+        else if (action === 'dismantle') self.dismantle(actionEl.getAttribute('data-id'));
         return;
       }
       var tabEl = e.target.closest ? e.target.closest('[data-tab]') : null;

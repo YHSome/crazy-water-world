@@ -78,6 +78,26 @@
     }
   ];
 
+  // Equippable relic effects. Every owned collectible can be placed in one of
+  // three archive slots; the bonus is passive while equipped.
+  CW.COLLECTIBLE_RELICS = {
+    'rusty-watch': { label: '抓钩 +2 秒', bonus: { time: 2 } },
+    'brass-key': { label: '声呐 +1 次', bonus: { probes: 1 } },
+    'sea-bottle': { label: '物资 +2%', bonus: { mat: 0.02 } },
+    'old-coin': { label: '打捞币 +2%', bonus: { credit: 0.02 } },
+    'crew-badge': { label: '三消 +1 步', bonus: { moves: 1 } },
+    'brass-compass': { label: '声呐 +1 次 · 抓钩 +1 秒', bonus: { probes: 1, time: 1 } },
+    'waterproof-camera': { label: '打捞币 +3%', bonus: { credit: 0.03 } },
+    'chart-tube': { label: '抓钩 +4 秒', bonus: { time: 4 } },
+    'copper-telescope': { label: '三消 +2 步', bonus: { moves: 2 } },
+    'silver-musicbox': { label: '打捞币 +5%', bonus: { credit: 0.05 } },
+    'diving-helmet': { label: '抓钩 +5 秒', bonus: { time: 5 } },
+    'ship-bell': { label: '声呐 +2 次', bonus: { probes: 2 } },
+    'captain-log': { label: '抓钩 +2 秒 · 三消 +2 步', bonus: { time: 2, moves: 2 } },
+    'black-box': { label: '打捞币 +6% · 声呐 +1 次', bonus: { credit: 0.06, probes: 1 } },
+    'tide-crown': { label: '全收益 +8% · 抓钩 +3 秒 · 三消 +2 步 · 声呐 +2 次', bonus: { credit: 0.08, mat: 0.08, time: 3, moves: 2, probes: 2 } }
+  };
+
   CW.collectiblesOfRarity = function (rarity) {
     var out = [];
     for (var k = 0; k < COLLECTIBLES.length; k++) {
