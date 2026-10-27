@@ -219,9 +219,9 @@
   var SHELTER_LEVELS = (CW.SHELTER_LEVELS = [
     null,
     { level: 2, credits: 4000, mats: { metal: 20, fiber: 20 }, unique: 4, runs: 10, unlock: '开放高级扩建等级' },
-    { level: 3, credits: 12000, mats: { glass: 24, copper: 24 }, unique: 8, runs: 25, unlock: '解锁「阿岚」与高级扩建' },
-    { level: 4, credits: 30000, mats: { chip: 30, fuel: 24 }, unique: 12, runs: 50, unlock: '开放更多高级扩建' },
-    { level: 5, credits: 80000, mats: { metal: 30, fiber: 30, chip: 20, glass: 20, copper: 20 }, unique: 15, runs: 100, unlock: '解锁「老周」与终极扩建' }
+    { level: 3, credits: 12000, mats: { glass: 24, copper: 24 }, specials: { 'sonar-core': 1 }, unique: 8, runs: 25, unlock: '解锁「阿岚」与高级扩建' },
+    { level: 4, credits: 30000, mats: { chip: 30, fuel: 24 }, specials: { 'pressure-valve': 1 }, unique: 12, runs: 50, unlock: '开放更多高级扩建' },
+    { level: 5, credits: 80000, mats: { metal: 30, fiber: 30, chip: 20, glass: 20, copper: 20 }, specials: { 'tide-cell': 1 }, filters: 1, unique: 15, runs: 100, unlock: '解锁「老周」与终极扩建' }
   ]);
 
   function crewDef(id) {
@@ -549,6 +549,7 @@
       filters: 0,
       filterPity: 0,
       collectibles: {},
+      specials: {},
       equipped: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
@@ -606,6 +607,15 @@
       for (var eq = 0; eq < raw.equipped.length && data.equipped.length < 3; eq++) {
         var eid = raw.equipped[eq];
         if (data.collectibles[eid] > 0 && data.equipped.indexOf(eid) < 0) data.equipped.push(eid);
+      }
+    }
+    data.specials = {};
+    if (raw.specials && typeof raw.specials === 'object') {
+      for (var spid in raw.specials) {
+        if (!Object.prototype.hasOwnProperty.call(raw.specials, spid)) continue;
+        if (CW.COLLECTIBLE_MAP[spid] && CW.COLLECTIBLE_MAP[spid].special === 'material') {
+          data.specials[spid] = clamp(Math.floor(Number(raw.specials[spid]) || 0), 0, 999);
+        }
       }
     }
     data.achievements = {};
@@ -1619,6 +1629,8 @@
       var item = CW.COLLECTIBLES[i];
       if (item.special === 'filter') {
         if ((this.data.filters || 0) > 0) n++;
+      } else if (item.special === 'material') {
+        if ((this.data.specials || {})[item.id] > 0) n++;
       } else if ((this.data.collectibles || {})[item.id] > 0) n++;
     }
     return n;
@@ -1629,6 +1641,9 @@
     var map = this.data.collectibles || {};
     for (var id in map) {
       if (Object.prototype.hasOwnProperty.call(map, id)) n += map[id];
+    }
+    for (var sid in this.data.specials) {
+      if (Object.prototype.hasOwnProperty.call(this.data.specials, sid)) n += this.data.specials[sid];
     }
     return n;
   };
@@ -2216,26 +2231,28 @@
       for (var i = 0; i < CW.COLLECTIBLES.length; i++) if (CW.COLLECTIBLES[i].rarity === rarity.id) group.push(CW.COLLECTIBLES[i]);
       var discovered = 0;
       for (var d = 0; d < group.length; d++) {
-        if (group[d].special === 'filter' ? filterCount > 0 : (map[group[d].id] || 0) > 0) discovered++;
+        var gd = group[d];
+        var ownedCount = gd.special === 'filter' ? filterCount : gd.special === 'material' ? (this.data.specials[gd.id] || 0) : (map[gd.id] || 0);
+        if (ownedCount > 0) discovered++;
       }
       html += '<section class="collection-group" style="--rarity:' + rarity.color + '">' +
         '<header><b>' + rarity.name + '</b><span>' + discovered + ' / ' + group.length + '</span></header><div class="collectible-grid">';
       for (var g = 0; g < group.length; g++) {
         var item = group[g];
-        var isSpecial = item.special === 'filter';
-        var n = isSpecial ? filterCount : (map[item.id] || 0);
+        var isSpecial = !!item.special;
+        var n = item.special === 'filter' ? filterCount : item.special === 'material' ? (this.data.specials[item.id] || 0) : (map[item.id] || 0);
         var isEquipped = !isSpecial && equipped.indexOf(item.id) >= 0;
         var relicInfo = CW.COLLECTIBLE_RELICS[item.id];
         html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + '" title="' + item.desc + (relicInfo ? ' · ' + relicInfo.label : '') + '" style="--rarity:' + rarity.color + '">' +
           '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
           '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em>' +
             (n && relicInfo ? '<span class="collectible-power">' + relicInfo.label + '</span>' : '') +
-            (n && isSpecial ? '<span class="collectible-power">净水核心 · 净水舱材料</span>' : '') + '</span>' +
+            (n && isSpecial ? '<span class="collectible-power">' + (item.special === 'filter' ? '净水核心 · 净水舱材料' : '稀有升级件 · 避难所材料') + '</span>' : '') + '</span>' +
           (n && !isSpecial ? '<span class="collectible-actions">' +
             '<button class="collectible-equip' + (isEquipped ? ' active' : '') + '" data-action="equip-collectible" data-id="' + item.id + '">' + (isEquipped ? '卸下' : '装备') + '</button>' +
             '<button class="collectible-dismantle" data-action="dismantle" data-id="' + item.id + '" title="分解 1 件为材料">分解</button>' +
           '</span>' : '') +
-          (n && isSpecial ? '<span class="collectible-special-mark">净水舱</span>' : '') +
+          (n && isSpecial ? '<span class="collectible-special-mark">' + (item.special === 'filter' ? '净水舱' : '升级件') + '</span>' : '') +
         '</article>';
       }
       html += '</div></section>';
@@ -2428,7 +2445,13 @@
           return '<span class="' + ((this.data.materials[id] || 0) >= next.mats[id] ? 'ok' : '') + '">' + (md ? md.name : id) + ' ' + next.mats[id] + '</span>';
         }, this).join('') +
         '<span class="' + (this.collectionArtifactUnique() >= next.unique ? 'ok' : '') + '">收藏 ' + Math.min(this.collectionArtifactUnique(), next.unique) + '/' + next.unique + '</span>' +
-        '<span class="' + (this.data.runs >= next.runs ? 'ok' : '') + '">出航 ' + Math.min(this.data.runs || 0, next.runs) + '/' + next.runs + '</span></div>' : '') +
+        '<span class="' + (this.data.runs >= next.runs ? 'ok' : '') + '">出航 ' + Math.min(this.data.runs || 0, next.runs) + '/' + next.runs + '</span>' +
+        (next.specials ? Object.keys(next.specials).map(function (id) {
+          var sd = CW.COLLECTIBLE_MAP[id];
+          return '<span class="' + ((this.data.specials[id] || 0) >= next.specials[id] ? 'ok' : '') + '">' + (sd ? sd.name : id) + ' ' + Math.min(this.data.specials[id] || 0, next.specials[id]) + '/' + next.specials[id] + '</span>';
+        }, this).join('') : '') +
+        (next.filters ? '<span class="' + ((this.data.filters || 0) >= next.filters ? 'ok' : '') + '">过滤器 ' + Math.min(this.data.filters || 0, next.filters) + '/' + next.filters + '</span>' : '') +
+        '</div>' : '') +
       '<div class="shelter-unlock">' + (next ? '下级解锁：' + next.unlock : '全部扩建与船员已解锁') + '</div></div>' +
       '<button class="shelter-up-btn" data-action="shelter-levelup"' + (!next || !canLevel ? ' disabled' : '') + '>' + (next ? (canLevel ? '升级避难所' : '条件不足') : 'MAX') + '</button></div>';
     var html = this.shelterSwitch() + levelCard + '<div class="shelter-head"><span>设施等级</span><b>Lv.' + this.level() + '</b></div><div class="upgrade-list">';
@@ -2493,6 +2516,13 @@
       var m = MATERIALS[i];
       if (next.mats[m.id] && (this.data.materials[m.id] || 0) < next.mats[m.id]) return false;
     }
+    if (next.specials) {
+      for (var sp in next.specials) {
+        if (!Object.prototype.hasOwnProperty.call(next.specials, sp)) continue;
+        if ((this.data.specials[sp] || 0) < next.specials[sp]) return false;
+      }
+    }
+    if (next.filters && (this.data.filters || 0) < next.filters) return false;
     return true;
   };
 
@@ -2508,6 +2538,12 @@
       if (!Object.prototype.hasOwnProperty.call(next.mats, id)) continue;
       this.data.materials[id] -= next.mats[id];
     }
+    if (next.specials) {
+      for (var sp in next.specials) {
+        if (Object.prototype.hasOwnProperty.call(next.specials, sp)) this.data.specials[sp] = Math.max(0, (this.data.specials[sp] || 0) - next.specials[sp]);
+      }
+    }
+    if (next.filters) this.data.filters = Math.max(0, (this.data.filters || 0) - next.filters);
     this.data.shelterLevel = Math.min(5, this.shelterLevel() + 1);
     this.audio.claim();
     this.showToast('SHELTER UPGRADED', '避难所 Lv.' + this.data.shelterLevel, next.unlock + ' · 收藏几率与仓库容量提升');
@@ -2647,6 +2683,16 @@
     }
     var collectibles = this.registerCollectibles(result);
     result.collectibles = collectibles;
+    var gainedSpecials = [];
+    if (Array.isArray(result.specials)) {
+      for (var spi = 0; spi < result.specials.length; spi++) {
+        var sid = result.specials[spi];
+        var sdef = CW.COLLECTIBLE_MAP[sid];
+        if (!sdef || sdef.special !== 'material') continue;
+        this.data.specials[sid] = (this.data.specials[sid] || 0) + 1;
+        gainedSpecials.push(sid);
+      }
+    }
     this.applyContractProgress(result);
     this.applyDailyProgress(result);
     var stats = this.data.stats;
@@ -2675,7 +2721,8 @@
       filtersTotal: this.data.filters,
       capacity: cap,
       used: cap - storeSpace,
-      collectibles: collectibles
+      collectibles: collectibles,
+      specials: gainedSpecials
     };
   };
 
