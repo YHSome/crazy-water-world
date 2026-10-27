@@ -41,8 +41,38 @@
       desc: '海面浮油：抓钩回收 -12%，三消 -1 步；物资 +18%',
       short: '回收 -12% · -1 步 · 物资 +18%',
       credit: 1, mat: 1.18, mines: 0, time: 0, moves: -1, probes: -1, reel: 0.88
+    },
+    {
+      id: 'redtide', name: '赤潮', color: '#ff7a8a',
+      desc: '赤潮翻涌：水雷 +1，抓钩 -2 秒，三消 +1 步；物资 +22%，打捞币 +8%',
+      short: '水雷 +1 · 物资 +22% · 打捞币 +8%',
+      credit: 1.08, mat: 1.22, mines: 1, time: -2, moves: 1, probes: 0, reel: 0.96
+    },
+    {
+      id: 'tailwind', name: '顺风', color: '#8ee6d4',
+      desc: '顺风平流：抓钩 +3 秒，三消 +2 步，声呐 +1；全收益 -6%',
+      short: '+3 秒 / +2 步 / +1 声呐 · 收益 -6%',
+      credit: 0.94, mat: 0.94, mines: 0, time: 3, moves: 2, probes: 1, reel: 1.08
     }
   ]);
+
+  function combineConditions(a, b) {
+    return {
+      id: a.id + '+' + b.id,
+      name: a.name + '·' + b.name,
+      color: a.color,
+      desc: '双重海况：' + a.short + '；' + b.short,
+      short: a.short + '；' + b.short,
+      credit: a.credit * b.credit,
+      mat: a.mat * b.mat,
+      mines: a.mines + b.mines,
+      time: a.time + b.time,
+      moves: a.moves + b.moves,
+      probes: a.probes + b.probes,
+      reel: a.reel * b.reel,
+      combo: true
+    };
+  }
 
   function id(x) { return document.getElementById(x); }
   function hexA(hex, a) {
@@ -261,8 +291,16 @@
 
   Arcade.prototype.pickCondition = function () {
     var pick = CONDITIONS[(Math.random() * CONDITIONS.length) | 0];
-    if (this.condition && CONDITIONS.length > 1 && pick.id === this.condition.id) {
+    if (this.condition && CONDITIONS.length > 1 && this.condition.id === pick.id) {
       pick = CONDITIONS[(CONDITIONS.indexOf(pick) + 1) % CONDITIONS.length];
+    }
+    if (chance(0.3)) {
+      var second = CONDITIONS[(Math.random() * CONDITIONS.length) | 0];
+      var guard = 0;
+      while (second.id === pick.id && guard++ < 20) {
+        second = CONDITIONS[(Math.random() * CONDITIONS.length) | 0];
+      }
+      if (second.id !== pick.id) return combineConditions(pick, second);
     }
     return pick;
   };
