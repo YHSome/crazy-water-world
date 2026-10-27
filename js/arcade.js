@@ -208,6 +208,7 @@
       briefReward: id('brief-reward'),
       summary: id('arcade-summary'),
       summaryScore: id('summary-score'),
+      summaryGrade: id('summary-grade'),
       summaryCredits: id('summary-credits'),
       summaryLoot: id('summary-loot'),
       summaryRare: id('summary-rare'),
@@ -566,6 +567,11 @@
     this.dom.brief.classList.add('hidden');
     this.dom.confirm.classList.add('hidden');
     this.dom.summaryScore.textContent = fmt(result.score || 0);
+    if (this.dom.summaryGrade) {
+      this.dom.summaryGrade.className = 'summary-grade grade-' + String(this.applied.grade || 'C').toLowerCase();
+      this.dom.summaryGrade.textContent = this.applied.grade || 'C';
+      this.dom.summaryGrade.title = this.applied.sBonus ? '首次 S 评级 · +' + this.applied.sBonus + ' 打捞币' : '本局评级';
+    }
     this.dom.summaryCredits.textContent = fmt(this.applied.totalCredits);
     var chips = '';
     if (this.condition) {
@@ -579,6 +585,9 @@
     }
     if (this.applied.chain >= 2) {
       chips += '<span class="summary-chip chain" style="--tone:#e0a13c">环线 · ' + this.applied.chain + '/6' + (this.applied.chainBonus > 0 ? ' · +' + Math.round((this.applied.chainMult - 1) * 100) + '%' : '') + '</span>';
+    }
+    if (this.applied.sBonus > 0) {
+      chips += '<span class="summary-chip grade-bonus" style="--tone:#b77b22">首次 ' + this.applied.grade + ' · +' + this.applied.sBonus + '</span>';
     }
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
