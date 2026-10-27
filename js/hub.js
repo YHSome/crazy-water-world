@@ -190,9 +190,18 @@
     }
   ]);
 
+  var CREW_LEVEL_XP = [0, 1, 3, 6, 10];
+
   function crewDef(id) {
     for (var i = 0; i < CREW.length; i++) if (CREW[i].id === id) return CREW[i];
     return null;
+  }
+
+  function crewLevelFromXp(xp) {
+    xp = Math.max(0, Math.floor(Number(xp) || 0));
+    var lvl = 1;
+    for (var i = 0; i < CREW_LEVEL_XP.length; i++) if (xp >= CREW_LEVEL_XP[i]) lvl = i + 1;
+    return lvl;
   }
 
   var CONTRACTS = (CW.CONTRACTS = [
@@ -410,6 +419,16 @@
       id: 'all-s', name: '六项全能 S', iconImg: 'assets/collectibles/tide-crown.webp',
       metric: 'sGradesCount', target: 6, desc: '六个打捞任务都拿到 S 评级。',
       reward: { credits: 1500, mats: { metal: 8, fuel: 6, fiber: 6, chip: 6, glass: 6, copper: 6 } }
+    },
+    {
+      id: 'crew-veteran', name: '独当一面', iconImg: 'assets/real/hook.webp',
+      metric: 'crewMaxed', target: 1, desc: '把任意一名船员练到 Lv.5。',
+      reward: { credits: 600, mats: { glass: 4, copper: 3 } }
+    },
+    {
+      id: 'crew-legend', name: '传奇船队', iconImg: 'assets/real/storage.webp',
+      metric: 'crewMaxed', target: 3, desc: '三名船员都达到 Lv.5。',
+      reward: { credits: 1800, mats: { metal: 10, fuel: 8, fiber: 8, chip: 8, glass: 8, copper: 8 } }
     }
   ]);
 
@@ -501,6 +520,7 @@
       equipped: [],
       contracts: makeContractSet(),
       crew: {},
+      crewXp: {},
       contractRound: 1,
       contractRerollUsed: false,
       daily: null,
@@ -608,6 +628,12 @@
       data.best.cut = Math.max(0, Number(raw.best.cut) || 0);
       data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
+      data.crewXp = {};
+      if (raw.crewXp && typeof raw.crewXp === 'object') {
+        for (var cx in raw.crewXp) {
+          if (crewDef(cx)) data.crewXp[cx] = Math.max(0, Math.floor(Number(raw.crewXp[cx]) || 0));
+        }
+      }
       data.crew = {};
       if (raw.crew && typeof raw.crew === 'object') {
         for (var cr in raw.crew) {
@@ -1133,23 +1159,43 @@
     return n;
   };
 
+  Hub.prototype.crewLevel = function (id) {
+    return crewLevelFromXp(this.data.crewXp && this.data.crewXp[id]);
+  };
+
+  Hub.prototype.crewDuration = function (def) {
+    var lvl = this.crewLevel(def.id);
+    return Math.round(def.duration * (1 - (lvl - 1) * 0.06));
+  };
+
+  Hub.prototype.crewMasteryMult = function (def) {
+    return 1 + (this.crewLevel(def.id) - 1) * 0.08;
+  };
+
   Hub.prototype.crewReward = function (def) {
     var seed = 0.5;
     var job = this.data.crew[def.id];
+    var mastery = this.crewMasteryMult(def);
     if (job) seed = Number(job.seed) || 0.5;
     function rnd(i) {
       var x = Math.sin(seed * 9173.13 + i * 47.71) * 43758.5453;
       return x - Math.floor(x);
     }
-    var credits = Math.round(def.credits[0] + (def.credits[1] - def.credits[0]) * rnd(1));
+    var credits = Math.round((def.credits[0] + (def.credits[1] - def.credits[0]) * rnd(1)) * mastery);
     var mats = {};
     var i = 2;
     for (var key in def.mats) {
       if (!Object.prototype.hasOwnProperty.call(def.mats, key)) continue;
       var range = def.mats[key];
-      mats[key] = Math.round(range[0] + (range[1] - range[0]) * rnd(i++));
+      mats[key] = Math.round((range[0] + (range[1] - range[0]) * rnd(i++)) * mastery);
     }
-    return { credits: credits, mats: mats, collectible: rnd(i++) < (def.collectibleChance || 0), filter: rnd(i + 4) < (def.filterChance || 0) };
+    var level = this.crewLevel(def.id);
+    var rareBonus = (level - 1) * 0.02;
+    return {
+      credits: credits, mats: mats,
+      collectible: rnd(i++) < Math.min(1, (def.collectibleChance || 0) + rareBonus),
+      filter: rnd(i + 4) < Math.min(1, (def.filterChance || 0) + rareBonus)
+    };
   };
 
   Hub.prototype.hireCrew = function (id) {
@@ -1163,9 +1209,10 @@
       return;
     }
     this.data.credits -= def.cost;
-    this.data.crew[id] = { remaining: def.duration, seed: Math.random() };
+    var duration = this.crewDuration(def);
+    this.data.crew[id] = { remaining: duration, seed: Math.random() };
     this.audio.claim();
-    this.showToast('CREW DISPATCHED', def.name + ' · ' + def.role, '预计 ' + Math.round(def.duration / 60) + ' 分钟后返航');
+    this.showToast('CREW DISPATCHED', def.name + ' · ' + def.role, 'Lv.' + this.crewLevel(id) + ' · 预计 ' + this.crewTimeText(duration * 1000) + ' 后返航');
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1189,8 +1236,11 @@
       extras.push('海水过滤器');
     }
     delete this.data.crew[id];
+    var oldLevel = this.crewLevel(id);
+    this.data.crewXp[id] = Math.max(0, Math.floor(Number(this.data.crewXp[id]) || 0)) + 1;
+    var newLevel = this.crewLevel(id);
     this.audio.claim();
-    this.showToast('CREW RETURNED', def.name + ' 返航', '+' + fmt(gained.credits) + ' 打捞币 · 材料已入库' + (extras.length ? ' · ' + extras.join(' / ') : ''));
+    this.showToast('CREW RETURNED', def.name + ' 返航', '+' + fmt(gained.credits) + ' 打捞币 · 材料已入库' + (extras.length ? ' · ' + extras.join(' / ') : '') + (newLevel > oldLevel ? ' · 熟练度 Lv.' + newLevel + '!' : ''));
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1201,6 +1251,12 @@
     for (var i = 0; i < CREW.length; i++) {
       var def = CREW[i];
       var job = this.crewJob(def.id);
+      var level = this.crewLevel(def.id);
+      var xp = Math.max(0, Number(this.data.crewXp[def.id]) || 0);
+      var nextXp = level < 5 ? CREW_LEVEL_XP[level] : null;
+      var curBase = CREW_LEVEL_XP[level - 1] || 0;
+      var xpPct = nextXp ? Math.min(1, (xp - curBase) / Math.max(1, nextXp - curBase)) : 1;
+      var mastery = Math.round((this.crewMasteryMult(def) - 1) * 100);
       var ready = !!(job && Number(job.remaining) <= 0);
       var working = !!(job && !ready);
       var stateClass = ready ? ' ready' : working ? ' working' : ' idle';
@@ -1223,11 +1279,13 @@
         timer = '<span class="crew-time" data-crew-id="' + def.id + '">' + this.crewTimeText(Number(job.remaining) * 1000) + '</span>';
       } else {
         btn = '<button class="crew-btn hire" data-action="crew-hire" data-id="' + def.id + '"' + ((this.data.credits || 0) < def.cost ? ' disabled' : '') + '>雇佣 · ' + fmt(def.cost) + '</button>';
-        timer = '<span class="crew-time">' + Math.round(def.duration / 60) + ' 分钟</span>';
+        timer = '<span class="crew-time">' + this.crewTimeText(this.crewDuration(def) * 1000) + '</span>';
       }
       html += '<article class="crew-card' + stateClass + '">' +
-        '<div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span></div>' +
-        '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>' + timer + '</em></div><p>' + def.desc + '</p><div class="crew-reward">' + rewardText + '</div></div>' +
+        '<div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + level + '</em></div>' +
+        '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>' + timer + '</em></div><p>' + def.desc + '</p>' +
+          '<div class="crew-mastery"><span>熟练度 ' + (nextXp ? xp + ' / ' + nextXp : 'MAX') + '</span><i><b style="width:' + (xpPct * 100).toFixed(0) + '%"></b></i></div>' +
+          '<div class="crew-reward">' + (mastery > 0 ? 'M Lv.' + level + ' · 产出 +' + mastery + '%<br>' : '') + rewardText + '</div></div>' +
         '<div class="crew-action">' + btn + '</div>' +
       '</article>';
     }
@@ -2191,6 +2249,11 @@
       case 'cutRuns': return this.data.stats.cutRuns || 0;
       case 'sortRuns': return this.data.stats.sortRuns || 0;
       case 'beaconRuns': return this.data.stats.beaconRuns || 0;
+      case 'crewMaxed': {
+        var cm = 0;
+        for (var ci2 = 0; ci2 < CREW.length; ci2++) if (this.crewLevel(CREW[ci2].id) >= 5) cm++;
+        return cm;
+      }
       case 'sGradesCount': {
         var sc = 0;
         for (var sk2 in this.data.sGrades) if (Object.prototype.hasOwnProperty.call(this.data.sGrades, sk2) && this.data.sGrades[sk2]) sc++;
