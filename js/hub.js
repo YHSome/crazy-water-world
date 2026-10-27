@@ -172,6 +172,29 @@
 
   function gradeRank(grade) { return GRADE_RANK[grade] || 0; }
 
+  var CREW = (CW.CREW = [
+    {
+      id: 'fisher', name: '阿盐', role: '老渔夫', iconImg: 'assets/real/hook.webp',
+      duration: 180, cost: 250, desc: '熟悉旧城区的潮沟，带回归废铁和纤维。',
+      credits: [180, 320], mats: { metal: [3, 6], fiber: [2, 4] }, collectibleChance: 0
+    },
+    {
+      id: 'diver', name: '小满', role: '潜水员', iconImg: 'assets/collectibles/diving-helmet.webp',
+      duration: 480, cost: 700, desc: '能在沉船里待很久，专挑玻璃、铜线和旧收藏。',
+      credits: [80, 160], mats: { glass: [3, 6], copper: [2, 4], chip: [1, 2] }, collectibleChance: 0.45
+    },
+    {
+      id: 'sonar', name: '老陈', role: '声呐员', iconImg: 'assets/real/sonar.webp',
+      duration: 900, cost: 1500, desc: '用旧声呐扫描外海，偶尔能带回净水核心。',
+      credits: [700, 1300], mats: { chip: [3, 6], fuel: [2, 4] }, collectibleChance: 0, filterChance: 0.1
+    }
+  ]);
+
+  function crewDef(id) {
+    for (var i = 0; i < CREW.length; i++) if (CREW[i].id === id) return CREW[i];
+    return null;
+  }
+
   var CONTRACTS = (CW.CONTRACTS = [
     {
       id: 'safe', name: '保险箱回收', iconImg: 'assets/real/safe.webp', metric: 'safe', mode: 'sum', target: 5,
@@ -477,6 +500,7 @@
       collectibles: {},
       equipped: [],
       contracts: makeContractSet(),
+      crew: {},
       contractRound: 1,
       contractRerollUsed: false,
       daily: null,
@@ -584,6 +608,17 @@
       data.best.cut = Math.max(0, Number(raw.best.cut) || 0);
       data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
+      data.crew = {};
+      if (raw.crew && typeof raw.crew === 'object') {
+        for (var cr in raw.crew) {
+          if (!Object.prototype.hasOwnProperty.call(raw.crew, cr) || !crewDef(cr)) continue;
+          var cjob = raw.crew[cr];
+          if (cjob && (Number(cjob.remaining) > 0 || Number(cjob.until) > 0)) {
+            var rem = cjob.remaining !== undefined ? Number(cjob.remaining) : Math.max(0, (Number(cjob.until) - Date.now()) / 1000);
+            data.crew[cr] = { remaining: Math.max(0, rem), seed: Number(cjob.seed) || 0 };
+          }
+        }
+      }
       data.grades = {};
       data.sGrades = {};
       if (raw.grades && typeof raw.grades === 'object') {
@@ -633,6 +668,7 @@
     this.marketTimers = [];
     this.marketBusy = false;
     this.lastMarketTick = marketTick();
+    this.lastCrewReady = -1;
     this.shelterView = 'upgrades';
     this.w = 0;
     this.h = 0;
@@ -928,6 +964,27 @@
       var clockEl = document.getElementById('market-clock-val');
       if (clockEl) clockEl.textContent = Math.max(0, Math.ceil((MARKET_TICK_MS - (Date.now() % MARKET_TICK_MS)) / 1000)) + 's';
     }
+    if (this.state === 'playing' && this.data && this.data.crew) {
+      for (var cj = 0; cj < CREW.length; cj++) {
+        var cjob = this.data.crew[CREW[cj].id];
+        if (!cjob || Number(cjob.remaining) <= 0) continue;
+        cjob.remaining = Math.max(0, Number(cjob.remaining) - dt);
+        if (cjob.remaining <= 0) this.saveGame();
+      }
+    }
+    var crewReady = this.crewReadyCount();
+    if (crewReady !== this.lastCrewReady) {
+      this.lastCrewReady = crewReady;
+      if (this.tab === 'crew') this.renderPanel();
+      this.updatePanelMeta();
+    }
+    if (this.state === 'playing' && this.tab === 'crew') {
+      var timers = document.querySelectorAll('[data-crew-id]');
+      for (var ci = 0; ci < timers.length; ci++) {
+        var tjob = this.crewJob(timers[ci].getAttribute('data-crew-id'));
+        timers[ci].textContent = tjob ? this.crewTimeText(Number(tjob.remaining) * 1000) : '0:00';
+      }
+    }
     requestAnimationFrame(this.loop);
   };
 
@@ -975,10 +1032,16 @@
     if (tasksTab) tasksTab.classList.toggle('has-ready', this.dailyReady() || this.contractsReadyCount() > 0);
     var shelterTab = document.querySelector('.panel-tab[data-tab="shelter"]');
     if (shelterTab) shelterTab.classList.toggle('has-ready', this.achievementsReadyCount() > 0);
+    var crewTab = document.querySelector('.panel-tab[data-tab="crew"]');
+    if (crewTab) crewTab.classList.toggle('has-ready', this.crewReadyCount() > 0);
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
       this.dom.panelTag.textContent = MISSIONS.length + ' 个任务';
       this.dom.panelNote.textContent = '今日挑战与物资都会存进避难所';
+    } else if (this.tab === 'crew') {
+      this.dom.panelTitle.textContent = '打捞队';
+      this.dom.panelTag.textContent = this.crewReadyCount() ? this.crewReadyCount() + ' 可领取' : CREW.length + ' 个岗位';
+      this.dom.panelNote.textContent = '雇佣 NPC 后等待返航 · 开启时计时';
     } else if (this.tab === 'contracts') {
       var contractReady = this.contractsReadyCount();
       this.dom.panelTitle.textContent = '打捞契约';
@@ -1015,6 +1078,7 @@
     if (!this.dom.panelContent) return;
     var scroll = this.dom.panelContent.scrollTop;
     if (this.tab === 'tasks') this.renderTasks();
+    else if (this.tab === 'crew') this.renderCrew();
     else if (this.tab === 'contracts') this.renderContracts();
     else if (this.tab === 'warehouse') this.renderWarehouse();
     else this.renderShelter();
@@ -1053,6 +1117,129 @@
         (daily.claimed ? '今日已完成' : ready ? '领取今日奖励' : '继续打捞') +
       '</button>' +
     '</article>';
+  };
+
+  Hub.prototype.crewJob = function (id) {
+    return this.data.crew && this.data.crew[id] ? this.data.crew[id] : null;
+  };
+
+  Hub.prototype.crewReadyCount = function () {
+    var n = 0;
+    var now = Date.now();
+    for (var i = 0; i < CREW.length; i++) {
+      var job = this.crewJob(CREW[i].id);
+      if (job && Number(job.remaining) <= 0) n++;
+    }
+    return n;
+  };
+
+  Hub.prototype.crewReward = function (def) {
+    var seed = 0.5;
+    var job = this.data.crew[def.id];
+    if (job) seed = Number(job.seed) || 0.5;
+    function rnd(i) {
+      var x = Math.sin(seed * 9173.13 + i * 47.71) * 43758.5453;
+      return x - Math.floor(x);
+    }
+    var credits = Math.round(def.credits[0] + (def.credits[1] - def.credits[0]) * rnd(1));
+    var mats = {};
+    var i = 2;
+    for (var key in def.mats) {
+      if (!Object.prototype.hasOwnProperty.call(def.mats, key)) continue;
+      var range = def.mats[key];
+      mats[key] = Math.round(range[0] + (range[1] - range[0]) * rnd(i++));
+    }
+    return { credits: credits, mats: mats, collectible: rnd(i++) < (def.collectibleChance || 0), filter: rnd(i + 4) < (def.filterChance || 0) };
+  };
+
+  Hub.prototype.hireCrew = function (id) {
+    var def = crewDef(id);
+    if (!def) return;
+    var job = this.crewJob(id);
+    if (job && Number(job.remaining) > 0) return;
+    if ((this.data.credits || 0) < def.cost) {
+      this.audio.warn();
+      this.showToast('NOT ENOUGH', '打捞币不足', '雇佣 ' + def.name + ' 需要 ' + fmt(def.cost));
+      return;
+    }
+    this.data.credits -= def.cost;
+    this.data.crew[id] = { remaining: def.duration, seed: Math.random() };
+    this.audio.claim();
+    this.showToast('CREW DISPATCHED', def.name + ' · ' + def.role, '预计 ' + Math.round(def.duration / 60) + ' 分钟后返航');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.claimCrew = function (id) {
+    var def = crewDef(id);
+    var job = this.crewJob(id);
+    if (!def || !job || Number(job.remaining) > 0) return;
+    var reward = this.crewReward(def);
+    var gained = this.grantContractReward({ credits: reward.credits, mats: reward.mats });
+    var extras = [];
+    if (reward.collectible && CW.rollCollectibleDef) {
+      var cdef = CW.rollCollectibleDef();
+      this.data.collectibles[cdef.id] = (this.data.collectibles[cdef.id] || 0) + 1;
+      extras.push(cdef.name);
+    }
+    if (reward.filter) {
+      this.data.filters = (this.data.filters || 0) + 1;
+      this.data.filterPity = 0;
+      extras.push('海水过滤器');
+    }
+    delete this.data.crew[id];
+    this.audio.claim();
+    this.showToast('CREW RETURNED', def.name + ' 返航', '+' + fmt(gained.credits) + ' 打捞币 · 材料已入库' + (extras.length ? ' · ' + extras.join(' / ') : ''));
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.renderCrew = function () {
+    var html = '<div class="crew-head"><div><span>CREW DOCK · 打捞队</span><b>把等待变成下一船物资</b><p>雇佣后在避难所开启期间倒计时；每个船员一次只能跑一个岗位。</p></div><div class="crew-ready"><b>' + this.crewReadyCount() + '</b><span>可领取</span></div></div><div class="crew-grid">';
+    for (var i = 0; i < CREW.length; i++) {
+      var def = CREW[i];
+      var job = this.crewJob(def.id);
+      var ready = !!(job && Number(job.remaining) <= 0);
+      var working = !!(job && !ready);
+      var stateClass = ready ? ' ready' : working ? ' working' : ' idle';
+      var rewardText = '约 ' + def.credits[0] + '–' + def.credits[1] + ' 币';
+      for (var mk in def.mats) {
+        if (!Object.prototype.hasOwnProperty.call(def.mats, mk)) continue;
+        var mname = null;
+        for (var mi = 0; mi < MATERIALS.length; mi++) if (MATERIALS[mi].id === mk) mname = MATERIALS[mi].name;
+        rewardText += ' · ' + (mname || mk) + def.mats[mk][0] + '–' + def.mats[mk][1];
+      }
+      if (def.collectibleChance) rewardText += ' · 收藏概率 ' + Math.round(def.collectibleChance * 100) + '%';
+      if (def.filterChance) rewardText += ' · 过滤器概率 ' + Math.round(def.filterChance * 100) + '%';
+      var timer = '';
+      var btn = '';
+      if (ready) {
+        btn = '<button class="crew-btn claim" data-action="crew-claim" data-id="' + def.id + '">领取收获</button>';
+        timer = '<span class="crew-time ready">可以返航</span>';
+      } else if (working) {
+        btn = '<button class="crew-btn" disabled>作业中</button>';
+        timer = '<span class="crew-time" data-crew-id="' + def.id + '">' + this.crewTimeText(Number(job.remaining) * 1000) + '</span>';
+      } else {
+        btn = '<button class="crew-btn hire" data-action="crew-hire" data-id="' + def.id + '"' + ((this.data.credits || 0) < def.cost ? ' disabled' : '') + '>雇佣 · ' + fmt(def.cost) + '</button>';
+        timer = '<span class="crew-time">' + Math.round(def.duration / 60) + ' 分钟</span>';
+      }
+      html += '<article class="crew-card' + stateClass + '">' +
+        '<div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span></div>' +
+        '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>' + timer + '</em></div><p>' + def.desc + '</p><div class="crew-reward">' + rewardText + '</div></div>' +
+        '<div class="crew-action">' + btn + '</div>' +
+      '</article>';
+    }
+    html += '</div><p class="crew-foot">收获会进入仓库；仓库满时材料按报价折算成打捞币。作业只在避难所开启时推进，关闭页面会暂停。</p>';
+    this.dom.panelContent.innerHTML = html;
+  };
+
+  Hub.prototype.crewTimeText = function (ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
   };
 
   Hub.prototype.renderTaskChain = function () {
@@ -2465,6 +2652,8 @@
         else if (action === 'market-list-confirm') self.confirmMarketListing(actionEl.getAttribute('data-id'), actionEl.getAttribute('data-mult'));
         else if (action === 'market-auction') self.openMarketAuction(actionEl.getAttribute('data-id'));
         else if (action === 'market-modal-close') self.closeMarketModal();
+        else if (action === 'crew-hire') self.hireCrew(actionEl.getAttribute('data-id'));
+        else if (action === 'crew-claim') self.claimCrew(actionEl.getAttribute('data-id'));
         return;
       }
       var tabEl = e.target.closest ? e.target.closest('[data-tab]') : null;
