@@ -543,9 +543,8 @@
   Hub.prototype.resize = function () {
     this.w = Math.max(280, window.innerWidth);
     this.h = Math.max(280, window.innerHeight);
-    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    var dpr = Math.min(coarse ? 1.5 : 2, window.devicePixelRatio || 1);
-    var maxPixels = 3000000;
+    var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    var maxPixels = 2400000;
     var raw = this.w * this.h * dpr * dpr;
     if (raw > maxPixels) dpr *= Math.sqrt(maxPixels / raw);
     this.dpr = dpr;
@@ -631,8 +630,14 @@
       this.arcade.update(dt);
       this.arcade.render();
     } else {
-      this.updateScene(dt);
-      this.renderScene();
+      // The hub backdrop is a slow, ambient scene. 30fps cuts canvas and
+      // compositor work in half without changing the feel of the rain.
+      this.hubAccum = (this.hubAccum || 0) + dt;
+      if (this.hubAccum >= 1 / 30) {
+        this.updateScene(this.hubAccum);
+        this.renderScene();
+        this.hubAccum = 0;
+      }
     }
     requestAnimationFrame(this.loop);
   };

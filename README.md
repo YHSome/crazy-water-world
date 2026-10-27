@@ -16,16 +16,15 @@
 
 源码仓库：**https://github.com/YHSome/crazy-water-world**
 
-本地预览（二选一）：
+本地运行：
 
-```bash
-# 项目自带零依赖 Node 静态服务器（Node.js >= 18）
-npm start
-# → http://127.0.0.1:4173
-
-# 或者直接用 Python
-python -m http.server 4173
+```text
+直接双击 index.html 即可。
 ```
+
+- 纯 **HTML + CSS + 原生 JavaScript**，无 Node、无 npm、无打包、无构建步骤。
+- 不需要安装任何运行时，也不需要启动服务器；双击 `index.html` 即可。
+- 图片、音频、脚本全部为本地文件，无远程运行时依赖。
 
 > 手机、平板、桌面浏览器均可直接游玩。建议开启声音。
 
@@ -291,7 +290,7 @@ python -m http.server 4173
 1. 推送仓库，默认分支使用 `main` 或 `master`。
 2. 进入 **Settings → Pages**。
 3. **Build and deployment → Source** 选择 **GitHub Actions**。
-4. workflow `Deploy 疯狂水世界 to GitHub Pages` 会自动构建并发布。
+4. workflow `Deploy 疯狂水世界 to GitHub Pages` 会把仓库静态文件原样上传并发布，**没有构建步骤**。
 
 工作流文件：[.github/workflows/pages.yml](.github/workflows/pages.yml)。
 
@@ -305,7 +304,7 @@ python -m http.server 4173
 
 ## 技术栈
 
-- HTML5 Canvas 2D + 原生 JavaScript，无框架、无构建步骤。
+- HTML5 Canvas 2D + 原生 JavaScript，纯静态 HTML/CSS/JS；无 Node、无 npm、无框架、无构建步骤。
 - **四首本地 BGM**：标题/避难所 Loop A、抓钩 Loop D、三消 Loop I、声呐 Loop C；场景切换时自动换曲，返回避难所从暂停位置继续。
 - **音效扩充**：界面切换、领取契约、合成、分解、声呐 ping / 货箱发现、四连线扫、五连彩虹、连击、错误与稀有物音效均由 Web Audio 实时合成。
 - 声音按钮同时控制 BGM 和音效，静音时暂停当前曲目，恢复后从原位置继续。
@@ -348,9 +347,8 @@ python -m http.server 4173
 │   └── seawater-filter-icon.webp # 方图，用于抓钩 / 标签 / 图标
 ├── favicon.png                   # 过滤器图片裁切
 ├── CREDITS.md                    # 图片、图标与 BGM 来源
-├── server.js                     # 零依赖本地静态服务器（可选）
-├── package.json
-├── docs/                       # README 预览图（WebP）
+├── .nojekyll                     # GitHub Pages 原样发布静态文件
+├── docs/                         # README 预览图（WebP）
 ├── DESIGN.md                   # 详细游戏设计文档
 ├── ROADMAP.md                  # 两小时迭代路线与候选玩法
 └── .github/workflows/pages.yml

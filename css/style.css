@@ -1965,6 +1965,25 @@ body::after {
   .achievement-stats b { font-size: 17px; }
 }
 
+/* ── pure static performance pass ─────────────────────────── */
+/* Full-screen animated grain/rain and live backdrop blurs were the
+   biggest repaint costs on low-end phones. The game keeps its palette
+   and photography without those compositing layers. */
+.rain-glass, .grain, body::after { display: none !important; }
+.hud-bar, .title-stats, .btn, .modal, .toast, .arcade-heading,
+.arcade-stats > div, .arcade-bottom, .arcade-card, .loot-chip {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.hud-bar { background: #fffdf8 !important; }
+.title-stats { background: rgba(255, 252, 244, 0.93); }
+.modal { background: #fffaf0; }
+.toast { background: #fffdf8; }
+.arcade-heading, .arcade-stats > div, .arcade-bottom, .arcade-card, .loot-chip { background-color: #fffdf8; }
+.panel-foot i { animation: none; }
+.countdown { animation: none; }
+.title-inner, .logo { animation: none; }
+
 /* Daily tide contract */
 .daily-card {
   position: relative;

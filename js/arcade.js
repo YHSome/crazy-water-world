@@ -221,9 +221,8 @@
   Arcade.prototype.resize = function () {
     this.w = Math.max(280, window.innerWidth);
     this.h = Math.max(280, window.innerHeight);
-    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    var dpr = Math.min(coarse ? 1.5 : 2, window.devicePixelRatio || 1);
-    var maxPixels = 2600000;
+    var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    var maxPixels = 2200000;
     var raw = this.w * this.h * dpr * dpr;
     if (raw > maxPixels) dpr *= Math.sqrt(maxPixels / raw);
     this.dpr = dpr;
