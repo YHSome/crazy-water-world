@@ -1907,6 +1907,43 @@ body::after {
   .mission-desc { font-size: 12px; }
 }
 
+/* Ship's log achievements */
+.shelter-switch { margin-bottom: 12px; }
+.achievement-summary { padding: 2px 2px 11px; border-bottom: 1px solid rgba(19, 93, 96, 0.09); }
+.achievement-summary .collection-headline { margin-top: 4px; }
+.achievement-summary p { margin-top: 5px; font-size: 11px; line-height: 1.55; color: #5d7e81; }
+.achievement-stats { display: flex; gap: 7px; margin: 11px 0 13px; }
+.achievement-stats span { flex: 1; min-width: 0; padding: 8px 9px; border: 1px solid rgba(19, 93, 96, 0.09); border-radius: 11px; background: #eefaf6; font-size: 9px; line-height: 1.3; color: #6d8b8e; }
+.achievement-stats b { display: block; font-family: var(--display); font-size: 19px; line-height: 1; color: #0d7774; }
+.achievement-list { display: flex; flex-direction: column; gap: 9px; }
+.achievement-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 15px; background: #fffdf7; box-shadow: 0 6px 15px rgba(21, 94, 96, 0.05); }
+.achievement-card.ready { border-color: rgba(255, 174, 80, 0.42); box-shadow: 0 8px 20px rgba(255, 174, 80, 0.1); }
+.achievement-card.claimed { opacity: 0.62; }
+.achievement-icon { width: 52px; height: 52px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 13px; background: #eefaf6; }
+.achievement-icon img { width: 100%; height: 100%; object-fit: cover; }
+.achievement-copy { min-width: 0; }
+.achievement-title { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.achievement-title b { overflow: hidden; font-size: 14px; color: #173f47; white-space: nowrap; text-overflow: ellipsis; }
+.achievement-title em { flex: 0 0 auto; font-family: var(--mono); font-size: 9px; font-style: normal; color: #7c999b; }
+.achievement-copy p { overflow: hidden; margin-top: 3px; font-size: 10px; line-height: 1.4; color: #5e7f82; white-space: nowrap; text-overflow: ellipsis; }
+.achievement-track { height: 5px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: rgba(19, 143, 138, 0.12); }
+.achievement-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #18b8b0, #ffc857); }
+.achievement-reward { display: flex; flex-wrap: wrap; gap: 4px 7px; margin-top: 5px; font-family: var(--mono); font-size: 8px; color: #956026; }
+.achievement-reward span { display: inline-flex; align-items: center; gap: 3px; }
+.achievement-reward img { width: 13px; height: 13px; border-radius: 3px; object-fit: cover; }
+.achievement-claim { min-width: 62px; min-height: 38px; padding: 0 7px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 10px; background: #e8e2d5; color: #9b917f; font-size: 10px; font-weight: 700; }
+.achievement-claim.ready { border-color: transparent; color: #fff; background: linear-gradient(135deg, #0f8f8a, #18b8b0); box-shadow: 0 6px 14px rgba(15, 143, 138, 0.16); }
+.achievement-claim:disabled { cursor: default; }
+
+@media (max-width: 380px) {
+  .achievement-card { grid-template-columns: 46px minmax(0, 1fr) auto; gap: 8px; padding: 9px; }
+  .achievement-icon { width: 46px; height: 46px; border-radius: 11px; }
+  .achievement-title b { font-size: 13px; }
+  .achievement-copy p { font-size: 9px; }
+  .achievement-claim { min-width: 54px; min-height: 36px; font-size: 9px; }
+  .achievement-stats b { font-size: 17px; }
+}
+
 /* Daily tide contract */
 .daily-card {
   position: relative;

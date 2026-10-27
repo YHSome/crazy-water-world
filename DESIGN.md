@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：4.1 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：4.2 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -297,6 +297,15 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 - 保存字段：`daily: { date, id, progress, claimed }`、`dailyStreak`、`lastDailyClaim`。
 - 任务标签显示可领取圆点；不新增标签页，不产生离线收入。
 
+### 8.9 航海日志与长期成就
+
+- 避难所标签内部切换「扩建 / 航海日志」，沿用仓库的子视图模式，不增加第五个顶层标签。
+- 10 个一次性里程碑：首次下潜、十次出航、九层连击、单局 2,500 分、声呐全图、3 台过滤器、10 件收藏、7 天连签、20 个保险箱、避难所 Lv.10。
+- `stats` 记录 `bestCombo / sonarPerfect / filtersFound / collectiblesFound / creditsEarned / safeTotal / goldTotal`。
+- 成就奖励打捞币与材料；每个成就 `achievements[id]=true` 后不可重复领取。
+- 旧存档迁移：收集品总数与当前过滤器用于补全 `collectiblesFound / filtersFound`；其余统计从 0 开始。
+- 可领取时避难所标签显示圆点；成就进度只由结算与长期状态计算，不产生离线收益。
+
 ## 9. 扩建
 
 | 项目 | 效果 | 等级 | 造价结构 |
@@ -425,6 +434,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 

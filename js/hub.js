@@ -194,6 +194,64 @@
     }
   ]);
 
+  var ACHIEVEMENTS = (CW.ACHIEVEMENTS = [
+    {
+      id: 'first-run', name: '第一次下潜', iconImg: 'assets/real/hook.webp',
+      metric: 'runs', target: 1, desc: '完成第一次打捞。',
+      reward: { credits: 120, mats: { metal: 2 } }
+    },
+    {
+      id: 'ten-runs', name: '十次出航', iconImg: 'assets/real/storage.webp',
+      metric: 'runs', target: 10, desc: '累计完成 10 次打捞。',
+      reward: { credits: 320, mats: { fuel: 3 } }
+    },
+    {
+      id: 'combo-nine', name: '九层连击', iconImg: 'assets/real/hook.webp',
+      metric: 'bestCombo', target: 9, desc: '单局抓钩达到 9 层连击。',
+      reward: { credits: 420, mats: { chip: 2 } }
+    },
+    {
+      id: 'match-2500', name: '分拣大师', iconImg: 'assets/real/puzzle.webp',
+      metric: 'matchScore', target: 2500, desc: '单局废料拼图达到 2,500 分。',
+      reward: { credits: 420, mats: { fiber: 3 } }
+    },
+    {
+      id: 'sonar-perfect', name: '全图回收', iconImg: 'assets/real/sonar.webp',
+      metric: 'sonarPerfect', target: 1, desc: '完成一次全部 4 货箱的声呐扫掠。',
+      reward: { credits: 360, mats: { chip: 2 } }
+    },
+    {
+      id: 'filter-three', name: '净水收藏', iconImg: 'assets/seawater-filter-icon.webp',
+      metric: 'filtersFound', target: 3, desc: '累计获得 3 台海水过滤器。',
+      reward: { credits: 500, mats: { fiber: 4 } }
+    },
+    {
+      id: 'archive-ten', name: '沉船档案', iconImg: 'assets/collectibles/tide-crown.webp',
+      metric: 'collectiblesFound', target: 10, desc: '累计带回 10 件收藏品。',
+      reward: { credits: 460, mats: { chip: 2 } }
+    },
+    {
+      id: 'streak-seven', name: '一周潮汐', iconImg: 'assets/real/sonar.webp',
+      metric: 'dailyStreak', target: 7, desc: '连续领取 7 天每日潮汐奖励。',
+      reward: { credits: 520, mats: { fuel: 4 } }
+    },
+    {
+      id: 'safe-twenty', name: '保险箱猎人', iconImg: 'assets/real/safe.webp',
+      metric: 'safeTotal', target: 20, desc: '累计抓回 20 个保险箱。',
+      reward: { credits: 480, mats: { metal: 6, fiber: 3 } }
+    },
+    {
+      id: 'level-ten', name: '海岸据点', iconImg: 'assets/real/workshop.webp',
+      metric: 'level', target: 10, desc: '把避难所升到 Lv.10。',
+      reward: { credits: 800, mats: { metal: 8, fuel: 6, fiber: 6, chip: 4 } }
+    }
+  ]);
+
+  function achievementDef(achievementId) {
+    for (var i = 0; i < ACHIEVEMENTS.length; i++) if (ACHIEVEMENTS[i].id === achievementId) return ACHIEVEMENTS[i];
+    return null;
+  }
+
   function dailyDef(dailyId) {
     for (var i = 0; i < DAILY_CHALLENGES.length; i++) if (DAILY_CHALLENGES[i].id === dailyId) return DAILY_CHALLENGES[i];
     return null;
@@ -270,6 +328,16 @@
       daily: null,
       dailyStreak: 0,
       lastDailyClaim: '',
+      achievements: {},
+      stats: {
+        bestCombo: 0,
+        sonarPerfect: 0,
+        filtersFound: 0,
+        collectiblesFound: 0,
+        creditsEarned: 0,
+        safeTotal: 0,
+        goldTotal: 0
+      },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0, sonar: 0 },
       runs: 0
@@ -294,6 +362,24 @@
         if (cnum > 0) data.collectibles[cid] = Math.min(9999, cnum);
       }
     }
+    data.achievements = {};
+    if (raw.achievements && typeof raw.achievements === 'object') {
+      for (var aid in raw.achievements) {
+        if (!Object.prototype.hasOwnProperty.call(raw.achievements, aid)) continue;
+        if (achievementDef(aid) && raw.achievements[aid]) data.achievements[aid] = true;
+      }
+    }
+    var collTotal = 0;
+    for (var ck in data.collectibles) {
+      if (Object.prototype.hasOwnProperty.call(data.collectibles, ck)) collTotal += data.collectibles[ck];
+    }
+    data.stats.bestCombo = Math.max(0, Math.floor(Number(raw.stats && raw.stats.bestCombo) || 0));
+    data.stats.sonarPerfect = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sonarPerfect) || 0));
+    data.stats.filtersFound = Math.max(0, Math.floor(Number(raw.stats && raw.stats.filtersFound) || data.filters));
+    data.stats.collectiblesFound = Math.max(0, Math.floor(Number(raw.stats && raw.stats.collectiblesFound) || collTotal));
+    data.stats.creditsEarned = Math.max(0, Number(raw.stats && raw.stats.creditsEarned) || 0);
+    data.stats.safeTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.safeTotal) || 0));
+    data.stats.goldTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.goldTotal) || 0));
     data.contracts = normalizeContractSet(raw.contracts);
     data.contractRound = Math.max(1, Math.floor(Number(raw.contractRound) || 1));
     data.dailyStreak = clamp(Math.floor(Number(raw.dailyStreak) || 0), 0, 999);
@@ -342,6 +428,7 @@
     this.state = 'title';
     this.tab = 'tasks';
     this.warehouseView = 'materials';
+    this.shelterView = 'upgrades';
     this.w = 0;
     this.h = 0;
     this.dpr = 1;
@@ -571,6 +658,8 @@
     if (warehouseTab) warehouseTab.classList.toggle('has-ready', this.collectionCanCraftAny());
     var tasksTab = document.querySelector('.panel-tab[data-tab="tasks"]');
     if (tasksTab) tasksTab.classList.toggle('has-ready', this.dailyReady() || this.contractsReadyCount() > 0);
+    var shelterTab = document.querySelector('.panel-tab[data-tab="shelter"]');
+    if (shelterTab) shelterTab.classList.toggle('has-ready', this.achievementsReadyCount() > 0);
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
       this.dom.panelTag.textContent = MISSIONS.length + ' 个任务';
@@ -590,9 +679,16 @@
         this.dom.panelNote.textContent = '超出容量的物资会折算成打捞币';
       }
     } else {
-      this.dom.panelTitle.textContent = '扩建疯狂号';
-      this.dom.panelTag.textContent = 'Lv.' + this.level();
-      this.dom.panelNote.textContent = '升级消耗打捞币与仓库材料';
+      var achievementsReady = this.achievementsReadyCount();
+      if (this.shelterView === 'log') {
+        this.dom.panelTitle.textContent = '航海日志';
+        this.dom.panelTag.textContent = this.achievementUnlocked() + ' / ' + ACHIEVEMENTS.length;
+        this.dom.panelNote.textContent = achievementsReady ? achievementsReady + ' 项成就可领取' : '长期记录与一次性里程碑';
+      } else {
+        this.dom.panelTitle.textContent = '扩建疯狂号';
+        this.dom.panelTag.textContent = 'Lv.' + this.level();
+        this.dom.panelNote.textContent = '升级消耗打捞币与仓库材料';
+      }
     }
   };
 
@@ -1103,9 +1199,114 @@
     this.dom.panelContent.innerHTML = html;
   };
 
+  Hub.prototype.shelterSwitch = function () {
+    return '<div class="warehouse-switch shelter-switch">' +
+      '<button class="' + (this.shelterView === 'upgrades' ? 'active' : '') + '" data-action="shelter-view" data-view="upgrades">扩建</button>' +
+      '<button class="' + (this.shelterView === 'log' ? 'active' : '') + '" data-action="shelter-view" data-view="log">航海日志</button>' +
+    '</div>';
+  };
+
+  Hub.prototype.achievementValue = function (def) {
+    switch (def.metric) {
+      case 'runs': return this.data.runs || 0;
+      case 'bestCombo': return this.data.stats.bestCombo || 0;
+      case 'matchScore': return this.data.best.match || 0;
+      case 'sonarPerfect': return this.data.stats.sonarPerfect || 0;
+      case 'filtersFound': return this.data.stats.filtersFound || 0;
+      case 'collectiblesFound': return this.data.stats.collectiblesFound || 0;
+      case 'dailyStreak': return this.data.dailyStreak || 0;
+      case 'safeTotal': return this.data.stats.safeTotal || 0;
+      case 'level': return this.level();
+      default: return 0;
+    }
+  };
+
+  Hub.prototype.achievementUnlocked = function () {
+    var n = 0;
+    for (var i = 0; i < ACHIEVEMENTS.length; i++) if (this.data.achievements[ACHIEVEMENTS[i].id]) n++;
+    return n;
+  };
+
+  Hub.prototype.achievementsReadyCount = function () {
+    var n = 0;
+    for (var i = 0; i < ACHIEVEMENTS.length; i++) {
+      var def = ACHIEVEMENTS[i];
+      if (!this.data.achievements[def.id] && this.achievementValue(def) >= def.target) n++;
+    }
+    return n;
+  };
+
+  Hub.prototype.claimAchievement = function (achievementId) {
+    var def = achievementDef(achievementId);
+    if (!def || this.data.achievements[def.id]) return;
+    if (this.achievementValue(def) < def.target) return;
+    this.data.achievements[def.id] = true;
+    var reward = this.grantContractReward(def.reward);
+    this.audio.claim();
+    this.showToast('LOG ENTRY', def.name, '+' + fmt(reward.credits) + ' 打捞币' + (reward.overflow ? ' · 仓库溢出已折算' : ''));
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.renderAchievements = function () {
+    var ready = this.achievementsReadyCount();
+    var unlocked = this.achievementUnlocked();
+    var list = ACHIEVEMENTS.slice().sort(function (a, b) {
+      var self = this;
+      var ar = !self.data.achievements[a.id] && self.achievementValue(a) >= a.target ? 1 : 0;
+      var br = !self.data.achievements[b.id] && self.achievementValue(b) >= b.target ? 1 : 0;
+      if (ar !== br) return br - ar;
+      var ac = self.data.achievements[a.id] ? 1 : 0;
+      var bc = self.data.achievements[b.id] ? 1 : 0;
+      return ac - bc;
+    }.bind(this));
+    var html = this.shelterSwitch() +
+      '<div class="achievement-summary">' +
+        '<span class="collection-kicker">SHIP\'S LOG · 航海日志</span>' +
+        '<div class="collection-headline"><b>' + unlocked + ' / ' + ACHIEVEMENTS.length + '</b><span>已解锁' + (ready ? ' · ' + ready + ' 项可领' : '') + '</span></div>' +
+        '<p>长期记录会自动累积，不需要重复刷取；每个里程碑只能领取一次。</p>' +
+      '</div>' +
+      '<div class="achievement-stats">' +
+        '<span><b>' + this.data.stats.bestCombo + '</b>最高连击</span>' +
+        '<span><b>' + this.data.stats.sonarPerfect + '</b>声呐全图</span>' +
+        '<span><b>' + this.data.stats.collectiblesFound + '</b>累计收藏</span>' +
+      '</div>' +
+      '<div class="achievement-list">';
+    for (var i = 0; i < list.length; i++) {
+      var def = list[i];
+      var claimed = !!this.data.achievements[def.id];
+      var value = this.achievementValue(def);
+      var progress = Math.min(def.target, value);
+      var isReady = !claimed && progress >= def.target;
+      var pct = clamp(progress / def.target, 0, 1);
+      var mats = [];
+      for (var m = 0; m < MATERIALS.length; m++) {
+        var mat = MATERIALS[m];
+        var amount = def.reward.mats && def.reward.mats[mat.id];
+        if (amount) mats.push('<span><img src="' + mat.iconImg + '" alt="">' + mat.name + ' +' + amount + '</span>');
+      }
+      html += '<article class="achievement-card' + (isReady ? ' ready' : '') + (claimed ? ' claimed' : '') + '">' +
+        '<span class="achievement-icon"><img src="' + def.iconImg + '" alt=""></span>' +
+        '<div class="achievement-copy">' +
+          '<div class="achievement-title"><b>' + def.name + '</b><em>' + progress + ' / ' + def.target + '</em></div>' +
+          '<p>' + def.desc + '</p>' +
+          '<div class="achievement-track"><i style="width:' + (pct * 100).toFixed(1) + '%"></i></div>' +
+          '<div class="achievement-reward"><span>打捞币 +' + def.reward.credits + '</span>' + mats.join('') + '</div>' +
+        '</div>' +
+        '<button class="achievement-claim' + (isReady ? ' ready' : '') + '" data-action="claim-achievement" data-id="' + def.id + '"' + (isReady ? '' : ' disabled') + '>' +
+          (claimed ? '已领取' : isReady ? '领取' : '未达成') +
+        '</button>' +
+      '</article>';
+    }
+    html += '</div>';
+    this.dom.panelContent.innerHTML = html;
+  };
+
   Hub.prototype.renderShelter = function () {
+    if (this.shelterView === 'log') { this.renderAchievements(); return; }
     var lvl = this.level();
-    var html = '<div class="shelter-head"><span>避难所等级</span><b>Lv.' + lvl + '</b></div><div class="upgrade-list">';
+    var html = this.shelterSwitch() + '<div class="shelter-head"><span>避难所等级</span><b>Lv.' + lvl + '</b></div><div class="upgrade-list">';
     for (var i = 0; i < UPGRADES.length; i++) {
       var up = UPGRADES[i];
       var level = this.data.upgrades[up.id] || 0;
@@ -1244,6 +1445,14 @@
     result.collectibles = collectibles;
     this.applyContractProgress(result);
     this.applyDailyProgress(result);
+    var stats = this.data.stats;
+    stats.bestCombo = Math.max(stats.bestCombo || 0, Math.floor(Number(result.bestCombo) || 0));
+    stats.safeTotal = (stats.safeTotal || 0) + Math.max(0, Math.floor(Number(result.safeCount) || 0));
+    stats.goldTotal = (stats.goldTotal || 0) + Math.max(0, Math.floor(Number(result.goldCount) || 0));
+    stats.filtersFound = (stats.filtersFound || 0) + filtersGained;
+    stats.collectiblesFound = (stats.collectiblesFound || 0) + collectibles.length;
+    stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits;
+    if (result.type === 'sonar' && Number(result.found || 0) >= 4) stats.sonarPerfect = (stats.sonarPerfect || 0) + 1;
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1387,6 +1596,12 @@
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
         else if (action === 'claim-daily') self.claimDaily();
         else if (action === 'craft') self.craft(actionEl.getAttribute('data-rarity'));
+        else if (action === 'claim-achievement') self.claimAchievement(actionEl.getAttribute('data-id'));
+        else if (action === 'shelter-view') {
+          self.shelterView = actionEl.getAttribute('data-view');
+          self.audio.tab();
+          self.renderPanel();
+        }
         else if (action === 'warehouse-view') {
           self.warehouseView = actionEl.getAttribute('data-view');
           self.audio.click();
