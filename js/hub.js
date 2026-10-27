@@ -181,6 +181,21 @@
       reward: { credits: 240, mats: { fuel: 2 } }
     },
     {
+      id: 'cut-contract', name: '精准拆解', iconImg: 'assets/real/workshop.webp', metric: 'cutCuts', mode: 'sum', target: 8,
+      desc: '累计完成 8 个沉船切割切口。',
+      reward: { credits: 240, mats: { glass: 2, copper: 1 } }
+    },
+    {
+      id: 'sort-contract', name: '流水线熟手', iconImg: 'assets/real/storage.webp', metric: 'sortCorrect', mode: 'sum', target: 10,
+      desc: '累计正确分拣 10 件货物。',
+      reward: { credits: 250, mats: { chip: 2, glass: 2 } }
+    },
+    {
+      id: 'beacon-contract', name: '守灯人', iconImg: 'assets/real/core.webp', metric: 'beaconRounds', mode: 'sum', target: 3,
+      desc: '累计复现 3 组灯塔信号。',
+      reward: { credits: 260, mats: { copper: 2, chip: 1 } }
+    },
+    {
       id: 'perfect-sonar', name: '全图回收', iconImg: 'assets/real/sonar.webp', metric: 'sonarPerfect', mode: 'max', target: 1, rare: true,
       desc: '单局声呐扫掠找回全部 4 个货箱。',
       reward: { credits: 520, mats: { chip: 4 } }
@@ -228,6 +243,24 @@
       metric: 'collectibles', mode: 'sum', target: 2,
       desc: '今天从局内带回 2 件收藏品。',
       reward: { credits: 300, mats: { fiber: 3, chip: 1 } }
+    },
+    {
+      id: 'daily-cut', name: '精准切口', iconImg: 'assets/real/workshop.webp',
+      metric: 'cutCuts', mode: 'max', target: 4,
+      desc: '单局沉船切割完成 4 个精准切口。',
+      reward: { credits: 320, mats: { glass: 3, copper: 1 } }
+    },
+    {
+      id: 'daily-sort', name: '分拣快手', iconImg: 'assets/real/storage.webp',
+      metric: 'sortCorrect', mode: 'max', target: 8,
+      desc: '单局分拣传送带正确分拣 8 件。',
+      reward: { credits: 330, mats: { chip: 2, glass: 2 } }
+    },
+    {
+      id: 'daily-beacon', name: '信号复现', iconImg: 'assets/real/core.webp',
+      metric: 'beaconRounds', mode: 'max', target: 2,
+      desc: '单局灯塔信号复现 2 组。',
+      reward: { credits: 330, mats: { copper: 2, chip: 2 } }
     }
   ]);
 
@@ -281,6 +314,26 @@
       id: 'level-ten', name: '海岸据点', iconImg: 'assets/real/workshop.webp',
       metric: 'level', target: 10, desc: '把避难所升到 Lv.10。',
       reward: { credits: 800, mats: { metal: 8, fuel: 6, fiber: 6, chip: 4 } }
+    },
+    {
+      id: 'cut-first', name: '第一道切口', iconImg: 'assets/real/workshop.webp',
+      metric: 'cutRuns', target: 1, desc: '完成一次沉船切割。',
+      reward: { credits: 200, mats: { glass: 2, copper: 1 } }
+    },
+    {
+      id: 'sort-first', name: '流水线开张', iconImg: 'assets/real/storage.webp',
+      metric: 'sortRuns', target: 1, desc: '完成一次分拣传送带。',
+      reward: { credits: 200, mats: { chip: 1, glass: 1 } }
+    },
+    {
+      id: 'beacon-first', name: '最后的灯塔', iconImg: 'assets/real/core.webp',
+      metric: 'beaconRuns', target: 1, desc: '完成一次灯塔信号。',
+      reward: { credits: 200, mats: { copper: 1, chip: 1 } }
+    },
+    {
+      id: 'all-six', name: '六面手', iconImg: 'assets/real/sonar.webp',
+      metric: 'missionsPlayed', target: 6, desc: '六种打捞任务都至少完成一次。',
+      reward: { credits: 900, mats: { metal: 6, fuel: 4, fiber: 4, chip: 4, glass: 4, copper: 4 } }
     }
   ]);
 
@@ -384,7 +437,10 @@
         collectiblesFound: 0,
         creditsEarned: 0,
         safeTotal: 0,
-        goldTotal: 0
+        goldTotal: 0,
+        cutRuns: 0,
+        sortRuns: 0,
+        beaconRuns: 0
       },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0 },
@@ -435,6 +491,9 @@
     data.stats.creditsEarned = Math.max(0, Number(raw.stats && raw.stats.creditsEarned) || 0);
     data.stats.safeTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.safeTotal) || 0));
     data.stats.goldTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.goldTotal) || 0));
+    data.stats.cutRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.cutRuns) || 0));
+    data.stats.sortRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sortRuns) || 0));
+    data.stats.beaconRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.beaconRuns) || 0));
     data.contracts = normalizeContractSet(raw.contracts);
     data.contractRound = Math.max(1, Math.floor(Number(raw.contractRound) || 1));
     data.contractRerollUsed = !!raw.contractRerollUsed;
@@ -899,6 +958,9 @@
       case 'chips': return Math.max(0, Number(result.materials && result.materials.chip) || 0);
       case 'glass': return Math.max(0, Number(result.materials && result.materials.glass) || 0);
       case 'copper': return Math.max(0, Number(result.materials && result.materials.copper) || 0);
+      case 'cutCuts': return Math.max(0, Number(result.cuts) || 0);
+      case 'sortCorrect': return Math.max(0, Number(result.correct) || 0);
+      case 'beaconRounds': return Math.max(0, Number(result.rounds) || 0);
       case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
       case 'sonarPerfect': return result.type === 'sonar' && Number(result.found || 0) >= 4 ? 1 : 0;
       case 'stormRun': {
@@ -959,6 +1021,9 @@
       case 'matchScore': return result.type === 'match' ? Math.max(0, Number(result.score) || 0) : 0;
       case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
       case 'runs': return 1;
+      case 'cutCuts': return Math.max(0, Number(result.cuts) || 0);
+      case 'sortCorrect': return Math.max(0, Number(result.correct) || 0);
+      case 'beaconRounds': return Math.max(0, Number(result.rounds) || 0);
       case 'collectibles': return Array.isArray(result.collectibles) ? result.collectibles.length : 0;
       default: return 0;
     }
@@ -1436,6 +1501,19 @@
       case 'collectiblesFound': return this.data.stats.collectiblesFound || 0;
       case 'dailyStreak': return this.data.dailyStreak || 0;
       case 'safeTotal': return this.data.stats.safeTotal || 0;
+      case 'cutRuns': return this.data.stats.cutRuns || 0;
+      case 'sortRuns': return this.data.stats.sortRuns || 0;
+      case 'beaconRuns': return this.data.stats.beaconRuns || 0;
+      case 'missionsPlayed': {
+        var n = 0;
+        if ((this.data.best.hook || 0) > 0) n++;
+        if ((this.data.best.match || 0) > 0) n++;
+        if ((this.data.best.sonar || 0) > 0) n++;
+        if ((this.data.stats.cutRuns || 0) > 0) n++;
+        if ((this.data.stats.sortRuns || 0) > 0) n++;
+        if ((this.data.stats.beaconRuns || 0) > 0) n++;
+        return n;
+      }
       case 'level': return this.level();
       default: return 0;
     }
@@ -1659,6 +1737,9 @@
     if (filtersGained > 0) this.data.filterPity = 0;
     else this.data.filterPity = Math.min(7, (this.data.filterPity || 0) + 1);
     this.data.runs += 1;
+    if (result.type === 'cut') this.data.stats.cutRuns = (this.data.stats.cutRuns || 0) + 1;
+    else if (result.type === 'sort') this.data.stats.sortRuns = (this.data.stats.sortRuns || 0) + 1;
+    else if (result.type === 'beacon') this.data.stats.beaconRuns = (this.data.stats.beaconRuns || 0) + 1;
     var key = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon'].indexOf(result.type) >= 0 ? result.type : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
     var collectibles = this.registerCollectibles(result);

@@ -112,7 +112,7 @@
     m.copper = 1 + Math.floor(this.cuts / 2);
     m.glass = 1;
     this.result = {
-      type: 'cut', score: this.score + this.cuts * 60,
+      type: 'cut', score: this.score + this.cuts * 60, cuts: this.cuts,
       credits: 90 + this.cuts * 65, filters: 0,
       materials: m, collectibles: [], bestCombo: this.cuts
     };
@@ -240,7 +240,7 @@
     for (var i = 0; i < CW.MATERIALS.length; i++) m[CW.MATERIALS[i].id] = 0;
     for (var id in this.counts) if (this.counts[id]) m[id] = this.counts[id];
     this.result = {
-      type: 'sort', score: this.score + this.correct * 30,
+      type: 'sort', score: this.score + this.correct * 30, correct: this.correct,
       credits: 100 + this.correct * 45, filters: 0,
       materials: m, collectibles: []
     };
@@ -385,7 +385,7 @@
     m.glass = 1 + Math.floor(this.rounds / 2);
     m.copper = 1;
     this.result = {
-      type: 'beacon', score: this.score,
+      type: 'beacon', score: this.score, rounds: this.rounds,
       credits: 100 + this.rounds * 90, filters: 0,
       materials: m, collectibles: []
     };
