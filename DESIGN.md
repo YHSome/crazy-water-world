@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：5.5.1 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：5.6 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -356,11 +356,19 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 ### 8.9 航海日志与长期成就
 
 - 避难所标签内部切换「扩建 / 航海日志」，沿用仓库的子视图模式，不增加第五个顶层标签。
-- 10 个一次性里程碑：首次下潜、十次出航、九层连击、单局 2,500 分、声呐全图、3 台过滤器、10 件收藏、7 天连签、20 个保险箱、避难所 Lv.10。
-- `stats` 记录 `bestCombo / sonarPerfect / filtersFound / collectiblesFound / creditsEarned / safeTotal / goldTotal`。
-- 14 个成就：原 10 个，加切割 / 分拣 / 灯塔首次完成与「六面手」。成就奖励打捞币与材料；每个成就 `achievements[id]=true` 后不可重复领取。
+- 16 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔首次完成 + 「六面手」+「第一枚 S」+「六项全能 S」。
+- `stats` 记录 `bestCombo / sonarPerfect / filtersFound / collectiblesFound / creditsEarned / safeTotal / goldTotal / cutRuns / sortRuns / beaconRuns`，并用 `grades / sGrades` 保存最佳评级与首次 S。
+- 成就奖励打捞币与材料；每个成就 `achievements[id]=true` 后不可重复领取。
 - 旧存档迁移：收集品总数与当前过滤器用于补全 `collectiblesFound / filtersFound`；其余统计从 0 开始。
 - 可领取时避难所标签显示圆点；成就进度只由结算与长期状态计算，不产生离线收益。
+
+### 8.9.1 任务评级
+
+- `MISSION_GRADES` 为六个任务各自定义 S/A/B/C 分数线；`gradeFor(type, score)` 在结算时计算。
+- 只保存历史最佳评级，低分不会覆盖；任务卡显示最佳评级徽章。
+- 每个任务首次 S 一次性 +300 打捞币；`sGrades[type]` 防止重复领取。
+- 结算页显示本局评级，首次 S 会在结算标签中标注奖励。
+- 不提供离线收益或永久倍率，只作为技巧目标与一次性奖励。
 
 ## 9. 扩建
 
@@ -492,6 +500,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
