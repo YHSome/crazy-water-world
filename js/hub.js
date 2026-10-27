@@ -1660,11 +1660,19 @@
   CW.rgba = rgba;
   CW.TAU = TAU;
 
-  window.addEventListener('load', function () {
+  function bootHub() {
     var canvas = document.getElementById('scene');
     if (!canvas) return;
     var hub = new Hub(canvas);
     window.__cw = hub;
-  });
+  }
+
+  // Start the UI as soon as the DOM is ready. Large local photos / audio can
+  // still be streaming, but the title, HUD and panels must not wait for `load`.
+  if (document.readyState === 'complete') {
+    bootHub();
+  } else {
+    document.addEventListener('DOMContentLoaded', bootHub, { once: true });
+  }
 })();
 
