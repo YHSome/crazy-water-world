@@ -1735,6 +1735,15 @@ body::after {
 }
 .arcade-card h2 { color: #143f47; }
 .arcade-copy { font-size: 12px; color: #5d7e81; }
+.brief-permits { margin: 0 0 12px; }
+.permit-title { display: block; margin-bottom: 6px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; color: #638285; }
+.permit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.permit-card { min-width: 0; padding: 8px 9px; text-align: left; border: 1px solid rgba(19, 93, 96, 0.12); border-left: 3px solid var(--permit, #14b8b2); border-radius: 9px; background: #f4fbf7; color: #2f5c61; }
+.permit-card b { display: block; font-size: 12px; color: #173f47; }
+.permit-card span { display: block; margin-top: 3px; font-family: var(--mono); font-size: 9px; line-height: 1.4; color: #66878a; }
+.permit-card.active { border-color: var(--permit, #14b8b2); background: color-mix(in srgb, var(--permit, #14b8b2) 10%, #fffdf7); box-shadow: 0 0 0 1px var(--permit, #14b8b2) inset; }
+.permit-card:hover { background: #eaf8f2; }
+.summary-chip.permit { border: 1px solid var(--tone); color: var(--tone); }
 .brief-stats > div { padding: 10px 11px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 11px; background: #f1faf6; }
 .brief-stats span { font-size: 9px; color: #6b8b8e; }
 .brief-stats b { margin-top: 4px; font-size: 11px; color: #173f47; }

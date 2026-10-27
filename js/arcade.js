@@ -56,6 +56,27 @@
     }
   ]);
 
+  var PERMITS = (CW.PERMITS = [
+    {
+      id: 'steady', name: '稳潮许可', color: '#14b8b2',
+      desc: '本局 +8 秒 / +3 步 / +2 声呐；全收益 -8%',
+      short: '+8 秒 · +3 步 · +2 声呐 · 收益 -8%',
+      credit: 0.92, mat: 0.92, time: 8, moves: 3, probes: 2
+    },
+    {
+      id: 'profit', name: '高价许可', color: '#ffb547',
+      desc: '本局打捞币 +25%；-5 秒 / -2 步 / -2 声呐',
+      short: '打捞币 +25% · -5 秒 / -2 步 / -2 声呐',
+      credit: 1.25, mat: 1, time: -5, moves: -2, probes: -2
+    },
+    {
+      id: 'cargo', name: '满载许可', color: '#8ee6d4',
+      desc: '本局物资 +25%；-4 秒 / -2 步 / -2 声呐',
+      short: '物资 +25% · -4 秒 / -2 步 / -2 声呐',
+      credit: 1, mat: 1.25, time: -4, moves: -2, probes: -2
+    }
+  ]);
+
   function combineConditions(a, b) {
     return {
       id: a.id + '+' + b.id,
@@ -150,6 +171,8 @@
     this.type = null;
     this.phase = 'closed';
     this.condition = null;
+    this.permit = null;
+    this.permitOptions = [];
     this.game = null;
     this.countdown = 0;
     this.hudTimer = 0;
@@ -179,6 +202,7 @@
       briefCapacity: id('brief-capacity'),
       briefGoal: id('brief-goal'),
       briefCondition: id('brief-condition'),
+      briefPermits: id('brief-permits'),
       briefReward: id('brief-reward'),
       summary: id('arcade-summary'),
       summaryScore: id('summary-score'),
@@ -219,7 +243,7 @@
       var action = el.getAttribute('data-action');
       if (action.indexOf('arcade-') !== 0) return;
       e.stopPropagation();
-      self.onAction(action);
+      self.onAction(action, el);
     });
     this.canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     this.canvas.addEventListener('pointerdown', function (e) {
@@ -255,8 +279,9 @@
     }
   };
 
-  Arcade.prototype.onAction = function (action) {
+  Arcade.prototype.onAction = function (action, el) {
     if (action === 'arcade-back') this.back();
+    else if (action === 'arcade-permit') this.choosePermit(el ? el.getAttribute('data-permit') : null);
     else if (action === 'arcade-start') this.startCountdown();
     else if (action === 'arcade-close') this.close();
     else if (action === 'arcade-again') this.restart();
@@ -275,10 +300,13 @@
     this.applied = null;
     this.lastLoot = '';
     this.lastHudScore = '';
+    this.permit = null;
+    this.condition = this.pickCondition();
+    this.pickPermitOptions();
     document.body.classList.add('is-arcade');
     this.root.classList.remove('hidden');
     this.resize();
-    this.createGame();
+    this.createGame(true);
     this.fillBrief();
     this.dom.brief.classList.remove('hidden');
     this.dom.summary.classList.add('hidden');
@@ -305,14 +333,40 @@
     return pick;
   };
 
-  Arcade.prototype.createGame = function () {
-    this.condition = this.pickCondition();
+  Arcade.prototype.pickPermitOptions = function () {
+    var pool = PERMITS.slice();
+    var out = [];
+    while (out.length < 2 && pool.length) {
+      var idx = (Math.random() * pool.length) | 0;
+      out.push(pool.splice(idx, 1)[0]);
+    }
+    this.permitOptions = out;
+  };
+
+  Arcade.prototype.choosePermit = function (permitId) {
+    var picked = null;
+    for (var i = 0; i < this.permitOptions.length; i++) {
+      if (this.permitOptions[i].id === permitId) picked = this.permitOptions[i];
+    }
+    if (!picked) return;
+    this.permit = this.permit && this.permit.id === picked.id ? null : picked;
+    this.createGame(true);
+    this.fillBrief();
+    this.audio.click();
+  };
+
+  Arcade.prototype.createGame = function (keepCondition) {
+    if (!keepCondition) this.condition = this.pickCondition();
+    var permit = this.permit;
+    var perkTime = permit ? permit.time : 0;
+    var perkMoves = permit ? permit.moves : 0;
+    var perkProbes = permit ? permit.probes : 0;
     var config = {
       w: this.w,
       h: this.h,
-      duration: this.hub.hookTime() + this.condition.time,
-      moves: this.hub.matchMoves() + this.condition.moves,
-      probes: this.hub.sonarProbes() + this.condition.probes,
+      duration: this.hub.hookTime() + this.condition.time + perkTime,
+      moves: this.hub.matchMoves() + this.condition.moves + perkMoves,
+      probes: this.hub.sonarProbes() + this.condition.probes + perkProbes,
       capacity: this.hub.capacity(),
       condition: this.condition
     };
@@ -329,17 +383,21 @@
   Arcade.prototype.applyCondition = function (result) {
     if (!result || !this.condition) return result;
     var cond = this.condition;
+    var permit = this.permit;
+    var creditMult = cond.credit * (permit ? permit.credit : 1);
+    var matMult = cond.mat * (permit ? permit.mat : 1);
     var out = {};
     for (var key in result) {
       if (Object.prototype.hasOwnProperty.call(result, key)) out[key] = result[key];
     }
-    out.credits = Math.round((result.credits || 0) * cond.credit);
+    out.credits = Math.round((result.credits || 0) * creditMult);
     out.materials = {};
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
-      out.materials[m.id] = Math.round(((result.materials && result.materials[m.id]) || 0) * cond.mat);
+      out.materials[m.id] = Math.round(((result.materials && result.materials[m.id]) || 0) * matMult);
     }
     out.condition = cond.id;
+    out.permit = permit ? permit.id : null;
     return out;
   };
 
@@ -354,15 +412,33 @@
     this.dom.briefKicker.textContent = mission.kicker + (cond ? ' · ' + cond.name : '');
     this.dom.briefTitle.textContent = mission.name;
     this.dom.briefCopy.textContent = mission.desc;
+    var permit = this.permit;
+    var permitTime = permit ? permit.time : 0;
+    var permitMoves = permit ? permit.moves : 0;
+    var permitProbes = permit ? permit.probes : 0;
     if (this.type === 'sonar') {
-      this.dom.briefTime.textContent = (this.hub.sonarProbes() + (cond ? cond.probes : 0)) + ' 次';
+      this.dom.briefTime.textContent = (this.hub.sonarProbes() + (cond ? cond.probes : 0) + permitProbes) + ' 次';
     } else {
-      this.dom.briefTime.textContent = isHook ? (this.hub.hookTime() + (cond ? cond.time : 0)) + ' 秒' : (this.hub.matchMoves() + (cond ? cond.moves : 0)) + ' 步';
+      this.dom.briefTime.textContent = isHook
+        ? (this.hub.hookTime() + (cond ? cond.time : 0) + permitTime) + ' 秒'
+        : (this.hub.matchMoves() + (cond ? cond.moves : 0) + permitMoves) + ' 步';
     }
     if (this.dom.briefCondition && cond) {
       this.dom.briefCondition.classList.remove('hidden');
       this.dom.briefCondition.style.setProperty('--cond', cond.color);
       this.dom.briefCondition.innerHTML = '<span>本局海况</span><b>' + cond.name + '</b><em>' + cond.desc + '</em>';
+    }
+    if (this.dom.briefPermits) {
+      if (!this.permitOptions.length) this.pickPermitOptions();
+      var permitHtml = '<span class="permit-title">出航许可 · 二选一（可不选）</span><div class="permit-row">';
+      for (var pi = 0; pi < this.permitOptions.length; pi++) {
+        var p = this.permitOptions[pi];
+        permitHtml += '<button class="permit-card' + (permit && permit.id === p.id ? ' active' : '') + '" data-action="arcade-permit" data-permit="' + p.id + '" style="--permit:' + p.color + '">' +
+          '<b>' + p.name + '</b><span>' + p.short + '</span>' +
+        '</button>';
+      }
+      permitHtml += '</div>';
+      this.dom.briefPermits.innerHTML = permitHtml;
     }
     var used = this.hub.used();
     var cap = this.hub.capacity();
@@ -491,6 +567,9 @@
     if (this.condition) {
       chips += '<span class="summary-chip condition" style="--tone:' + this.condition.color + '">海况 · ' + this.condition.name + '</span>';
     }
+    if (this.permit) {
+      chips += '<span class="summary-chip permit" style="--tone:' + this.permit.color + '">许可 · ' + this.permit.name + '</span>';
+    }
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
       var n = this.applied.stored[m.id] || 0;
@@ -532,10 +611,17 @@
   Arcade.prototype.restart = function () {
     if (this.phase !== 'summary') return;
     this.dom.summary.classList.add('hidden');
-    this.createGame();
+    this.phase = 'brief';
+    this.permit = null;
+    this.condition = this.pickCondition();
+    this.pickPermitOptions();
+    this.createGame(true);
+    this.fillBrief();
     this.lastLoot = '';
     this.lastHudScore = '';
-    this.startCountdown();
+    this.showPlayUI(false);
+    this.dom.brief.classList.remove('hidden');
+    this.audio.click();
   };
 
   Arcade.prototype.back = function () {
