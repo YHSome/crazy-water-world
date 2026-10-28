@@ -10,14 +10,14 @@
   var rand = CW.rand;
 
   var TILE = {
-    fish: { name: '银鱼', glyph: '鱼', color: '#8fe7ff', value: 55, mats: { fiber: 1 } },
-    crate: { name: '漂流货箱', glyph: '箱', color: '#ffcf72', value: 95, mats: { metal: 2, glass: 1 } },
-    gold: { name: '黄金鱼', glyph: '金', color: '#ffdf72', value: 220, mats: { chip: 1 } },
-    pearl: { name: '深海珍珠', glyph: '珠', color: '#d9b8ff', value: 140, collectible: true },
-    magnet: { name: '磁力网', glyph: '磁', color: '#79d8ff', value: 0, power: 'magnet' },
-    slow: { name: '缓流符', glyph: '缓', color: '#9be2a9', value: 0, power: 'slow' },
-    shield: { name: '护网盾', glyph: '盾', color: '#ffd166', value: 0, power: 'shield' },
-    mine: { name: '锈雷', glyph: '雷', color: '#ff7a62', value: 0, mine: true }
+    fish: { name: '银鱼', glyph: '鱼', color: '#8fe7ff', value: 55, mats: { fiber: 1 }, img: 'assets/icons/fish.svg' },
+    crate: { name: '漂流货箱', glyph: '箱', color: '#ffcf72', value: 95, mats: { metal: 2, glass: 1 }, img: 'assets/real/storage.webp' },
+    gold: { name: '黄金鱼', glyph: '金', color: '#ffdf72', value: 220, mats: { chip: 1 }, img: 'assets/real/gold.webp' },
+    pearl: { name: '深海珍珠', glyph: '珠', color: '#d9b8ff', value: 140, collectible: true, img: 'assets/collectibles/tide-crown.webp' },
+    magnet: { name: '磁力网', glyph: '磁', color: '#79d8ff', value: 0, power: 'magnet', img: 'assets/real/core.webp' },
+    slow: { name: '缓流符', glyph: '缓', color: '#9be2a9', value: 0, power: 'slow', img: 'assets/real/sonar.webp' },
+    shield: { name: '护网盾', glyph: '盾', color: '#ffd166', value: 0, power: 'shield', img: 'assets/seawater-filter-icon.webp' },
+    mine: { name: '锈雷', glyph: '雷', color: '#ff7a62', value: 0, mine: true, img: 'assets/real/mine.webp' }
   };
 
   function TrawlGame(arcade, config) {
@@ -50,6 +50,13 @@
     this.caught = 0;
     this.netW = 0;
     this.effects = { magnet: 0, slow: 0, shield: 0 };
+    this.sprites = {};
+    for (var tk in TILE) {
+      if (!Object.prototype.hasOwnProperty.call(TILE, tk)) continue;
+      var timg = new Image();
+      timg.src = TILE[tk].img;
+      this.sprites[tk] = timg;
+    }
   }
 
   TrawlGame.prototype.netY = function () { return this.h - Math.max(96, this.h * 0.14); };
@@ -328,18 +335,43 @@
       ctx.beginPath();
       ctx.arc(2, 3, it.r + 3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = data.color;
+      var timg = this.sprites && this.sprites[it.key];
+      var imageReady = timg && timg.complete && timg.naturalWidth;
+      if (imageReady) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, it.r, 0, Math.PI * 2);
+        ctx.clip();
+        var scale = Math.max((it.r * 2) / timg.naturalWidth, (it.r * 2) / timg.naturalHeight);
+        var iw = timg.naturalWidth * scale;
+        var ih = timg.naturalHeight * scale;
+        ctx.drawImage(timg, -iw / 2, -ih / 2, iw, ih);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = data.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, it.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0b3b46';
+        ctx.font = '800 ' + Math.round(it.r * 0.95) + 'px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(data.glyph, 0, 1);
+      }
+      ctx.strokeStyle = data.mine ? 'rgba(255, 88, 66, 0.95)' : 'rgba(255,255,255,0.88)';
+      ctx.lineWidth = data.mine ? 3 : 2;
       ctx.beginPath();
       ctx.arc(0, 0, it.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = data.mine ? 'rgba(255, 88, 66, 0.9)' : 'rgba(255,255,255,0.86)';
-      ctx.lineWidth = data.mine ? 3 : 2;
       ctx.stroke();
-      ctx.fillStyle = '#0b3b46';
-      ctx.font = '800 ' + Math.round(it.r * 0.95) + 'px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.fillStyle = 'rgba(2, 31, 41, 0.78)';
+      ctx.beginPath();
+      ctx.arc(it.r * 0.66, it.r * 0.66, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#eafff6';
+      ctx.font = '800 7px "Noto Sans SC", "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(data.glyph, 0, 1);
+      ctx.fillText(data.glyph, it.r * 0.66, it.r * 0.66 + 0.5);
       ctx.restore();
     }
     for (var p = 0; p < this.particles.length; p++) {
