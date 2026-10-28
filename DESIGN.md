@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：6.8 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：6.9 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -374,7 +374,8 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 ### 8.9 航海日志与长期成就
 
 - 避难所标签内部切换「扩建 / 航海日志」，沿用仓库的子视图模式，保持在现有五项导航内。
-- 18 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔首次完成 + 「六面手」+「第一枚 S」+「六项全能 S」+「独当一面」+「传奇船队」。
+- 25 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔首次完成 + 「六面手」+「第一枚 S」+「六项全能 S」+「独当一面」+「传奇船队」+ 避难所 Lv.5 / 工具 Lv.3 / 远征 1・10 次 / 急单 10 笔 / 三套奖励 / 完整 19 件档案。
+- 新增统计：`stats.expeditionRuns`、`stats.urgentOrders`；`shelterLevel`、`crewGearMax`、`setRewardsCount`、`collectionUnique` 作为成就指标。
 - `stats` 记录 `bestCombo / sonarPerfect / filtersFound / collectiblesFound / creditsEarned / safeTotal / goldTotal / cutRuns / sortRuns / beaconRuns`，并用 `grades / sGrades` 保存最佳评级与首次 S。
 - 成就奖励打捞币与材料；每个成就 `achievements[id]=true` 后不可重复领取。
 - 旧存档迁移：收集品总数与当前过滤器用于补全 `collectiblesFound / filtersFound`；其余统计从 0 开始。
@@ -563,6 +564,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
