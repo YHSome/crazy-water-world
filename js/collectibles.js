@@ -324,11 +324,11 @@
   };
 
   CW.DISMANTLE_YIELDS = {
-    common: { metal: 2, fiber: 1 },
-    uncommon: { metal: 3, chip: 1, glass: 1 },
-    rare: { metal: 4, fuel: 1, chip: 2, glass: 2, copper: 1 },
-    epic: { metal: 6, fuel: 2, fiber: 2, chip: 3, glass: 2, copper: 2 },
-    legendary: { metal: 10, fuel: 4, fiber: 4, chip: 5, glass: 4, copper: 4 }
+    common: { metal: 3, fiber: 2 },
+    uncommon: { metal: 4, chip: 2, glass: 2 },
+    rare: { metal: 6, fuel: 2, chip: 3, glass: 3, copper: 2 },
+    epic: { metal: 10, fuel: 4, fiber: 4, chip: 5, glass: 4, copper: 4 },
+    legendary: { metal: 16, fuel: 6, fiber: 6, chip: 8, glass: 6, copper: 6 }
   };
 
   CW.rollSpecialMaterial = function () {
