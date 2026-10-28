@@ -2608,6 +2608,10 @@ body:not(.is-title) #scene { clip-path: none !important; }
   .shelter-up-btn { width: 100%; }
 }
 
+/* Layered components must not override the global hidden state. */
+#hub-panel.hidden { display: none !important; }
+#hud.hidden, #arcade.hidden, #title-screen.hidden { display: none !important; }
+
 /* Daily tide contract */
 .daily-card {
   position: relative;
