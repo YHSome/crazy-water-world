@@ -35,6 +35,8 @@
     this.stack = [];
     this.delivered = 0;
     this.missed = 0;
+    this.combo = 0;
+    this.bestCombo = 0;
     this.crateW = 62;
     this.crateH = 40;
     this.crate = null;
@@ -76,6 +78,8 @@
     this.stack = [];
     this.delivered = 0;
     this.missed = 0;
+    this.combo = 0;
+    this.bestCombo = 0;
     this.nextIndex = 0;
     this.popups = [];
     this.particles = [];
@@ -105,19 +109,25 @@
       filters: 0,
       hasAction: true,
       actionLabel: '放下货箱',
-      hint: '点击水面放下货箱 · 对准已有货箱或栈桥 · 偏太多会掉进海里'
+      hint: '点击水面放下货箱 · 对准已有货箱或栈桥 · 完美对齐可累计连击 · 偏太多会掉进海里'
     };
   };
 
   StackGame.prototype.settleCrate = function () {
     var c = this.crate;
     var top = this.stack.length ? this.stack[this.stack.length - 1] : null;
-    var ok = !top || Math.abs(c.x - top.x) <= this.crateW * 0.58;
+    var diff = top ? Math.abs(c.x - top.x) : 0;
+    var ok = !top || diff <= this.crateW * 0.58;
     if (ok) {
       this.stack.push({ x: c.x, idx: c.idx });
       this.delivered += 1;
       var data = c.data;
-      this.credits += data.credits + this.delivered * 20;
+      var perfect = !top || diff <= 10;
+      this.combo = perfect ? this.combo + 1 : 0;
+      this.bestCombo = Math.max(this.bestCombo, this.combo);
+      var bonus = perfect ? 25 * this.combo : 0;
+      this.credits += data.credits + this.delivered * 20 + bonus;
+      if (perfect) this.popups.push({ x: c.x, y: c.y - 24, text: '完美 ×' + this.combo + ' · +' + bonus, color: '#ffe18a', life: 1.4, maxLife: 1.4 });
       for (var k in data.mats) {
         if (Object.prototype.hasOwnProperty.call(data.mats, k)) this.counts[k] = (this.counts[k] || 0) + data.mats[k];
       }
@@ -129,6 +139,7 @@
       this.audio.coin();
     } else {
       this.missed += 1;
+      this.combo = 0;
       this.remaining = Math.max(0, this.remaining - 4);
       this.flash = 0.8;
       this.popups.push({ x: c.x, y: c.y, text: '偏了！-4 秒', color: '#ff7a62', life: 1.5, maxLife: 1.5 });
@@ -323,7 +334,7 @@
     ctx.fillStyle = '#eafff6';
     ctx.font = '800 15px "Noto Sans SC", "Microsoft YaHei", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('码头吊装 · 已卸 ' + this.delivered + ' / 6', w / 2, h - 38);
+    ctx.fillText('码头吊装 · 已卸 ' + this.delivered + ' / 6 · 完美 ×' + this.combo, w / 2, h - 38);
     ctx.fillStyle = 'rgba(198, 245, 239, 0.72)';
     ctx.font = '10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
     ctx.fillText('点击水面放下货箱 · 对准再放', w / 2, h - 20);
