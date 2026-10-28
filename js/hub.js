@@ -468,6 +468,21 @@
       id: 'storm-run', name: '风暴猎手', iconImg: 'assets/real/mine.webp', metric: 'stormRun', mode: 'max', target: 1, rare: true,
       desc: '在雷区、赤潮或包含它们的双重海况下完成一局。',
       reward: { credits: 480, mats: { fuel: 4, fiber: 2 } }
+    },
+    {
+      id: 'trawl-twice', name: '潮汐两网', iconImg: 'assets/real/hook.webp', metric: 'trawlRuns', mode: 'sum', target: 2,
+      desc: '完成 2 次潮汐拖网。',
+      reward: { credits: 210, mats: { fiber: 3, glass: 2 } }
+    },
+    {
+      id: 'dive-twice', name: '断面试航', iconImg: 'assets/collectibles/diving-helmet.webp', metric: 'diveRuns', mode: 'sum', target: 2,
+      desc: '完成 2 次深海潜航。',
+      reward: { credits: 240, mats: { copper: 3, glass: 2 } }
+    },
+    {
+      id: 'stack-twice', name: '六箱归位', iconImg: 'assets/real/storage.webp', metric: 'stackRuns', mode: 'sum', target: 2,
+      desc: '完成 2 次码头吊装。',
+      reward: { credits: 250, mats: { metal: 4, fuel: 2 } }
     }
   ]);
 
@@ -2012,6 +2027,9 @@
       case 'cutCuts': return Math.max(0, Number(result.cuts) || 0);
       case 'sortCorrect': return Math.max(0, Number(result.correct) || 0);
       case 'beaconRounds': return Math.max(0, Number(result.rounds) || 0);
+      case 'trawlRuns': return result.type === 'trawl' ? 1 : 0;
+      case 'diveRuns': return result.type === 'dive' ? 1 : 0;
+      case 'stackRuns': return result.type === 'stack' ? 1 : 0;
       case 'sonarFinds': return Math.max(0, Number(result.found) || 0);
       case 'sonarPerfect': return result.type === 'sonar' && Number(result.found || 0) >= 4 ? 1 : 0;
       case 'stormRun': {
@@ -3334,7 +3352,22 @@
         '</div>' : '') +
       '<div class="shelter-unlock">' + (next ? '下级解锁：' + next.unlock : '全部扩建与船员已解锁') + '</div></div>' +
       '<button class="shelter-up-btn" data-action="shelter-levelup"' + (!next || !canLevel ? ' disabled' : '') + '>' + (next ? (canLevel ? '升级避难所' : '条件不足') : 'MAX') + '</button></div>';
-    var html = this.shelterSwitch() + levelCard + '<div class="shelter-head"><span>设施等级</span><b>Lv.' + this.level() + '</b></div><div class="upgrade-list">';
+    var stages = [
+      { lvl: 1, num: '01', name: '驳船甲板', img: 'assets/bg-hub.webp', desc: '驳船、旧钢板和浮筒拼成的主平台。' },
+      { lvl: 2, num: '02', name: '净水舱', img: 'assets/seawater-filter.webp', desc: '把海水滤成能喝的淡水，舱壁开始像家。' },
+      { lvl: 3, num: '03', name: '声呐桅杆', img: 'assets/real/sonar.webp', desc: '桅杆上的旧声呐，替避难所听见海底。' },
+      { lvl: 4, num: '04', name: '工作间', img: 'assets/real/workshop.webp', desc: '维修、拆解和改装都在这里完成。' },
+      { lvl: 5, num: '05', name: '潮汐核心', img: 'assets/real/core.webp', desc: '稳定整座漂浮避难所的能源心脏。' }
+    ];
+    var refugeView = '<div class="refuge-view"><div class="refuge-hero"><span>REFUGE APPEARANCE · 当前外观</span><b>Lv.' + lvl + ' 漂浮避难所</b><p>等级提升会逐步补齐甲板、净水舱、声呐桅杆、工作间与潮汐核心。</p></div><div class="refuge-modules">';
+    for (var si = 0; si < stages.length; si++) {
+      var st = stages[si];
+      var unlocked = lvl >= st.lvl;
+      var current = lvl === st.lvl;
+      refugeView += '<article class="refuge-module ' + (unlocked ? 'unlocked' : 'locked') + (current ? ' current' : '') + '"><img src="' + st.img + '" alt=""><div><span>' + st.num + ' · ' + (unlocked ? (current ? '当前' : '已解锁') : 'Lv.' + st.lvl + ' 解锁') + '</span><b>' + st.name + '</b><small>' + st.desc + '</small></div></article>';
+    }
+    refugeView += '</div></div>';
+    var html = this.shelterSwitch() + levelCard + refugeView + '<div class="shelter-head"><span>设施等级</span><b>Lv.' + this.level() + '</b></div><div class="upgrade-list">';
     for (var i = 0; i < UPGRADES.length; i++) {
       var up = UPGRADES[i];
       var level = this.data.upgrades[up.id] || 0;
