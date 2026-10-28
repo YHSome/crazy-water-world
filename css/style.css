@@ -840,6 +840,7 @@ body.muted .toggle i { transform: translateX(3px); background: linear-gradient(1
   left: 50%;
   top: 16%;
   transform: translate(-50%, 8px);
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2383,6 +2384,47 @@ body:not(.is-title) #scene { clip-path: none !important; }
 @media (max-width: 720px) and (orientation: landscape) {
   .hub-panel { top: 76px !important; bottom: 6px !important; }
   .panel-tabs { flex-direction: row; }
+}
+
+/* ── Collectible detail modal ────────────────────────────── */
+.collectible-card { position: relative; cursor: pointer; }
+.collectible-card:hover { transform: translateY(-2px); }
+.collectible-open { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
+.collectible-open:focus-visible { outline: 3px solid rgba(24, 184, 176, 0.45); outline-offset: 2px; }
+.collectible-actions, .collectible-special-mark { position: relative; z-index: 2; }
+.collectible-modal { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 18px; background: rgba(9, 38, 43, 0.42); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+.collectible-dialog { position: relative; width: min(470px, 100%); max-height: min(760px, calc(100dvh - 24px)); overflow-y: auto; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.96); border-radius: 23px; background: linear-gradient(160deg, #fffdf8, #fff7e9); box-shadow: 0 12px 0 -4px #ddcbb0, 0 34px 70px rgba(14, 55, 57, 0.3), inset 0 1px 0 #fff; }
+.collectible-modal-close { position: absolute; z-index: 2; top: 10px; right: 10px; width: 38px; height: 38px; border: 1px solid rgba(19, 93, 96, 0.13); border-radius: 50%; background: rgba(255, 253, 248, 0.95); color: #31595c; font-size: 20px; line-height: 1; }
+.collectible-detail { --rarity: #8fa7a8; }
+.collectible-detail-hero { position: relative; height: 188px; overflow: hidden; border-radius: 16px; background: linear-gradient(145deg, #e9f8f1, #f5e6cc); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7); }
+.collectible-detail-hero img { width: 100%; height: 100%; object-fit: cover; }
+.collectible-detail.unknown .collectible-detail-hero img { filter: grayscale(1) blur(5px) brightness(0.78); transform: scale(1.08); }
+.detail-rarity { position: absolute; left: 10px; top: 10px; padding: 4px 9px; border-radius: 99px; background: var(--rarity); color: #143c42; font-family: var(--mono); font-size: 9px; font-weight: 800; box-shadow: 0 3px 0 rgba(18, 64, 66, 0.18); }
+.detail-count { position: absolute; right: 10px; bottom: 10px; padding: 4px 9px; border-radius: 99px; background: rgba(255, 252, 245, 0.93); color: #31595c; font-family: var(--mono); font-size: 9px; }
+.collectible-detail-copy { padding: 13px 3px 2px; }
+.detail-kicker { margin: 0; font-family: var(--mono); font-size: 8px; letter-spacing: 0.12em; color: #b06b28; }
+.collectible-detail h3 { margin: 5px 0 7px; font-size: 26px; line-height: 1.1; color: #173f47; }
+.detail-desc { margin: 0 0 10px; font-size: 12px; line-height: 1.65; color: #5c7a7c; }
+.detail-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 11px; }
+.detail-chips span { padding: 4px 7px; border-radius: 6px; background: #edf8f2; color: #176d6b; font-family: var(--mono); font-size: 8px; }
+.detail-block { padding: 9px 0; border-top: 1px solid rgba(19, 93, 96, 0.09); }
+.detail-block b { display: block; margin-bottom: 3px; font-size: 10px; color: #8a6b3e; }
+.detail-block p { margin: 0; font-size: 11px; line-height: 1.55; color: #526f71; }
+.detail-block.source p { color: #7a8e8d; }
+.detail-actions { display: flex; gap: 8px; margin-top: 10px; }
+.detail-action { flex: 1; min-height: 42px; padding: 0 10px; border: 1px solid rgba(19, 93, 96, 0.14); border-radius: 10px; background: #f5eee0; color: #526f71; font-size: 12px; font-weight: 800; }
+.detail-action.primary { background: linear-gradient(135deg, #0f8f8a, #18b8b0); color: #fff; border-color: transparent; box-shadow: 0 4px 0 #0b6f6b; }
+@media (max-width: 720px) {
+  .collectible-modal { padding: 10px; }
+  .collectible-dialog { padding: 10px; border-radius: 19px; }
+  .collectible-detail-hero { height: 172px; }
+  .collectible-detail h3 { font-size: 23px; }
+}
+@media (max-height: 520px) {
+  .collectible-dialog { max-height: calc(100dvh - 10px); }
+  .collectible-detail { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; }
+  .collectible-detail-hero { height: 100%; min-height: 180px; }
+  .collectible-detail-copy { padding-top: 0; }
 }
 
 /* ── Shelter level ───────────────────────────────────────── */
