@@ -453,8 +453,8 @@
       reward: { credits: 480, mats: { metal: 6, fiber: 3 } }
     },
     {
-      id: 'level-ten', name: '海岸据点', iconImg: 'assets/real/workshop.webp',
-      metric: 'level', target: 10, desc: '把避难所升到 Lv.10。',
+      id: 'level-ten', name: '设施总管', iconImg: 'assets/real/workshop.webp',
+      metric: 'level', target: 10, desc: '五项设施等级合计达到 10 级。',
       reward: { credits: 800, mats: { metal: 8, fuel: 6, fiber: 6, chip: 4 } }
     },
     {
@@ -494,8 +494,43 @@
     },
     {
       id: 'crew-legend', name: '传奇船队', iconImg: 'assets/real/storage.webp',
-      metric: 'crewMaxed', target: 3, desc: '三名船员都达到 Lv.5。',
+      metric: 'crewMaxed', target: 3, desc: '三名核心船员都达到 Lv.5。',
       reward: { credits: 1800, mats: { metal: 10, fuel: 8, fiber: 8, chip: 8, glass: 8, copper: 8 } }
+    },
+    {
+      id: 'shelter-five', name: '海上堡垒', iconImg: 'assets/real/workshop.webp',
+      metric: 'shelterLevel', target: 5, desc: '把避难所等级提升到 Lv.5。',
+      reward: { credits: 2600, mats: { metal: 12, fuel: 10, fiber: 10, chip: 10, glass: 10, copper: 10 } }
+    },
+    {
+      id: 'gear-master', name: '改装大师', iconImg: 'assets/real/core.webp',
+      metric: 'crewGearMax', target: 3, desc: '把任意一件船员工具升到 Lv.3。',
+      reward: { credits: 900, mats: { chip: 6, copper: 5 } }
+    },
+    {
+      id: 'expedition-first', name: '联合出航', iconImg: 'assets/real/hook.webp',
+      metric: 'expeditionRuns', target: 1, desc: '完成一次联合远征。',
+      reward: { credits: 800, mats: { metal: 6, fiber: 6, glass: 4 } }
+    },
+    {
+      id: 'expedition-ten', name: '远海常客', iconImg: 'assets/collectibles/captain-log.webp',
+      metric: 'expeditionRuns', target: 10, desc: '累计完成 10 次联合远征。',
+      reward: { credits: 2400, mats: { metal: 10, fiber: 10, chip: 8, copper: 8 } }
+    },
+    {
+      id: 'urgent-ten', name: '码头熟人', iconImg: 'assets/real/gold.webp',
+      metric: 'urgentOrders', target: 10, desc: '累计完成 10 笔码头急单。',
+      reward: { credits: 1500, mats: { glass: 8, copper: 6 } }
+    },
+    {
+      id: 'set-master', name: '套装藏家', iconImg: 'assets/collectibles/tide-crown.webp',
+      metric: 'setRewardsCount', target: 3, desc: '领取全部三套收藏的完成奖励。',
+      reward: { credits: 2200, mats: { chip: 10, glass: 8 } }
+    },
+    {
+      id: 'archive-complete', name: '完整档案', iconImg: 'assets/collectibles/silver-musicbox.webp',
+      metric: 'collectionUnique', target: 19, desc: '发现全部 19 件沉船档案。',
+      reward: { credits: 5000, mats: { metal: 12, fuel: 12, fiber: 12, chip: 12, glass: 12, copper: 12 } }
     }
   ]);
 
@@ -611,7 +646,9 @@
         goldTotal: 0,
         cutRuns: 0,
         sortRuns: 0,
-        beaconRuns: 0
+        beaconRuns: 0,
+        expeditionRuns: 0,
+        urgentOrders: 0
       },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
       best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0 },
@@ -699,6 +736,8 @@
     data.stats.cutRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.cutRuns) || 0));
     data.stats.sortRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sortRuns) || 0));
     data.stats.beaconRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.beaconRuns) || 0));
+    data.stats.expeditionRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.expeditionRuns) || 0));
+    data.stats.urgentOrders = Math.max(0, Math.floor(Number(raw.stats && raw.stats.urgentOrders) || 0));
     data.contracts = normalizeContractSet(raw.contracts);
     data.contractRound = Math.max(1, Math.floor(Number(raw.contractRound) || 1));
     data.contractRerollUsed = !!raw.contractRerollUsed;
@@ -1422,6 +1461,7 @@
       extras.push(sdef.name);
     }
     this.data.crewExpedition = null;
+    this.data.stats.expeditionRuns = (this.data.stats.expeditionRuns || 0) + 1;
     this.closeExpeditionEvent();
     this.audio.relic();
     this.showToast('EXPEDITION RETURNED', '联合远征返航', '+' + fmt(gained.credits) + ' 打捞币' + (extras.length ? ' · ' + extras.join(' / ') : ''));
@@ -2191,6 +2231,7 @@
       }
     }
     this.data.credits += urgent.total;
+    this.data.stats.urgentOrders = (this.data.stats.urgentOrders || 0) + 1;
     this.data.urgentDone[String(urgent.win)] = true;
     this.audio.claim();
     this.showToast('URGENT DELIVERY', '码头急单完成', '+' + fmt(urgent.total) + ' 打捞币');
@@ -2822,6 +2863,16 @@
       case 'cutRuns': return this.data.stats.cutRuns || 0;
       case 'sortRuns': return this.data.stats.sortRuns || 0;
       case 'beaconRuns': return this.data.stats.beaconRuns || 0;
+      case 'expeditionRuns': return this.data.stats.expeditionRuns || 0;
+      case 'urgentOrders': return this.data.stats.urgentOrders || 0;
+      case 'shelterLevel': return this.shelterLevel();
+      case 'crewGearMax': {
+        var gm = 0;
+        for (var cgi = 0; cgi < CREW.length; cgi++) gm = Math.max(gm, this.crewGearLevel(CREW[cgi].id));
+        return gm;
+      }
+      case 'setRewardsCount': return (this.data.setRewards || []).length;
+      case 'collectionUnique': return this.collectionUnique();
       case 'crewMaxed': {
         var cm = 0;
         for (var ci2 = 0; ci2 < CREW.length; ci2++) if (this.crewLevel(CREW[ci2].id) >= 5) cm++;
