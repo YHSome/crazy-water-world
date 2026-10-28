@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.7.4 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.8 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -594,6 +594,8 @@ CREDITS.md                        图片与图标授权
 - 背景与物件均通过 `Image` 预加载后用 `drawImage` 合成；Canvas 不再绘制场景/物件本体。
 - 主循环 `requestAnimationFrame`，`dt` 限制 50ms；Hub 环境场景固定 30fps，Arcade 保持 60fps。
 - DPR 上限 1.5；Hub 画布预算约 240 万像素、Arcade 约 220 万；粒子上限下调。抓钩物品精灵、三消方块与背景均预渲染缓存。
+- 画面质量：`quality = auto | high | low`；省电 DPR 1.0、Hub 预算 120 万、Arcade 110 万，雨幕降到 6–12 条并隐藏颗粒 / 雨窗 / 暗角。
+- 自动模式每 1.5 秒采样帧率，低于 38fps 自动降级并提示；手动切换即时重建画布。
 - 性能优先：移除全屏动态 grain/rain、`backdrop-filter` 实时模糊、暗角伪元素和持续脉冲动画；面板改为不透明奶油底，靠静态阴影与边框维持层次。
 - 存档写入 `crazywater.floodline.v1`，包含 `filters` 稀有物、`filterPity` 保底计数、`collectibles` 收藏、`contracts` 契约进度 / `contractRound` 轮次与 `upgrades.purifier`；套装加成由已拥有收藏实时计算，不单独存档。仅在开始、结算、扩建、领取契约、合成和页面退出时写入。
 - 音效开关：`crazywater.muted.v1`。
@@ -612,6 +614,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
