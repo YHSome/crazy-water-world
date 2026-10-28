@@ -2397,6 +2397,27 @@ body:not(.is-title) #scene { clip-path: none !important; }
   .panel-tabs { flex-direction: row; }
 }
 
+/* ── Collection filters / milestones ─────────────────────── */
+.collection-milestones { margin: 10px 0; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 14px; background: linear-gradient(135deg, #fff8e9, #eefaf6); box-shadow: 0 6px 0 -3px #e1d2b8, 0 12px 22px rgba(31, 84, 84, 0.08); }
+.collection-milestone-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.collection-milestone-head span { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: #b06b28; }
+.collection-milestone-head small { font-family: var(--mono); font-size: 8px; color: #7c8f8f; }
+.collection-milestone-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.collection-milestone { min-height: 45px; padding: 5px 3px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 8px; background: #f2f7f2; color: #6e8584; }
+.collection-milestone b { display: block; font-family: var(--mono); font-size: 10px; }
+.collection-milestone span { display: block; margin-top: 2px; font-family: var(--mono); font-size: 7px; }
+.collection-milestone.ready { border-color: transparent; background: linear-gradient(135deg, #ffdc91, #ffb547); color: #6d430f; box-shadow: 0 3px 0 #d2943a; }
+.collection-milestone.claimed { background: #e6f7ee; color: #0b7774; }
+.collection-milestone:disabled { opacity: 0.78; }
+.collection-filters { display: flex; gap: 4px; overflow-x: auto; padding: 2px 0 5px; scrollbar-width: none; }
+.collection-filters::-webkit-scrollbar { display: none; }
+.collection-filters button { flex: 0 0 auto; min-height: 32px; padding: 0 10px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 99px; background: #f4f7f1; color: #607c7d; font-family: var(--mono); font-size: 9px; }
+.collection-filters button.active { background: #0f8f8a; color: #fff; border-color: transparent; box-shadow: 0 3px 0 #0b6f6b; }
+.collection-empty { margin: 18px 4px; padding: 18px; border: 1px dashed rgba(19, 93, 96, 0.2); border-radius: 14px; text-align: center; font-family: var(--mono); font-size: 10px; color: #829695; }
+@media (max-width: 380px) {
+  .collection-milestone-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* ── Collectible detail modal ────────────────────────────── */
 .collectible-card { position: relative; cursor: pointer; }
 .collectible-card:hover { transform: translateY(-2px); }
