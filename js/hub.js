@@ -782,6 +782,8 @@
       settings: id('settings-screen'),
     marketModal: id('market-modal'),
     marketBody: id('market-modal-body'),
+    collectibleModal: id('collectible-modal'),
+    collectibleBody: id('collectible-modal-body'),
       reset: id('reset-save'),
       toast: id('toast'),
       toastKicker: id('toast-kicker'),
@@ -899,6 +901,7 @@
     this.saveGame();
     this.updateUI();
     this.renderPanel();
+    if (this.dom.collectibleModal && !this.dom.collectibleModal.classList.contains('hidden')) this.openCollectibleDetail(id);
   };
 
   Hub.prototype.collectionUnequip = function (id) {
@@ -910,6 +913,7 @@
     this.saveGame();
     this.updateUI();
     this.renderPanel();
+    if (this.dom.collectibleModal && !this.dom.collectibleModal.classList.contains('hidden')) this.openCollectibleDetail(id);
   };
 
   Hub.prototype.collectionCleanupEquipped = function () {
@@ -1825,6 +1829,53 @@
     };
   };
 
+  Hub.prototype.openCollectibleDetail = function (id) {
+    var def = CW.COLLECTIBLE_MAP[id];
+    if (!def || !this.dom.collectibleModal) return;
+    var rarity = CW.COLLECTIBLE_RARITY_MAP[def.rarity];
+    var count = def.special === 'filter' ? (this.data.filters || 0) : def.special === 'material' ? (this.data.specials[id] || 0) : (this.data.collectibles[id] || 0);
+    var isSpecial = !!def.special;
+    var equipped = !isSpecial && this.data.equipped.indexOf(id) >= 0;
+    var relic = CW.COLLECTIBLE_RELICS[id];
+    var set = null;
+    for (var i = 0; i < CW.COLLECTION_SETS.length; i++) {
+      if (CW.COLLECTION_SETS[i].items.indexOf(id) >= 0) { set = CW.COLLECTION_SETS[i]; break; }
+    }
+    var uses = [];
+    if (id === 'seawater-filter') uses.push('净水舱升级');
+    for (var s = 1; s < SHELTER_LEVELS.length; s++) {
+      var req = SHELTER_LEVELS[s];
+      if (req && req.specials && req.specials[id]) uses.push('避难所 Lv.' + req.level + ' 升级');
+    }
+    var source = isSpecial ? '来源：抓钩的沉船秘宝 / 黄金宝箱，或三消高分深海馈赠' : '来源：抓钩、三消、声呐、切割等打捞结算';
+    var actions = '';
+    if (count > 0 && !isSpecial) {
+      actions = '<button class="detail-action primary" data-action="equip-collectible" data-id="' + id + '">' + (equipped ? '从档案卸下' : '装备到档案') + '</button>';
+    }
+    actions += '<button class="detail-action" data-action="collectible-close">关闭</button>';
+    var html = '<div class="collectible-detail' + (count ? '' : ' unknown') + '" style="--rarity:' + rarity.color + '">' +
+      '<div class="collectible-detail-hero"><img src="' + def.icon + '" alt=""><span class="detail-rarity">' + rarity.name + '</span><span class="detail-count">' + (count ? '拥有 ×' + count : '未发现') + '</span></div>' +
+      '<div class="collectible-detail-copy"><p class="detail-kicker">SUNKEN ARCHIVE · 收藏详情</p><h3>' + def.name + '</h3>' +
+        '<p class="detail-desc">' + (count ? def.desc : '档案里只有一张模糊的照片。继续打捞或完成小游戏，才能看清它。') + '</p>' +
+        '<div class="detail-chips"><span>' + rarity.name + '</span><span>' + (equipped ? '已装备' : isSpecial ? (id === 'seawater-filter' ? '净水核心' : '稀有升级件') : '可装备') + '</span>' + (set ? '<span>' + set.name + ' ' + this.collectionSetOwned(set) + '/' + set.items.length + '</span>' : '') + '</div>' +
+        (uses.length ? '<div class="detail-block"><b>用途</b><p>' + uses.join(' · ') + '</p></div>' : '') +
+        (!isSpecial && relic ? '<div class="detail-block"><b>档案效果</b><p>' + relic.label + (equipped ? ' · 当前生效' : '') + '</p></div>' : '') +
+        (set ? '<div class="detail-block"><b>套装</b><p>' + set.desc + ' · ' + set.bonusText + '</p></div>' : '') +
+        '<div class="detail-block source"><b>获取</b><p>' + source + '</p></div>' +
+        '<div class="detail-actions">' + actions + '</div>' +
+      '</div></div>';
+    this.dom.collectibleBody.innerHTML = html;
+    this.dom.collectibleModal.classList.remove('hidden');
+    this.dom.collectibleModal.setAttribute('aria-hidden', 'false');
+    this.audio.tab();
+  };
+
+  Hub.prototype.closeCollectibleDetail = function () {
+    if (!this.dom.collectibleModal) return;
+    this.dom.collectibleModal.classList.add('hidden');
+    this.dom.collectibleModal.setAttribute('aria-hidden', 'true');
+  };
+
   Hub.prototype.openMarketModal = function (html) {
     if (!this.dom.marketModal) return;
     this.dom.marketModal.classList.remove('hidden');
@@ -2243,7 +2294,8 @@
         var n = item.special === 'filter' ? filterCount : item.special === 'material' ? (this.data.specials[item.id] || 0) : (map[item.id] || 0);
         var isEquipped = !isSpecial && equipped.indexOf(item.id) >= 0;
         var relicInfo = CW.COLLECTIBLE_RELICS[item.id];
-        html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + '" title="' + item.desc + (relicInfo ? ' · ' + relicInfo.label : '') + '" style="--rarity:' + rarity.color + '">' +
+        html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + '" style="--rarity:' + rarity.color + '">' +
+          '<button class="collectible-open" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情"></button>' +
           '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
           '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em>' +
             (n && relicInfo ? '<span class="collectible-power">' + relicInfo.label + '</span>' : '') +
@@ -2864,6 +2916,8 @@
           self.audio.click();
           self.renderPanel();
         } else if (action === 'equip-collectible') self.collectionEquip(actionEl.getAttribute('data-id'));
+        else if (action === 'collectible-detail') self.openCollectibleDetail(actionEl.getAttribute('data-id'));
+        else if (action === 'collectible-close') self.closeCollectibleDetail();
         else if (action === 'auction-duplicates') self.auctionDuplicates();
         else if (action === 'sell-materials') self.sellMaterials(10);
         else if (action === 'upgrade-salvage') self.salvageForUpgrade(actionEl.getAttribute('data-upgrade'));
@@ -2895,12 +2949,19 @@
       }
     });
 
+    if (this.dom.collectibleModal) {
+      this.dom.collectibleModal.addEventListener('click', function (e) {
+        if (e.target === self.dom.collectibleModal) self.closeCollectibleDetail();
+      });
+    }
+
     window.addEventListener('keydown', function (e) {
       self.audio.unlock();
       if (e.repeat) return;
       if (e.code === 'KeyM') { self.toggleMute(); return; }
       if (e.code === 'Escape') {
-        if (self.dom.marketModal && !self.dom.marketModal.classList.contains('hidden')) self.closeMarketModal();
+        if (self.dom.collectibleModal && !self.dom.collectibleModal.classList.contains('hidden')) self.closeCollectibleDetail();
+        else if (self.dom.marketModal && !self.dom.marketModal.classList.contains('hidden')) self.closeMarketModal();
         else if (!self.dom.guide.classList.contains('hidden')) self.closeGuide();
         else if (!self.dom.settings.classList.contains('hidden')) self.closeSettings();
         return;
