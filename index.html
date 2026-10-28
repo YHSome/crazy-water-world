@@ -136,7 +136,7 @@
       </div>
       <div class="title-footer">
         <span>海岸实景素材 · 本地图片 · 无离线收益</span>
-        <span>v7.4 · PURE STATIC</span>
+        <span>v7.5 · PURE STATIC</span>
       </div>
     </section>
 
@@ -221,7 +221,7 @@
         <button class="btn ghost wide" data-action="guide">查看玩法说明</button>
         <button id="reset-save" class="btn danger wide" data-action="reset-save">清空避难所</button>
         <p class="modal-note">清空会删除打捞币、物资和所有扩建，无法撤销。再次点击确认。</p>
-        <p class="version">疯狂水世界 · v7.4 · 本地图片素材 + 程序化特效，无远程依赖</p>
+        <p class="version">疯狂水世界 · v7.5 · 本地图片素材 + 程序化特效，无远程依赖</p>
       </div>
     </section>
 
@@ -254,6 +254,7 @@
         <p id="brief-kicker" class="eyebrow">MISSION 01</p>
         <h2 id="brief-title">沉城抓钩</h2>
         <p id="brief-copy" class="arcade-copy">抓钩会来回摆动。点击水面放下抓钩，抓回旧世界的物资。</p>
+      <button class="brief-story" data-action="arcade-story">任务档案 · 背景故事</button>
         <div class="brief-stats">
           <div><span>任务时长</span><b id="brief-time">60 秒</b></div>
           <div><span>仓库容量</span><b id="brief-capacity">72</b></div>
@@ -313,8 +314,16 @@
       <div id="expedition-modal-body"></div>
     </div>
   </div>
+
+  <div id="story-modal" class="story-modal hidden" aria-hidden="true">
+    <div class="story-dialog" role="dialog" aria-modal="true" aria-label="档案详情">
+      <button class="story-modal-close" data-action="story-close" aria-label="关闭">×</button>
+      <div id="story-modal-body"></div>
+    </div>
+  </div>
 </body>
 </html>
+
 
 
 
