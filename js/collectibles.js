@@ -64,21 +64,24 @@
       desc: '黄铜罗盘、航线图筒、铜制望远镜',
       items: ['brass-compass', 'chart-tube', 'copper-telescope'],
       bonus: { credit: 0.1, mat: 0 },
-      bonusText: '打捞币 +10%'
+      bonusText: '打捞币 +10%',
+      reward: { credits: 1000, mats: { metal: 6, fiber: 6, glass: 6 } }
     },
     {
       id: 'deepsea', name: '深潜者', color: '#79d8ff',
       desc: '旧式留声机、深海潜水盔、沉船船钟',
       items: ['silver-musicbox', 'diving-helmet', 'ship-bell'],
       bonus: { credit: 0, mat: 0.1 },
-      bonusText: '物资 +10%'
+      bonusText: '物资 +10%',
+      reward: { credits: 1600, mats: { glass: 8, chip: 8, copper: 6 } }
     },
     {
       id: 'captain', name: '船长遗物', color: '#ffd166',
       desc: '船长航海日志、黑匣子、潮汐王冠',
       items: ['captain-log', 'black-box', 'tide-crown'],
       bonus: { credit: 0.1, mat: 0.1 },
-      bonusText: '打捞币 +10% · 物资 +10%'
+      bonusText: '打捞币 +10% · 物资 +10%',
+      reward: { credits: 3200, mats: { chip: 10, copper: 8 }, filters: 1 }
     }
   ];
 
