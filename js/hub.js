@@ -746,6 +746,8 @@
       trackedCollection: '',
       setRewards: [],
       urgentDone: {},
+      urgentStreak: 0,
+      urgentLastWin: -1,
       equipped: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
@@ -831,6 +833,8 @@
         if (cmv) data.collectionMilestones.push(cmv);
       }
     }
+    data.urgentStreak = Math.max(0, Math.floor(Number(raw.urgentStreak) || 0));
+    data.urgentLastWin = Number.isFinite(Number(raw.urgentLastWin)) ? Math.floor(Number(raw.urgentLastWin)) : -1;
     data.urgentDone = {};
     if (raw.urgentDone && typeof raw.urgentDone === 'object') {
       for (var ud in raw.urgentDone) {
@@ -2401,13 +2405,15 @@
       quote = this.marketMaterialQuote(def.id, t);
       qty = 3 + Math.floor(r3 * 4);
     }
-    var unit = Math.max(1, Math.round(quote.price * (0.99 + r3 * 0.04)));
+    var streak = this.data.urgentLastWin === win - 1 ? (this.data.urgentStreak || 0) : 0;
+    var rawMult = 0.93 + r3 * 0.04 + streak * 0.02;
+    var unit = Math.max(1, Math.min(Math.round(quote.price * 1.04), Math.round(quote.price * rawMult)));
     var until = (win + 1) * MARKET_URGENT_TICKS * MARKET_TICK_MS;
     return {
       win: win, kind: isCollectible ? 'collectible' : 'material',
       id: def.id, name: def.name, icon: def.iconImg || def.icon, qty: qty,
       unit: unit, total: unit * qty, remaining: Math.max(0, until - Date.now()),
-      done: !!this.data.urgentDone[win], quote: quote
+      done: !!this.data.urgentDone[win], quote: quote, streak: streak
     };
   };
 
@@ -2432,6 +2438,8 @@
     }
     this.data.credits += urgent.total;
     this.data.stats.urgentOrders = (this.data.stats.urgentOrders || 0) + 1;
+    this.data.urgentStreak = this.data.urgentLastWin === urgent.win - 1 ? (this.data.urgentStreak || 0) + 1 : 1;
+    this.data.urgentLastWin = urgent.win;
     this.data.urgentDone[String(urgent.win)] = true;
     this.audio.claim();
     this.showToast('URGENT DELIVERY', '码头急单完成', '+' + fmt(urgent.total) + ' 打捞币');
@@ -2730,7 +2738,8 @@
     var urgent = this.marketUrgent(tick);
     var urgentHave = urgent.kind === 'material' ? (this.data.materials[urgent.id] || 0) : (this.data.collectibles[urgent.id] || 0);
     var urgentSecs = Math.max(0, Math.ceil(urgent.remaining / 1000));
-    html += '<div class="market-urgent' + (urgent.done ? ' done' : '') + '"><img src="' + urgent.icon + '" alt=""><div class="market-urgent-copy"><span>DOCK ORDER · 码头急单</span><b>' + (urgent.done ? '本单已交付' : '收购 ' + urgent.qty + ' × ' + urgent.name) + '</b><p>' + (urgent.done ? '下一单即将刷新 · ' : '净价 ' + fmt(urgent.unit) + '/件 · ') + '剩余 <em id="market-urgent-val">' + urgentSecs + '</em>s · 持有 ' + urgentHave + '</p></div>' +
+    var urgentStreakText = urgent.streak > 0 ? '连续 ' + urgent.streak + ' 单 · ' : '';
+    html += '<div class="market-urgent' + (urgent.done ? ' done' : '') + '"><img src="' + urgent.icon + '" alt=""><div class="market-urgent-copy"><span>DOCK ORDER · 码头急单</span><b>' + (urgent.done ? '本单已交付' : '收购 ' + urgent.qty + ' × ' + urgent.name) + '</b><p>' + (urgent.done ? '下一单即将刷新 · ' : urgentStreakText + '净价 ' + fmt(urgent.unit) + '/件 · ') + '剩余 <em id="market-urgent-val">' + urgentSecs + '</em>s · 持有 ' + urgentHave + '</p></div>' +
       '<button data-action="market-urgent"' + (urgent.done || urgentHave < urgent.qty ? ' disabled' : '') + '>' + (urgent.done ? '已交付' : urgentHave < urgent.qty ? '数量不足' : '交付 · +' + fmt(urgent.total)) + '</button></div>';
     if (this.marketTab === 'collectibles') {
       html += '<div class="market-note">买下藏品会直接进入档案；挂单按你定的价格撮合，拍卖则可能捡漏也可能砸价。</div><div class="market-items">';
