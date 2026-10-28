@@ -2340,8 +2340,19 @@ body:not(.is-title) #scene { clip-path: none !important; }
 .crew-name em { font-family: var(--mono); font-size: 10px; font-style: normal; color: #8a6b3e; }
 .crew-copy p { margin: 5px 0 7px; font-size: 10px; line-height: 1.5; color: #6c8587; }
 .crew-reward { font-family: var(--mono); font-size: 8px; line-height: 1.55; color: #8a6b3e; }
-.crew-action { padding: 0 12px 12px; }
+.crew-action { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px; }
 .crew-btn { width: 100%; min-height: 40px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 10px; background: #edf9f4; color: #0b7774; font-size: 12px; font-weight: 800; }
+.crew-gear-btn { width: 100%; min-height: 32px; border: 1px solid rgba(180, 118, 31, 0.22); border-radius: 9px; background: #fff8e8; color: #8a5a1f; font-family: var(--mono); font-size: 9px; font-weight: 700; }
+.crew-gear-panel { padding: 8px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 10px; background: #f3fbf6; }
+.crew-gear-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.crew-gear-head b { font-size: 11px; color: #173f47; }
+.crew-gear-head span { font-family: var(--mono); font-size: 8px; color: #7c8f8f; }
+.crew-gear-costs { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0; }
+.crew-gear-costs span { padding: 3px 5px; border-radius: 5px; background: #e4f7ee; color: #0b7774; font-family: var(--mono); font-size: 8px; }
+.crew-gear-costs span.poor { background: #f6e2dd; color: #b34d3b; }
+.crew-gear-up { width: 100%; min-height: 32px; border: 1px solid transparent; border-radius: 8px; background: linear-gradient(135deg, #0f8f8a, #18b8b0); color: #fff; font-family: var(--mono); font-size: 9px; font-weight: 800; }
+.crew-gear-up:disabled { background: #e9e3d7; color: #9a9183; }
+.crew-gear-max { margin: 6px 0 0; font-family: var(--mono); font-size: 8px; color: #0b7774; }
 .crew-btn.hire { background: linear-gradient(135deg, #ffdc91, #ffb547); color: #6d430f; border-color: transparent; box-shadow: 0 4px 0 #d2943a; }
 .crew-btn.claim { background: linear-gradient(135deg, #0f8f8a, #18b8b0); color: #fff; border-color: transparent; box-shadow: 0 4px 0 #0b6f6b; }
 .crew-btn:disabled { background: #e9e3d7; color: #9a9183; box-shadow: none; }
