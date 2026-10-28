@@ -14,6 +14,9 @@
     crate: { name: '漂流货箱', glyph: '箱', color: '#ffcf72', value: 95, mats: { metal: 2, glass: 1 } },
     gold: { name: '黄金鱼', glyph: '金', color: '#ffdf72', value: 220, mats: { chip: 1 } },
     pearl: { name: '深海珍珠', glyph: '珠', color: '#d9b8ff', value: 140, collectible: true },
+    magnet: { name: '磁力网', glyph: '磁', color: '#79d8ff', value: 0, power: 'magnet' },
+    slow: { name: '缓流符', glyph: '缓', color: '#9be2a9', value: 0, power: 'slow' },
+    shield: { name: '护网盾', glyph: '盾', color: '#ffd166', value: 0, power: 'shield' },
     mine: { name: '锈雷', glyph: '雷', color: '#ff7a62', value: 0, mine: true }
   };
 
@@ -46,6 +49,7 @@
     this.shake = 0;
     this.caught = 0;
     this.netW = 0;
+    this.effects = { magnet: 0, slow: 0, shield: 0 };
   }
 
   TrawlGame.prototype.netY = function () { return this.h - Math.max(96, this.h * 0.14); };
@@ -69,6 +73,7 @@
     this.spawnGap = 0.65;
     this.flash = 0;
     this.shake = 0;
+    this.effects = { magnet: 0, slow: 0, shield: 0 };
     this.audio.click();
   };
 
@@ -94,7 +99,7 @@
       loot: this.counts,
       filters: 0,
       hasAction: false,
-      hint: '点击/拖动水面移动渔网 · 接住鱼获与货箱 · 锈雷会扣 4 秒'
+      hint: '点击/拖动水面移动渔网 · 接住鱼获与货箱 · 磁力/缓流/护盾会随机掉落 · 锈雷扣 4 秒'
     };
   };
 
@@ -105,9 +110,15 @@
     if (this.condition && this.condition.mines < 0) mineChance = 0;
     else if (this.condition && this.condition.mines > 0) mineChance = Math.min(0.22, 0.08 + this.condition.mines * 0.03);
     if (roll < mineChance) key = 'mine';
-    else if (roll < 0.18) key = 'pearl';
-    else if (roll < 0.31) key = 'gold';
-    else if (roll < 0.56) key = 'crate';
+    else {
+      var pick = Math.random();
+      if (pick < 0.045) key = 'shield';
+      else if (pick < 0.09) key = 'magnet';
+      else if (pick < 0.135) key = 'slow';
+      else if (pick < 0.27) key = 'pearl';
+      else if (pick < 0.42) key = 'gold';
+      else if (pick < 0.68) key = 'crate';
+    }
     var item = {
       key: key,
       x: rand(this.netW * 0.55, this.w - this.netW * 0.55),
@@ -123,7 +134,20 @@
 
   TrawlGame.prototype.catchItem = function (item) {
     var data = TILE[item.key];
+    if (data.power) {
+      this.effects[data.power] = data.power === 'shield' ? 1 : 6;
+      this.popups.push({ x: item.x, y: item.y, text: data.name + (data.power === 'shield' ? ' 已就绪' : ' 6 秒'), color: data.color, life: 1.5, maxLife: 1.5 });
+      this.audio.relic();
+      return;
+    }
     if (data.mine) {
+      if (this.effects.shield > 0) {
+        this.effects.shield = 0;
+        this.flash = 0.3;
+        this.popups.push({ x: item.x, y: item.y, text: '护网盾挡下锈雷', color: '#ffd166', life: 1.5, maxLife: 1.5 });
+        this.audio.relic();
+        return;
+      }
       this.remaining = Math.max(0, this.remaining - 4);
       this.combo = 0;
       this.flash = 0.8;
@@ -161,6 +185,8 @@
     this.remaining -= dt;
     this.flash = Math.max(0, this.flash - dt * 2);
     this.shake = Math.max(0, this.shake - dt * 10);
+    this.effects.magnet = Math.max(0, this.effects.magnet - dt);
+    this.effects.slow = Math.max(0, this.effects.slow - dt);
     this.spawnGap = Math.max(0.34, 0.65 - this.time * 0.005);
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
@@ -172,8 +198,9 @@
     var netY = this.netY();
     for (var i = this.items.length - 1; i >= 0; i--) {
       var it = this.items[i];
-      it.y += it.vy * dt;
+      it.y += it.vy * (this.effects.slow > 0 ? 0.48 : 1) * dt;
       it.x += Math.sin(this.time * 1.4 + it.phase) * it.drift * dt;
+      if (this.effects.magnet > 0 && it.y > this.netY() * 0.35) it.x += clamp(this.netX - it.x, -135 * dt, 135 * dt);
       if (it.y >= netY - 6 && it.y <= netY + 18 && Math.abs(it.x - this.netX) <= this.netW / 2) {
         this.catchItem(it);
         this.items.splice(i, 1);
@@ -338,6 +365,22 @@
       ctx.fillText(pp.text, pp.x, pp.y + 1);
     }
     ctx.globalAlpha = 1;
+    var effectParts = [];
+    if (this.effects.magnet > 0) effectParts.push('磁力 ' + Math.ceil(this.effects.magnet) + 's');
+    if (this.effects.slow > 0) effectParts.push('缓流 ' + Math.ceil(this.effects.slow) + 's');
+    if (this.effects.shield > 0) effectParts.push('护网盾 就绪');
+    if (effectParts.length) {
+      ctx.font = '800 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(2, 36, 45, 0.7)';
+      var et = effectParts.join(' · ');
+      var ew = ctx.measureText(et).width;
+      ctx.beginPath();
+      ctx.roundRect(w / 2 - ew / 2 - 8, h - 88, ew + 16, 20, 9);
+      ctx.fill();
+      ctx.fillStyle = '#c8fff3';
+      ctx.fillText(et, w / 2, h - 75);
+    }
     ctx.fillStyle = 'rgba(2, 31, 41, 0.84)';
     ctx.fillRect(0, h - 66, w, 66);
     ctx.fillStyle = '#eafff6';
