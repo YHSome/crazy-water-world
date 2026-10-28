@@ -272,10 +272,10 @@
   var MARKET_TICK_MS = 20000;
   var MARKET_URGENT_TICKS = 3;
   var MARKET_FEE_BUY = 0.05;
-  var MARKET_FEE_SELL = 0.08;
+  var MARKET_FEE_SELL = 0.05;
   var MARKET_FEE_AUCTION = 0.08;
   var MARKET_FEE_LIST = 0.04;
-  var MARKET_MATERIAL_BASE = { metal: 16, fuel: 22, fiber: 15, chip: 34, glass: 28, copper: 31 };
+  var MARKET_MATERIAL_BASE = { metal: 32, fuel: 44, fiber: 28, chip: 62, glass: 50, copper: 56 };
   var MARKET_COLLECTIBLE_BASE = { common: 260, uncommon: 680, rare: 1700, epic: 4000, legendary: 9500 };
 
   function marketHash(str) {
@@ -289,7 +289,7 @@
     var wave = Math.sin(tick * 1.37 + h * 0.013) * 0.36;
     var slow = Math.sin(tick * 0.41 + h * 0.031) * 0.20;
     var jitter = (Math.sin(tick * 12.9898 + h * 0.17) * 43758.5453) % 1;
-    return clamp(1 + wave + slow + jitter * 0.16, 0.45, 1.9);
+    return clamp(1 + wave + slow + jitter * 0.16, 0.7, 1.9);
   }
 
   function gradeFor(type, score) {
@@ -764,6 +764,7 @@
       urgentDone: {},
       urgentStreak: 0,
       urgentLastWin: -1,
+      marketPressure: { win: -1, counts: {} },
       equipped: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
@@ -852,6 +853,18 @@
     }
     data.urgentStreak = Math.max(0, Math.floor(Number(raw.urgentStreak) || 0));
     data.urgentLastWin = Number.isFinite(Number(raw.urgentLastWin)) ? Math.floor(Number(raw.urgentLastWin)) : -1;
+    data.marketPressure = { win: -1, counts: {} };
+    if (raw.marketPressure && typeof raw.marketPressure === 'object') {
+      data.marketPressure.win = Number.isFinite(Number(raw.marketPressure.win)) ? Math.floor(Number(raw.marketPressure.win)) : -1;
+      if (raw.marketPressure.counts && typeof raw.marketPressure.counts === 'object') {
+        for (var mp in raw.marketPressure.counts) {
+          if (Object.prototype.hasOwnProperty.call(raw.marketPressure.counts, mp)) {
+            var mval = Math.max(0, Math.floor(Number(raw.marketPressure.counts[mp]) || 0));
+            if (mval) data.marketPressure.counts[mp] = mval;
+          }
+        }
+      }
+    }
     data.urgentDone = {};
     if (raw.urgentDone && typeof raw.urgentDone === 'object') {
       for (var ud in raw.urgentDone) {
@@ -2022,9 +2035,9 @@
       case 'bestCombo': return Math.max(0, Number(result.bestCombo) || 0);
       case 'matchScore': return result.type === 'match' ? Math.max(0, Number(result.score) || 0) : 0;
       case 'runs': return 1;
-      case 'chips': return Math.max(0, Number(result.materials && result.materials.chip) || 0);
-      case 'glass': return Math.max(0, Number(result.materials && result.materials.glass) || 0);
-      case 'copper': return Math.max(0, Number(result.materials && result.materials.copper) || 0);
+      case 'chips': return Math.max(0, Number((result.runMaterials || result.materials) && (result.runMaterials || result.materials).chip) || 0);
+      case 'glass': return Math.max(0, Number((result.runMaterials || result.materials) && (result.runMaterials || result.materials).glass) || 0);
+      case 'copper': return Math.max(0, Number((result.runMaterials || result.materials) && (result.runMaterials || result.materials).copper) || 0);
       case 'cutCuts': return Math.max(0, Number(result.cuts) || 0);
       case 'sortCorrect': return Math.max(0, Number(result.correct) || 0);
       case 'beaconRounds': return Math.max(0, Number(result.rounds) || 0);
@@ -2554,15 +2567,27 @@
     this.renderPanel();
   };
 
+  Hub.prototype.marketScarcityCount = function (id, tick) {
+    var t = tick === undefined ? marketTick() : tick;
+    var win = Math.floor(t / MARKET_URGENT_TICKS);
+    var pressure = this.data.marketPressure || { win: -1, counts: {} };
+    if (pressure.win !== win || !pressure.counts) return 0;
+    return Math.max(0, Math.floor(Number(pressure.counts[id]) || 0));
+  };
+
   Hub.prototype.marketMaterialQuote = function (id, tick) {
     var base = MARKET_MATERIAL_BASE[id] || 10;
     var t = tick === undefined ? marketTick() : tick;
     var price = Math.round(base * marketMultiplier('mat:' + id, t));
+    var pressure = this.marketScarcityCount(id, t);
+    var scarcity = 1 + Math.min(3, pressure * 0.25);
     return {
       price: price,
-      buy: Math.round(price * (1 + MARKET_FEE_BUY)),
+      buy: Math.round(price * (1 + MARKET_FEE_BUY) * scarcity),
       sell: Math.round(price * (1 - MARKET_FEE_SELL)),
-      prev: Math.round(base * marketMultiplier('mat:' + id, t - 1))
+      prev: Math.round(base * marketMultiplier('mat:' + id, t - 1)),
+      pressure: pressure,
+      scarcityPct: Math.round((scarcity - 1) * 100)
     };
   };
 
@@ -2877,14 +2902,14 @@
       }
       html += '</div>';
     } else {
-      html += '<div class="market-note">价格是实时行情；先回收或卖掉材料再买入，避免仓库卡死。</div><div class="market-materials">';
+      html += '<div class="market-note">局内不再直接产出物资，只能分解藏品或在此购入。每买 1 件，本窗口内同种物资再贵 25%，称为「物资匮乏」。</div><div class="market-materials">';
       for (var k = 0; k < MATERIALS.length; k++) {
         var m = MATERIALS[k];
         var mq = this.marketMaterialQuote(m.id, tick);
         var prevBuy = Math.round((mq.prev || mq.price) * (1 + MARKET_FEE_BUY));
         var pct = Math.round((mq.buy / Math.max(1, prevBuy) - 1) * 100);
         var have = this.data.materials[m.id] || 0;
-        html += '<div class="market-mat"><img src="' + m.iconImg + '" alt=""><div class="market-mat-copy"><b>' + m.name + '</b><span>持有 ' + have + '</span></div>' +
+        html += '<div class="market-mat"><img src="' + m.iconImg + '" alt=""><div class="market-mat-copy"><b>' + m.name + '</b><span>持有 ' + have + (mq.pressure ? ' · 物资匮乏 +' + mq.scarcityPct + '%' : '') + '</span></div>' +
           '<div class="market-mat-quote"><span>买 ' + fmt(mq.buy) + '</span><span>卖 ' + fmt(mq.sell) + '</span><em class="' + (pct >= 0 ? 'up' : 'down') + '">' + (pct >= 0 ? '↑' : '↓') + Math.abs(pct) + '%</em></div>' +
           '<div class="market-mat-actions"><button data-action="market-buy-material" data-id="' + m.id + '">买1</button><button data-action="market-sell-material" data-id="' + m.id + '"' + (have < 1 ? ' disabled' : '') + '>卖1</button></div></div>';
       }
@@ -2911,8 +2936,13 @@
     }
     this.data.credits -= quote.buy;
     this.data.materials[id] = (this.data.materials[id] || 0) + 1;
+    var pressureWin = Math.floor(marketTick() / MARKET_URGENT_TICKS);
+    if (!this.data.marketPressure || this.data.marketPressure.win !== pressureWin) {
+      this.data.marketPressure = { win: pressureWin, counts: {} };
+    }
+    this.data.marketPressure.counts[id] = (this.data.marketPressure.counts[id] || 0) + 1;
     this.audio.claim();
-    this.showToast('MARKET BUY', def.name + ' ×1', '-' + fmt(quote.buy) + ' 打捞币 · 含买入手续费');
+    this.showToast('MARKET BUY', def.name + ' ×1', '-' + fmt(quote.buy) + ' 打捞币 · 物资匮乏，下一件更贵');
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -3619,6 +3649,9 @@
 
   Hub.prototype.applyRunResult = function (result) {
     var taskType = result.type || 'hook';
+    var runMaterials = result.materials || {};
+    result.runMaterials = runMaterials;
+    result.materials = {};
     var chainTypes = Array.isArray(this.data.taskChainTypes) ? this.data.taskChainTypes.slice() : [];
     if (chainTypes.indexOf(taskType) >= 0 || taskType === this.data.lastTask) chainTypes = [];
     chainTypes.push(taskType);
@@ -3676,6 +3709,11 @@
     var shelterChance = this.shelterCollectibleChance();
     if (shelterChance > 0 && CW.rollCollectibleDef && Math.random() < shelterChance) {
       if (!Array.isArray(result.collectibles)) result.collectibles = [];
+      result.collectibles.push(CW.rollCollectibleDef().id);
+    }
+    if (!Array.isArray(result.collectibles)) result.collectibles = [];
+    var bonusDrops = 1 + (Math.random() < 0.35 ? 1 : 0);
+    for (var bd = 0; bd < bonusDrops; bd++) {
       result.collectibles.push(CW.rollCollectibleDef().id);
     }
     var collectibles = this.registerCollectibles(result);
