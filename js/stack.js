@@ -10,12 +10,12 @@
   var rand = CW.rand;
 
   var CARGO = [
-    { name: '废铁箱', img: 'assets/real/scrap.webp', color: '#b8c5c6', credits: 70, mats: { metal: 3 } },
-    { name: '玻璃箱', img: 'assets/collectibles/sea-bottle.webp', color: '#8fe0d8', credits: 80, mats: { glass: 2 } },
-    { name: '芯片箱', img: 'assets/real/chip.webp', color: '#79d8ff', credits: 110, mats: { chip: 2 } },
-    { name: '保险箱', img: 'assets/real/safe.webp', color: '#ffcf72', credits: 180, mats: { metal: 2, chip: 1 } },
-    { name: '金条箱', img: 'assets/real/gold.webp', color: '#ffdf72', credits: 240, mats: {} },
-    { name: '燃料箱', img: 'assets/real/fuel.webp', color: '#ffb15e', credits: 90, mats: { fuel: 2 } }
+    { name: '废铁箱', img: 'assets/real/scrap.webp', color: '#b8c5c6', credits: 55, mats: { metal: 3 } },
+    { name: '玻璃箱', img: 'assets/collectibles/sea-bottle.webp', color: '#8fe0d8', credits: 60, mats: { glass: 2 } },
+    { name: '芯片箱', img: 'assets/real/chip.webp', color: '#79d8ff', credits: 85, mats: { chip: 2 } },
+    { name: '保险箱', img: 'assets/real/safe.webp', color: '#ffcf72', credits: 135, mats: { metal: 2, chip: 1 } },
+    { name: '金条箱', img: 'assets/real/gold.webp', color: '#ffdf72', credits: 180, mats: {} },
+    { name: '燃料箱', img: 'assets/real/fuel.webp', color: '#ffb15e', credits: 65, mats: { fuel: 2 } }
   ];
 
   function StackGame(arcade, config) {
@@ -125,8 +125,8 @@
       var perfect = !top || diff <= 10;
       this.combo = perfect ? this.combo + 1 : 0;
       this.bestCombo = Math.max(this.bestCombo, this.combo);
-      var bonus = perfect ? 25 * this.combo : 0;
-      this.credits += data.credits + this.delivered * 20 + bonus;
+      var bonus = perfect ? 15 * this.combo : 0;
+      this.credits += data.credits + this.delivered * 15 + bonus;
       if (perfect) this.popups.push({ x: c.x, y: c.y - 24, text: '完美 ×' + this.combo + ' · +' + bonus, color: '#ffe18a', life: 1.4, maxLife: 1.4 });
       for (var k in data.mats) {
         if (Object.prototype.hasOwnProperty.call(data.mats, k)) this.counts[k] = (this.counts[k] || 0) + data.mats[k];
@@ -346,3 +346,4 @@
 
   CW.StackGame = StackGame;
 })();
+
