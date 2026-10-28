@@ -2460,22 +2460,6 @@ body:not(.is-title) #scene { clip-path: none !important; }
 
 /* ── Mission rotation ────────────────────────────────────── */
 .mission-rotate { min-height: 25px; padding: 0 7px; border: 1px solid rgba(180, 118, 31, 0.22); border-radius: 6px; background: #fff8e8; color: #8a5a1f; font-family: var(--mono); font-size: 8px; }
-.candidate-board { margin-top: 16px; padding: 10px 12px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 14px; background: #f4f8f2; }
-.candidate-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.candidate-head span { font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; color: #b06b28; }
-.candidate-head small { font-family: var(--mono); font-size: 8px; color: #829695; }
-.candidate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
-.candidate-card { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 6px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 9px; background: #fffdf8; }
-.candidate-pic { position: relative; width: 34px; height: 34px; flex: 0 0 auto; }
-.candidate-card img { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; }
-.candidate-pic .img-detail { right: -4px; bottom: -4px; width: 19px; height: 19px; font-size: 10px; line-height: 15px; }
-.candidate-card div { flex: 1; min-width: 0; }
-.candidate-card b { display: block; overflow: hidden; font-size: 10px; color: #173f47; white-space: nowrap; text-overflow: ellipsis; }
-.candidate-card span { font-family: var(--mono); font-size: 7px; color: #8a9b9a; }
-.candidate-card button { flex: 0 0 auto; min-height: 28px; padding: 0 7px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 6px; background: #eaf8f2; color: #0b7774; font-family: var(--mono); font-size: 8px; }
-@media (max-width: 420px) {
-  .candidate-grid { grid-template-columns: 1fr; }
-}
 
 /* ── Archive tracking ────────────────────────────────────── */
 .track-card { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 9px 11px; border: 1px solid color-mix(in srgb, var(--rarity) 38%, #fff); border-radius: 14px; background: linear-gradient(135deg, #fffdf8, #f1faf4); box-shadow: 0 5px 0 -2px #e2d4bc, 0 12px 20px rgba(31, 84, 84, 0.07); }
