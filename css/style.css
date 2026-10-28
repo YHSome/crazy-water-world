@@ -2173,6 +2173,19 @@ body::after {
 
 /* ── Free market ─────────────────────────────────────────── */
 .market-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin: 12px 0 10px; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 16px; background: linear-gradient(135deg, #fffaf0, #eefaf5); box-shadow: 0 6px 0 -2px #e2d2b6, 0 14px 24px rgba(31, 84, 84, 0.09), inset 0 1px 0 #fff; }
+.market-urgent { display: flex; align-items: center; gap: 9px; margin: 0 0 9px; padding: 9px 10px; border: 1px solid rgba(255, 177, 87, 0.35); border-radius: 13px; background: linear-gradient(135deg, #fff4d8, #fff9ec); box-shadow: 0 4px 0 -2px #e8c98e; }
+.market-urgent > img { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 9px; object-fit: cover; border: 2px solid #fffdf8; }
+.market-urgent-copy { flex: 1; min-width: 0; }
+.market-urgent-copy span { display: block; font-family: var(--mono); font-size: 7px; letter-spacing: 0.08em; color: #b06b28; }
+.market-urgent-copy b { display: block; margin: 2px 0; font-size: 12px; color: #173f47; }
+.market-urgent-copy p { margin: 0; font-size: 9px; color: #7f6a4d; }
+.market-urgent-copy em { font-style: normal; font-weight: 800; color: #b05e28; }
+.market-urgent > button { flex: 0 0 auto; min-height: 38px; padding: 0 9px; border: 1px solid transparent; border-radius: 9px; background: linear-gradient(135deg, #ffdc91, #ffb547); color: #6d430f; font-size: 9px; font-weight: 800; box-shadow: 0 3px 0 #d2943a; }
+.market-urgent > button:disabled { background: #e9e3d7; color: #9a9183; box-shadow: none; }
+.market-urgent.done { opacity: 0.72; }
+@media (max-width: 720px) {
+  .market-urgent > button { max-width: 92px; line-height: 1.2; }
+}
 .market-title { min-width: 0; }
 .market-title span { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: #b06b28; }
 .market-title b { display: block; margin-top: 3px; font-size: 17px; color: #173f47; }
