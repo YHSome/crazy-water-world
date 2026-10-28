@@ -15,6 +15,9 @@
     chip: { name: '芯片箱', glyph: '芯', img: 'assets/real/chip.webp', color: '#79d8ff', credits: 95, mats: { chip: 2 } },
     gold: { name: '金条', glyph: '金', img: 'assets/real/gold.webp', color: '#ffdf72', credits: 220, mats: {} },
     relic: { name: '沉船遗物', glyph: '遗', img: 'assets/collectibles/captain-log.webp', color: '#d9b8ff', credits: 120, collectible: true },
+    oxygen: { name: '氧气瓶', glyph: '氧', img: 'assets/seawater-filter-icon.webp', color: '#9feeff', power: 'oxygen' },
+    shield: { name: '潜航护盾', glyph: '盾', img: 'assets/real/core.webp', color: '#ffd166', power: 'shield' },
+    magnet: { name: '磁力钩', glyph: '磁', img: 'assets/real/sonar.webp', color: '#79d8ff', power: 'magnet' },
     mine: { name: '漂浮水雷', glyph: '雷', img: 'assets/real/mine.webp', color: '#ff7a62', mine: true }
   };
 
@@ -41,6 +44,7 @@
     this.player = { x: this.w * 0.24, y: this.h * 0.55, targetY: this.h * 0.55, r: 24 };
     this.combo = 0;
     this.caught = 0;
+    this.effects = { magnet: 0, shield: 0 };
     this.sprites = {};
     for (var key in LOOT) {
       if (!Object.prototype.hasOwnProperty.call(LOOT, key)) continue;
@@ -59,6 +63,7 @@
     this.credits = 0;
     this.combo = 0;
     this.caught = 0;
+    this.effects = { magnet: 0, shield: 0 };
     this.items = [];
     this.particles = [];
     this.popups = [];
@@ -94,7 +99,7 @@
       loot: this.counts,
       filters: 0,
       hasAction: false,
-      hint: '点击 / 拖动深海断面移动潜水员 · 收集漂浮物资 · 水雷会扣 4 秒'
+      hint: '点击 / 拖动深海断面移动潜水员 · 氧气 +10 秒 · 护盾 / 磁力钩随机出现 · 水雷扣 4 秒'
     };
   };
 
@@ -102,10 +107,16 @@
     var roll = Math.random();
     var key = 'glass';
     if (roll < 0.12) key = 'mine';
-    else if (roll < 0.22) key = 'relic';
-    else if (roll < 0.38) key = 'gold';
-    else if (roll < 0.62) key = 'chip';
-    else if (roll < 0.82) key = 'copper';
+    else {
+      var pick = Math.random();
+      if (pick < 0.04) key = 'oxygen';
+      else if (pick < 0.08) key = 'shield';
+      else if (pick < 0.12) key = 'magnet';
+      else if (pick < 0.22) key = 'relic';
+      else if (pick < 0.38) key = 'gold';
+      else if (pick < 0.62) key = 'chip';
+      else if (pick < 0.82) key = 'copper';
+    }
     var item = {
       key: key,
       x: this.w + 36,
@@ -119,7 +130,27 @@
 
   DiveGame.prototype.catchItem = function (item) {
     var data = LOOT[item.key];
+    if (data.power) {
+      if (data.power === 'oxygen') {
+        this.remaining += 10;
+        this.popups.push({ x: item.x, y: item.y, text: '氧气 +10 秒', color: data.color, life: 1.5, maxLife: 1.5 });
+      } else if (data.power === 'shield') {
+        this.effects.shield = 1;
+        this.popups.push({ x: item.x, y: item.y, text: '潜航护盾 就绪', color: data.color, life: 1.5, maxLife: 1.5 });
+      } else {
+        this.effects.magnet = 6;
+        this.popups.push({ x: item.x, y: item.y, text: '磁力钩 6 秒', color: data.color, life: 1.5, maxLife: 1.5 });
+      }
+      this.audio.relic();
+      return;
+    }
     if (data.mine) {
+      if (this.effects.shield > 0) {
+        this.effects.shield = 0;
+        this.popups.push({ x: item.x, y: item.y, text: '护盾挡下水雷', color: '#ffd166', life: 1.5, maxLife: 1.5 });
+        this.audio.relic();
+        return;
+      }
       this.remaining = Math.max(0, this.remaining - 4);
       this.combo = 0;
       this.popups.push({ x: item.x, y: item.y, text: '水雷！-4 秒', color: '#ff7a62', life: 1.2, maxLife: 1.2 });
@@ -152,6 +183,7 @@
     if (this.state !== 'play') return;
     this.time += dt;
     this.remaining -= dt;
+    this.effects.magnet = Math.max(0, this.effects.magnet - dt);
     this.spawnTimer -= dt;
     this.spawnGap = Math.max(0.34, 0.62 - this.time * 0.004);
     if (this.spawnTimer <= 0) {
@@ -164,6 +196,10 @@
       var it = this.items[i];
       it.x += it.vx * dt;
       it.y += Math.sin(this.time * 2 + it.bob) * 12 * dt;
+      if (this.effects.magnet > 0 && it.x < this.w * 0.85) {
+        it.x += clamp(p.x - it.x, -150 * dt, 150 * dt);
+        it.y += clamp(p.y - it.y, -110 * dt, 110 * dt);
+      }
       var dx = it.x - p.x;
       var dy = it.y - p.y;
       if (dx * dx + dy * dy < (p.r + it.r) * (p.r + it.r)) {
@@ -322,6 +358,21 @@
       ctx.fillText(pp.text, pp.x, pp.y + 1);
     }
     ctx.globalAlpha = 1;
+    var effectParts = [];
+    if (this.effects.magnet > 0) effectParts.push('磁力钩 ' + Math.ceil(this.effects.magnet) + 's');
+    if (this.effects.shield > 0) effectParts.push('潜航护盾 就绪');
+    if (effectParts.length) {
+      ctx.font = '800 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      var et = effectParts.join(' · ');
+      var ew = ctx.measureText(et).width;
+      ctx.fillStyle = 'rgba(2, 36, 45, 0.7)';
+      ctx.beginPath();
+      ctx.roundRect(w / 2 - ew / 2 - 8, h - 88, ew + 16, 20, 9);
+      ctx.fill();
+      ctx.fillStyle = '#c8fff3';
+      ctx.fillText(et, w / 2, h - 75);
+    }
     ctx.fillStyle = 'rgba(2, 31, 41, 0.84)';
     ctx.fillRect(0, h - 66, w, 66);
     ctx.fillStyle = '#eafff6';
