@@ -35,7 +35,7 @@
 
   Hub.prototype.buildRain = function () {
     this.rain = [];
-    var n = Math.round(clamp(this.w / 38, 14, 36));
+    var n = this.lowFx ? Math.round(clamp(this.w / 80, 6, 12)) : Math.round(clamp(this.w / 38, 14, 36));
     for (var i = 0; i < n; i++) {
       this.rain.push({
         x: Math.random(),
@@ -127,6 +127,7 @@
   };
 
   Hub.prototype.drawRain = function (ctx) {
+    if (this.lowFx) return;
     if (!this.rain || !this.rain.length) return;
     ctx.save();
     ctx.lineCap = 'round';
