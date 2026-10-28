@@ -583,6 +583,7 @@
       collectibles: {},
       specials: {},
       collectionMilestones: [],
+      setRewards: [],
       equipped: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
@@ -657,6 +658,13 @@
       for (var cmi = 0; cmi < raw.collectionMilestones.length; cmi++) {
         var cmv = Number(raw.collectionMilestones[cmi]);
         if (cmv) data.collectionMilestones.push(cmv);
+      }
+    }
+    data.setRewards = [];
+    if (Array.isArray(raw.setRewards)) {
+      for (var sri = 0; sri < raw.setRewards.length; sri++) {
+        var srv = String(raw.setRewards[sri]);
+        for (var srs = 0; srs < CW.COLLECTION_SETS.length; srs++) if (CW.COLLECTION_SETS[srs].id === srv) data.setRewards.push(srv);
       }
     }
     data.achievements = {};
@@ -1845,6 +1853,29 @@
     return this.collectionSetOwned(set) >= set.items.length;
   };
 
+  Hub.prototype.setRewardClaimed = function (setId) {
+    return (this.data.setRewards || []).indexOf(setId) >= 0;
+  };
+
+  Hub.prototype.claimSetReward = function (setId) {
+    var set = null;
+    for (var i = 0; i < CW.COLLECTION_SETS.length; i++) if (CW.COLLECTION_SETS[i].id === setId) set = CW.COLLECTION_SETS[i];
+    if (!set || !set.reward || this.setRewardClaimed(setId)) return;
+    if (!this.collectionSetActive(set)) {
+      this.audio.warn();
+      this.showToast('SET INCOMPLETE', set.name + ' 尚未集齐', '集齐 ' + set.items.length + ' 件后可领取');
+      return;
+    }
+    var gained = this.grantContractReward({ credits: set.reward.credits, mats: set.reward.mats });
+    if (set.reward.filters) this.data.filters = (this.data.filters || 0) + set.reward.filters;
+    this.data.setRewards.push(setId);
+    this.audio.claim();
+    this.showToast('SET COMPLETE', set.name + ' · 套装奖励', '+' + fmt(gained.credits) + ' 打捞币 · 材料已入库' + (set.reward.filters ? ' · 过滤器 +1' : ''));
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
   Hub.prototype.collectionSetBonuses = function () {
     var out = { credit: 0, mat: 0, active: 0 };
     for (var i = 0; i < CW.COLLECTION_SETS.length; i++) {
@@ -2406,10 +2437,20 @@
         var setItem = CW.COLLECTIBLE_MAP[set.items[ii]];
         icons += '<img class="' + ((map[setItem.id] || 0) > 0 ? '' : 'missing') + '" src="' + setItem.icon + '" alt="" title="' + setItem.name + '">';
       }
-      html += '<div class="set-card' + (active ? ' active' : '') + '" style="--set-color:' + set.color + '">' +
+      var setClaimed = this.setRewardClaimed(set.id);
+      var setRewardText = fmt(set.reward.credits) + ' 币';
+      for (var srm in set.reward.mats) {
+        if (!Object.prototype.hasOwnProperty.call(set.reward.mats, srm)) continue;
+        var srmd = null;
+        for (var srmi = 0; srmi < MATERIALS.length; srmi++) if (MATERIALS[srmi].id === srm) srmd = MATERIALS[srmi];
+        setRewardText += ' · ' + (srmd ? srmd.name : srm) + set.reward.mats[srm];
+      }
+      if (set.reward.filters) setRewardText += ' · 过滤器1';
+      html += '<div class="set-card' + (active ? ' active' : '') + (setClaimed ? ' claimed' : '') + '" style="--set-color:' + set.color + '">' +
         '<div class="set-icons">' + icons + '</div>' +
         '<div class="set-copy"><b>' + set.name + '</b><span>' + set.desc + '</span></div>' +
         '<div class="set-status"><b>' + owned + ' / ' + set.items.length + '</b><em>' + set.bonusText + '</em></div>' +
+        '<div class="set-reward"><span>' + setRewardText + '</span><button data-action="claim-set-reward" data-set="' + set.id + '"' + (active && !setClaimed ? '' : ' disabled') + '>' + (setClaimed ? '已领取' : active ? '领取' : '未集齐') + '</button></div>' +
       '</div>';
     }
     html += '</div></div>';
@@ -3080,6 +3121,7 @@
           self.renderPanel();
         }
         else if (action === 'claim-collection-milestone') self.claimCollectionMilestone(Number(actionEl.getAttribute('data-count')));
+        else if (action === 'claim-set-reward') self.claimSetReward(actionEl.getAttribute('data-set'));
         else if (action === 'auction-duplicates') self.auctionDuplicates();
         else if (action === 'sell-materials') self.sellMaterials(10);
         else if (action === 'upgrade-salvage') self.salvageForUpgrade(actionEl.getAttribute('data-upgrade'));
