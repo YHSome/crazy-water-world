@@ -167,6 +167,75 @@
     return { active: a, candidates: c };
   }
 
+  CW.MISSION_LORE = {
+    hook: [
+      '旧城区在第一次涨潮时被整体放弃。写字楼、码头和一座没来得及剪彩的商场沉进同一片浅海，只剩吊车臂露出水面，像一排不肯沉下去的问号。',
+      '阿盐把抓钩固定在避难所左舷。每天退潮，他都会把钩子放进同一片水域，捞上来的东西从钢筋、油桶到保险箱，偶尔还有密封得很好的旧世界。',
+      '老船员说，沉城抓钩最重要的不是手快，而是知道什么时候放绳。钩子只认方向，不认后悔。'
+    ],
+    match: [
+      '废料拼图发生在沉船的反应堆控制室。洪水灌进来时，值班员把最后一批物资塞进格子柜，然后锁上门，让压力把整间屋子压成了一个巨大的废料盒。',
+      '三消台其实是一块旧控制屏。玩家每交换一次方块，屏幕背后的机械臂就会把对应的废料拨进回收槽；四连和五连会触发当年留下的应急程序。',
+      '控制室至今还有电。没有人知道电从哪来，但每次五连清屏时，天花板的应急灯都会闪一下。'
+    ],
+    sonar: [
+      '声呐扫掠使用的是一台从旧海军监听站拆下来的控制台。它的屏幕有裂纹，按键缺了三个，但还能听见海底的回声。',
+      '货箱被故意分散埋在 6×6 的海床格子里。旧世界的走私者用距离差来标记藏货点，后来这变成了一套只有回波能读懂的地图。',
+      '深层货箱需要二次探测。老陈说那不是技术问题，是海床在提醒你：有些东西只捞一次是带不走的。'
+    ],
+    cut: [
+      '沉船切割台原本是旧港的拆船车间。洪水之后，人们把搁浅的船壳拖上来，切开，取出还能用的玻璃、铜线和钢板。',
+      '切割线进入安全区时下手最稳。切得太早会伤到材料，切得太晚船壳会回弹。每一次精准切口，都是和一块不肯认输的钢板讲道理。',
+      '车间墙上还挂着旧安全标语：慢一点，但别停。'
+    ],
+    sort: [
+      '分拣传送带来自旧码头的自动货运线。它原本负责把集装箱送进仓库，现在负责把混在一起的废料送回正确的材料箱。',
+      '六种材料对应六个箱子。点错并不会爆炸，但传送带会扣掉三秒，像在提醒你：旧世界的秩序已经没了，新世界的秩序得自己分。',
+      '传送带尽头有一盏黄灯，至今没有人走到过。'
+    ],
+    beacon: [
+      '灯塔信号来自外海最后一座还亮着的灯塔。它的看守人早已不在，但灯组仍按固定顺序闪烁，像一段没有收件人的坐标。',
+      '四座信号灯分别是潮、火、风、星。复现顺序就能让灯塔把最后的航海数据发回来；看错一次，它会重新播放，耐心得不像一台旧机器。',
+      '阿岚相信灯塔里还有人在值班。她说每次复现正确，灯就会多亮半秒。'
+    ],
+    trawl: [
+      '潮汐拖网是避难所最年轻的岗位。渔网用旧缆绳和防雨布缝成，网眼大得能漏掉小鱼，却刚好兜住随潮水冲下来的货箱。',
+      '鱼汛来的时候，海面会先浮起一层银色。阿盐说那是鱼群在换气，也是提醒：网要放低一点，锈雷也会跟着上来。',
+      '珍珠是拖网最不可靠的收获。它们不属于任何一艘沉船，像是海自己长出来的东西。'
+    ]
+  };
+
+  CW.CREW_LORE = {
+    fisher: [
+      '阿盐在旧港长大，父亲是最后一代拖网渔船船长。洪水之后，他靠一根改装的抓钩把整条街的邻居从屋顶上接下来。',
+      '他不喜欢别人叫他英雄，只承认自己比别人更熟悉潮沟。每次出航前他都会检查绳结，检查三遍。'
+    ],
+    diver: [
+      '小满曾是旧城潜水学校的学员。学校沉没那天，她穿着训练服游了六个小时，最后抱着一块船板漂到避难所。',
+      '她能在水下待很久，也会在夜里听见沉船敲击。她说那不是鬼，是金属在冷缩，但从不主动解释自己为什么不再夜潜。'
+    ],
+    sonar: [
+      '老陈是旧海军监听站的最后一名技术员。他独自在站里守了两年，直到天线被盐雾腐蚀，才带着声呐核心离开。',
+      '他能从回波里分辨出货箱、鱼群和空船。偶尔他会说听见了鲸歌，但仪器上什么也没有。'
+    ],
+    navigator: [
+      '阿岚是避难所里唯一还相信海图的人。她的图筒里装着七张手绘海图，每一张都标着不同的浅滩和“不要在同一天去两次”。',
+      '她算出过一次完美的航线，带着全船避开了风暴。第二天，那条航线从海图上消失了。'
+    ],
+    captain: [
+      '老周当过拆船工、渔船长和码头调度。他说话慢，走路更慢，但每次远征都能把人和货一起带回来。',
+      '他的打捞绞盘上刻着所有没能返航的名字。他说这不是纪念，是提醒：船可以旧，人得回来。'
+    ]
+  };
+
+  CW.UPGRADE_LORE = {
+    storage: '仓库扩建是把旧集装箱焊在驳船两侧。每多一格空间，避难所就多一分像家的可能。',
+    workshop: '打捞工坊由旧船机舱改造。扳手、焊枪和一台不肯报废的台钳，负责把所有捞回来的东西变成能用的东西。',
+    sonar: '声呐阵列最初只是监听站的一根天线。后来它长成了整座避难所的耳朵，替所有人听海底的回声。',
+    core: '聚变核心是避难所的心脏。它不发光的时候像一块废铁，亮起来的时候整条船都会安静。',
+    purifier: '净水舱是避难所最干净的房间。海水从一侧进来，盐和铁锈留在滤芯里，清水从另一侧流进每个人的杯子。'
+  };
+
   var MISSION_GRADES = (CW.MISSION_GRADES = {
     hook: { S: 1100, A: 750, B: 400 },
     match: { S: 2400, A: 1600, B: 800 },
@@ -944,6 +1013,8 @@
     collectibleBody: id('collectible-modal-body'),
     expeditionModal: id('expedition-modal'),
     expeditionBody: id('expedition-modal-body'),
+    storyModal: id('story-modal'),
+    storyBody: id('story-modal-body'),
       reset: id('reset-save'),
       toast: id('toast'),
       toastKicker: id('toast-kicker'),
@@ -1689,7 +1760,7 @@
       var def = CREW[i];
       var locked = (def.unlockLevel || 1) > this.shelterLevel();
       if (locked) {
-        html += '<article class="crew-card locked"><div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + (def.unlockLevel || 1) + '</em></div>' +
+        html += '<article class="crew-card locked"><div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + (def.unlockLevel || 1) + '</em><button class="img-detail" data-action="crew-detail" data-id="' + def.id + '" aria-label="查看 ' + def.name + ' 档案">i</button></div>' +
           '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>未解锁</em></div><p>' + def.desc + '</p><div class="crew-reward">避难所达到 Lv.' + (def.unlockLevel || 1) + ' 后开放</div></div>' +
           '<div class="crew-action"><button class="crew-btn" disabled>避难所 Lv.' + (def.unlockLevel || 1) + ' 解锁</button></div></article>';
         continue;
@@ -1748,7 +1819,7 @@
             '<p class="crew-gear-max">工具已满级 · 稀有概率 +3%</p>') + '</div>';
       }
       html += '<article class="crew-card' + stateClass + '">' +
-        '<div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + level + '</em></div>' +
+        '<div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + level + '</em><button class="img-detail" data-action="crew-detail" data-id="' + def.id + '" aria-label="查看 ' + def.name + ' 档案">i</button></div>' +
         '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>' + timer + '</em></div><p>' + def.desc + '</p>' +
           '<div class="crew-mastery"><span>熟练度 ' + (nextXp ? xp + ' / ' + nextXp : 'MAX') + '</span><i><b style="width:' + (xpPct * 100).toFixed(0) + '%"></b></i></div>' +
           '<div class="crew-reward">' + (mastery > 0 ? 'M Lv.' + level + ' · 产出 +' + mastery + '%' : '') + (gearLv ? ' · 工具 +' + (gearLv * 8) + '%' : '') + (mastery > 0 || gearLv ? '<br>' : '') + rewardText + '</div></div>' +
@@ -1841,7 +1912,7 @@
       if (m.id === 'match') tags[0] = this.matchMoves() + ' 步';
       if (m.id === 'sonar') tags[0] = this.sonarProbes() + ' 次声呐';
       html += '<article class="mission-card">' +
-        '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt=""></div>' +
+        '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt=""><button class="img-detail" data-action="mission-detail" data-id="' + m.id + '" aria-label="查看 ' + m.name + ' 详情">i</button></div>' +
         '<div class="mission-copy">' +
           '<span class="mission-kicker">' + m.kicker + '</span>' +
           '<div class="mission-name">' + m.name +
@@ -1863,7 +1934,7 @@
       for (var ci = 0; ci < candidateIds.length; ci++) {
         var cm = this.missionById(candidateIds[ci]);
         if (!cm) continue;
-        html += '<article class="candidate-card"><img src="' + cm.iconImg + '" alt=""><div><b>' + cm.name + '</b><span>候补</span></div><button data-action="mission-promote" data-mission="' + cm.id + '">换上</button></article>';
+        html += '<article class="candidate-card"><span class="candidate-pic"><img src="' + cm.iconImg + '" alt=""><button class="img-detail" data-action="mission-detail" data-id="' + cm.id + '" aria-label="查看 ' + cm.name + ' 详情">i</button></span><div><b>' + cm.name + '</b><span>候补</span></div><button data-action="mission-promote" data-mission="' + cm.id + '">换上</button></article>';
       }
       html += '</div></div>';
     }
@@ -2405,6 +2476,57 @@
     if (this.dom.collectibleModal && !this.dom.collectibleModal.classList.contains('hidden')) this.openCollectibleDetail(id);
   };
 
+  Hub.prototype.openStoryDetail = function (kind, id) {
+    if (!this.dom.storyModal) return;
+    var title = '', kicker = '', icon = '', tags = '', paras = [], actions = '';
+    if (kind === 'mission') {
+      var m = this.missionById(id);
+      if (!m) return;
+      title = m.name;
+      kicker = m.kicker + ' · MISSION FILE';
+      icon = m.iconImg;
+      tags = m.tags.map(function (t) { return '<span>' + t + '</span>'; }).join('');
+      paras = CW.MISSION_LORE[id] || [m.desc];
+      var best = this.data.best[id] || 0;
+      var grade = this.data.grades[id] || '—';
+      paras = paras.slice();
+      actions = this.arcade && this.arcade.active ?
+        '<button class="story-action" data-action="story-close">返回简报</button>' :
+        '<button class="story-action primary" data-action="story-start-mission" data-mission="' + id + '">开始打捞</button><button class="story-action" data-action="story-close">关闭</button>';
+      tags += '<span>最佳 ' + fmt(best) + '</span><span>评级 ' + grade + '</span>';
+    } else if (kind === 'crew') {
+      var c = crewDef(id);
+      if (!c) return;
+      title = c.name;
+      kicker = 'CREW FILE · ' + c.role;
+      icon = c.iconImg;
+      tags = '<span>熟练度 Lv.' + this.crewLevel(id) + '</span><span>' + c.gearName + ' Lv.' + this.crewGearLevel(id) + '</span><span>' + c.desc + '</span>';
+      paras = CW.CREW_LORE[id] || [c.desc];
+      actions = '<button class="story-action" data-action="story-close">关闭</button>';
+    } else if (kind === 'upgrade') {
+      var u = null;
+      for (var ui = 0; ui < UPGRADES.length; ui++) if (UPGRADES[ui].id === id) u = UPGRADES[ui];
+      if (!u) return;
+      title = u.name;
+      kicker = 'FACILITY FILE · 设施档案';
+      icon = u.iconImg || 'assets/real/workshop.webp';
+      tags = '<span>Lv.' + (this.data.upgrades[id] || 0) + ' / ' + u.max + '</span><span>' + u.desc + '</span>';
+      paras = [CW.UPGRADE_LORE[id] || u.desc];
+      actions = '<button class="story-action" data-action="story-close">关闭</button>';
+    } else return;
+    var body = '<div class="story-detail"><div class="story-hero"><img src="' + icon + '" alt=""><span>' + kicker + '</span></div><div class="story-copy"><p class="story-kicker">SUNKEN COAST · 档案记录</p><h3>' + title + '</h3><div class="story-tags">' + tags + '</div><div class="story-text">' + paras.map(function (p) { return '<p>' + p + '</p>'; }).join('') + '</div><div class="story-actions">' + actions + '</div></div></div>';
+    this.dom.storyBody.innerHTML = body;
+    this.dom.storyModal.classList.remove('hidden');
+    this.dom.storyModal.setAttribute('aria-hidden', 'false');
+    this.audio.tab();
+  };
+
+  Hub.prototype.closeStoryDetail = function () {
+    if (!this.dom.storyModal) return;
+    this.dom.storyModal.classList.add('hidden');
+    this.dom.storyModal.setAttribute('aria-hidden', 'true');
+  };
+
   Hub.prototype.openCollectibleDetail = function (id) {
     var def = CW.COLLECTIBLE_MAP[id];
     if (!def || !this.dom.collectibleModal) return;
@@ -2423,7 +2545,7 @@
       var req = SHELTER_LEVELS[s];
       if (req && req.specials && req.specials[id]) uses.push('避难所 Lv.' + req.level + ' 升级');
     }
-    var source = isSpecial ? '来源：抓钩的沉船秘宝 / 黄金宝箱，或三消高分深海馈赠' : '来源：抓钩、三消、声呐、切割等打捞结算';
+    var source = isSpecial ? '来源：抓钩的沉船秘宝 / 黄金宝箱，或三消高分深海馈赠' : '来源：抓钩、三消、声呐、拖网等打捞结算';
     var tracked = this.data.trackedCollection === id;
     var actions = '<button class="detail-action' + (tracked ? ' tracking' : '') + '" data-action="collectible-track" data-id="' + id + '">' + (tracked ? '取消追踪' : '追踪这件') + '</button>';
     if (count > 0 && !isSpecial) {
@@ -2435,6 +2557,7 @@
       '<div class="collectible-detail-copy"><p class="detail-kicker">SUNKEN ARCHIVE · 收藏详情</p><h3>' + def.name + '</h3>' +
         '<p class="detail-desc">' + (count ? def.desc : '档案里只有一张模糊的照片。继续打捞或完成小游戏，才能看清它。') + '</p>' +
         '<div class="detail-chips"><span>' + rarity.name + '</span><span>' + (equipped ? '已装备' : isSpecial ? (id === 'seawater-filter' ? '净水核心' : '稀有升级件') : '可装备') + '</span>' + (tracked ? '<span>追踪中</span>' : '') + (set ? '<span>' + set.name + ' ' + this.collectionSetOwned(set) + '/' + set.items.length + '</span>' : '') + '</div>' +
+        ((CW.COLLECTIBLE_LORE && CW.COLLECTIBLE_LORE[id]) ? '<div class="detail-block detail-lore"><b>档案记录</b>' + CW.COLLECTIBLE_LORE[id].map(function (p) { return '<p>' + p + '</p>'; }).join('') + '</div>' : '') +
         (uses.length ? '<div class="detail-block"><b>用途</b><p>' + uses.join(' · ') + '</p></div>' : '') +
         (!isSpecial && relic ? '<div class="detail-block"><b>档案效果</b><p>' + relic.label + (equipped ? ' · 当前生效' : '') + '</p></div>' : '') +
         (set ? '<div class="detail-block"><b>套装</b><p>' + set.desc + ' · ' + set.bonusText + '</p></div>' : '') +
@@ -3181,7 +3304,7 @@
       }
       var iconHtml = up.iconImg ? '<img src="' + up.iconImg + '" alt="">' : up.icon;
       html += '<div class="upgrade-card' + (up.id === 'purifier' ? ' rare' : '') + (locked ? ' locked' : '') + '">' +
-        '<span class="upgrade-icon" style="--tone:' + up.tone + '">' + iconHtml + '</span>' +
+        '<span class="upgrade-icon" style="--tone:' + up.tone + '">' + iconHtml + '<button class="img-detail" data-action="upgrade-detail" data-id="' + up.id + '" aria-label="查看 ' + up.name + ' 档案">i</button></span>' +
         '<div class="upgrade-info">' +
           '<div class="upgrade-name">' + up.name + ' <span class="pips">' + pips + '</span> <span class="upgrade-level">Lv.' + level + '/' + up.max + '</span></div>' +
           '<div class="upgrade-effect">' + up.desc + '</div>' +
@@ -3547,6 +3670,16 @@
         else if (action === 'reset-save') self.resetSave();
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
         else if (action === 'mission-rotate') self.rotateActiveMission(actionEl.getAttribute('data-mission'));
+        else if (action === 'mission-detail') self.openStoryDetail('mission', actionEl.getAttribute('data-id'));
+        else if (action === 'crew-detail') self.openStoryDetail('crew', actionEl.getAttribute('data-id'));
+        else if (action === 'upgrade-detail') self.openStoryDetail('upgrade', actionEl.getAttribute('data-id'));
+        else if (action === 'story-close') self.closeStoryDetail();
+        else if (action === 'arcade-story' && self.arcade && self.arcade.type) self.openStoryDetail('mission', self.arcade.type);
+        else if (action === 'story-start-mission') {
+          var storyMission = actionEl.getAttribute('data-mission');
+          self.closeStoryDetail();
+          self.startMission(storyMission);
+        }
         else if (action === 'mission-promote') {
           self.promoteMission(actionEl.getAttribute('data-mission'));
           self.saveGame();
@@ -3633,13 +3766,19 @@
         if (e.target === self.dom.expeditionModal) self.closeExpeditionEvent();
       });
     }
+    if (this.dom.storyModal) {
+      this.dom.storyModal.addEventListener('click', function (e) {
+        if (e.target === self.dom.storyModal) self.closeStoryDetail();
+      });
+    }
 
     window.addEventListener('keydown', function (e) {
       self.audio.unlock();
       if (e.repeat) return;
       if (e.code === 'KeyM') { self.toggleMute(); return; }
       if (e.code === 'Escape') {
-        if (self.dom.expeditionModal && !self.dom.expeditionModal.classList.contains('hidden')) self.closeExpeditionEvent();
+        if (self.dom.storyModal && !self.dom.storyModal.classList.contains('hidden')) self.closeStoryDetail();
+        else if (self.dom.expeditionModal && !self.dom.expeditionModal.classList.contains('hidden')) self.closeExpeditionEvent();
         else if (self.dom.collectibleModal && !self.dom.collectibleModal.classList.contains('hidden')) self.closeCollectibleDetail();
         else if (self.dom.marketModal && !self.dom.marketModal.classList.contains('hidden')) self.closeMarketModal();
         else if (!self.dom.guide.classList.contains('hidden')) self.closeGuide();
