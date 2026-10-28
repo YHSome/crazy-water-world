@@ -155,6 +155,7 @@
   var GRADE_RANK = { C: 0, B: 1, A: 2, S: 3 };
   var AUCTION_PRICES = { common: 180, uncommon: 450, rare: 1100, epic: 2600, legendary: 6000 };
   var MARKET_TICK_MS = 20000;
+  var MARKET_URGENT_TICKS = 3;
   var MARKET_FEE_BUY = 0.05;
   var MARKET_FEE_SELL = 0.08;
   var MARKET_FEE_AUCTION = 0.08;
@@ -584,6 +585,7 @@
       specials: {},
       collectionMilestones: [],
       setRewards: [],
+      urgentDone: {},
       equipped: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
@@ -658,6 +660,12 @@
       for (var cmi = 0; cmi < raw.collectionMilestones.length; cmi++) {
         var cmv = Number(raw.collectionMilestones[cmi]);
         if (cmv) data.collectionMilestones.push(cmv);
+      }
+    }
+    data.urgentDone = {};
+    if (raw.urgentDone && typeof raw.urgentDone === 'object') {
+      for (var ud in raw.urgentDone) {
+        if (Object.prototype.hasOwnProperty.call(raw.urgentDone, ud) && raw.urgentDone[ud]) data.urgentDone[ud] = true;
       }
     }
     data.setRewards = [];
@@ -1106,6 +1114,11 @@
     if (this.state === 'playing' && this.tab === 'warehouse' && this.warehouseView === 'market') {
       var clockEl = document.getElementById('market-clock-val');
       if (clockEl) clockEl.textContent = Math.max(0, Math.ceil((MARKET_TICK_MS - (Date.now() % MARKET_TICK_MS)) / 1000)) + 's';
+      var urgentEl = document.getElementById('market-urgent-val');
+      if (urgentEl) {
+        var uwin = Math.floor(marketTick() / MARKET_URGENT_TICKS);
+        urgentEl.textContent = Math.max(0, Math.ceil(((uwin + 1) * MARKET_URGENT_TICKS * MARKET_TICK_MS - Date.now()) / 1000));
+      }
     }
     if (this.state === 'playing' && this.data && this.data.crew) {
       for (var cj = 0; cj < CREW.length; cj++) {
@@ -1956,6 +1969,65 @@
     this.renderPanel();
   };
 
+  Hub.prototype.marketUrgent = function (tick) {
+    var t = tick === undefined ? marketTick() : tick;
+    var win = Math.floor(t / MARKET_URGENT_TICKS);
+    var r1 = (marketHash('urgent:a:' + win) % 10000) / 10000;
+    var r2 = (marketHash('urgent:b:' + win) % 10000) / 10000;
+    var r3 = (marketHash('urgent:c:' + win) % 10000) / 10000;
+    var isCollectible = r1 < 0.38;
+    var def = null;
+    var quote = null;
+    var qty = 1;
+    if (isCollectible) {
+      var pool = [];
+      for (var i = 0; i < CW.COLLECTIBLES.length; i++) if (!CW.COLLECTIBLES[i].special) pool.push(CW.COLLECTIBLES[i]);
+      def = pool[(r2 * pool.length) | 0];
+      quote = this.marketCollectibleQuote(def, t);
+      qty = 1;
+    } else {
+      def = MATERIALS[(r2 * MATERIALS.length) | 0];
+      quote = this.marketMaterialQuote(def.id, t);
+      qty = 3 + Math.floor(r3 * 4);
+    }
+    var unit = Math.max(1, Math.round(quote.price * (0.99 + r3 * 0.04)));
+    var until = (win + 1) * MARKET_URGENT_TICKS * MARKET_TICK_MS;
+    return {
+      win: win, kind: isCollectible ? 'collectible' : 'material',
+      id: def.id, name: def.name, icon: def.iconImg || def.icon, qty: qty,
+      unit: unit, total: unit * qty, remaining: Math.max(0, until - Date.now()),
+      done: !!this.data.urgentDone[win], quote: quote
+    };
+  };
+
+  Hub.prototype.fulfillUrgent = function () {
+    var urgent = this.marketUrgent();
+    if (!urgent || urgent.done) return;
+    var have = urgent.kind === 'material' ? (this.data.materials[urgent.id] || 0) : (this.data.collectibles[urgent.id] || 0);
+    if (have < urgent.qty) {
+      this.audio.warn();
+      this.showToast('NOT ENOUGH', '急单数量不足', '需要 ' + urgent.qty + ' × ' + urgent.name);
+      return;
+    }
+    if (urgent.kind === 'material') {
+      this.data.materials[urgent.id] -= urgent.qty;
+    } else {
+      this.data.collectibles[urgent.id] -= urgent.qty;
+      if (this.data.collectibles[urgent.id] <= 0) delete this.data.collectibles[urgent.id];
+      if (!(this.data.collectibles[urgent.id] > 0)) {
+        var at = this.data.equipped.indexOf(urgent.id);
+        if (at >= 0) this.data.equipped.splice(at, 1);
+      }
+    }
+    this.data.credits += urgent.total;
+    this.data.urgentDone[String(urgent.win)] = true;
+    this.audio.claim();
+    this.showToast('URGENT DELIVERY', '码头急单完成', '+' + fmt(urgent.total) + ' 打捞币');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
   Hub.prototype.marketMaterialQuote = function (id, tick) {
     var base = MARKET_MATERIAL_BASE[id] || 10;
     var t = tick === undefined ? marketTick() : tick;
@@ -2171,6 +2243,11 @@
     var html = this.warehouseSwitch() +
       '<div class="market-head"><div class="market-title"><span>OPEN MARKET · 自由集市</span><b>价格每 20 秒大幅波动</b><p>买入含 5% 手续费，卖出扣 8%；挂单与拍卖另计。</p></div><div class="market-clock"><span>下次刷新</span><b id="market-clock-val">' + remain + 's</b></div></div>' +
       '<div class="market-switch"><button class="' + (this.marketTab === 'collectibles' ? '' : 'active') + '" data-action="market-tab" data-view="materials">材料行情</button><button class="' + (this.marketTab === 'collectibles' ? 'active' : '') + '" data-action="market-tab" data-view="collectibles">藏品行情</button></div>';
+    var urgent = this.marketUrgent(tick);
+    var urgentHave = urgent.kind === 'material' ? (this.data.materials[urgent.id] || 0) : (this.data.collectibles[urgent.id] || 0);
+    var urgentSecs = Math.max(0, Math.ceil(urgent.remaining / 1000));
+    html += '<div class="market-urgent' + (urgent.done ? ' done' : '') + '"><img src="' + urgent.icon + '" alt=""><div class="market-urgent-copy"><span>DOCK ORDER · 码头急单</span><b>' + (urgent.done ? '本单已交付' : '收购 ' + urgent.qty + ' × ' + urgent.name) + '</b><p>' + (urgent.done ? '下一单即将刷新 · ' : '净价 ' + fmt(urgent.unit) + '/件 · ') + '剩余 <em id="market-urgent-val">' + urgentSecs + '</em>s · 持有 ' + urgentHave + '</p></div>' +
+      '<button data-action="market-urgent"' + (urgent.done || urgentHave < urgent.qty ? ' disabled' : '') + '>' + (urgent.done ? '已交付' : urgentHave < urgent.qty ? '数量不足' : '交付 · +' + fmt(urgent.total)) + '</button></div>';
     if (this.marketTab === 'collectibles') {
       html += '<div class="market-note">买下藏品会直接进入档案；挂单按你定的价格撮合，拍卖则可能捡漏也可能砸价。</div><div class="market-items">';
       for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
@@ -3147,6 +3224,7 @@
         }
         else if (action === 'crew-gear-up') self.upgradeCrewGear(actionEl.getAttribute('data-id'));
         else if (action === 'shelter-levelup') self.upgradeShelter();
+        else if (action === 'market-urgent') self.fulfillUrgent();
         return;
       }
       var tabEl = e.target.closest ? e.target.closest('[data-tab]') : null;
