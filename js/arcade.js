@@ -388,6 +388,8 @@
     else if (this.type === 'sort' && CW.SortGame) this.game = new CW.SortGame(this, config);
     else if (this.type === 'beacon' && CW.BeaconGame) this.game = new CW.BeaconGame(this, config);
     else if (this.type === 'trawl' && CW.TrawlGame) this.game = new CW.TrawlGame(this, config);
+    else if (this.type === 'dive' && CW.DiveGame) this.game = new CW.DiveGame(this, config);
+    else if (this.type === 'stack' && CW.StackGame) this.game = new CW.StackGame(this, config);
     else this.game = new CW.HookGame(this, config);
     if (this.condition && this.dom.kicker) {
       var mission = null;
