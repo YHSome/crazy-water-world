@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.9 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.10 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -368,7 +368,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 
 ### 8.7 沉船收藏与合成
 
-- 19 件收藏档案，5 个稀有度：普通 5 / 精良 4 / 稀有 3 / 史诗 4 / 传说 3；普通收藏保存为 `collectibles`，过滤器使用 `filters`，声呐核心 / 耐压阀 / 潮汐电池使用 `specials`。
+- 38 件收藏档案，5 个稀有度：普通 11 / 精良 9 / 稀有 7 / 史诗 6 / 传说 5；普通收藏保存为 `collectibles`，过滤器使用 `filters`，声呐核心 / 耐压阀 / 潮汐电池使用 `specials`。
 - 收藏品与消耗品**同级**，直接混在原有掉落表中，而不是额外的特殊物件：
   - 抓钩：普通海床物品槽约 5% 直接生成为收藏品；抓回即获得，不额外占一个物品位。
   - 三消：每盘固定混入 2 个收藏品方块，与废料方块同级；消除时获得 1 件收藏。
@@ -393,11 +393,11 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 - 收藏筛选：`collectionFilter` 为 all / owned / missing / set / special；筛选后空稀有度分组隐藏。
 - 收藏追踪：`trackedCollection` 保存目标 id；详情内切换；任务页 `renderTrackCard()` 显示来源任务按钮，点击走 `startMission`。
 - 来源映射：普通收藏 `hook/match/sonar/trawl`，升级件 `hook/match`，过滤器 `hook/sonar`。
-- 图鉴里程碑：5/10/15/19 件，手动领取；记录 `collectionMilestones`。奖励走 `grantContractReward`，19 件额外发放过滤器。
+- 图鉴里程碑：5/10/20/30/38 件，手动领取；记录 `collectionMilestones`。奖励走 `grantContractReward`，38 件额外发放过滤器。
 - 套装完成奖励：航海官 / 深潜者 / 船长遗物各一份一次性奖励，记录 `setRewards`；未集齐不可领取，已领取不可重复。
 - 合成台：3 件同稀有度 + 打捞币 → 1 件下一稀有度；费用 150 / 400 / 1,000 / 2,500。
 - 合成随机产出下一稀有度的任意收藏；重复件优先消耗数量最多的藏品。
-- 三套永久套装：
+- 五套永久套装：
   - 航海官（黄铜罗盘 / 航线图筒 / 铜制望远镜）：打捞币 +10%。
   - 深潜者（旧式留声机 / 深海潜水盔 / 沉船船钟）：物资 +10%。
   - 船长遗物（船长航海日志 / 黑匣子 / 潮汐王冠）：打捞币 +10% · 物资 +10%。
@@ -418,7 +418,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 ### 8.9 航海日志与长期成就
 
 - 避难所标签内部切换「扩建 / 航海日志」，沿用仓库的子视图模式，保持在现有五项导航内。
-- 25 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔 / 拖网 / 潜航 / 吊装首次完成 + 「九面手」+「第一枚 S」+「九项全能 S」+「独当一面」+「传奇船队」+ 避难所 Lv.5 / 工具 Lv.3 / 远征 1・10 次 / 急单 10 笔 / 三套奖励 / 完整 19 件档案。
+- 25 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔 / 拖网 / 潜航 / 吊装首次完成 + 「九面手」+「第一枚 S」+「九项全能 S」+「独当一面」+「传奇船队」+ 避难所 Lv.5 / 工具 Lv.3 / 远征 1・10 次 / 急单 10 笔 / 五套奖励 / 完整 38 件档案。
 - 新增统计：`stats.expeditionRuns`、`stats.urgentOrders`；`shelterLevel`、`crewGearMax`、`setRewardsCount`、`collectionUnique` 作为成就指标。
 - `stats` 记录 `bestCombo / sonarPerfect / filtersFound / collectiblesFound / creditsEarned / safeTotal / goldTotal / cutRuns / sortRuns / beaconRuns`，并用 `grades / sGrades` 保存最佳评级与首次 S。
 - 成就奖励打捞币与材料；每个成就 `achievements[id]=true` 后不可重复领取。
@@ -477,6 +477,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 - 每级效果：收藏掉落额外概率 +4.5%（最高 18%）、仓库容量 +15。
 - 全局收藏加成在 `applyRunResult` 中按概率追加 1 件随机收藏，和原有掉落叠加。
 - 设施上限扩展：仓库 / 工坊 Lv.7，声呐 Lv.6，核心 / 净水舱 Lv.5；各等级带 `shelter` 要求，未达标时卡面锁定。
+- 高等级设施消耗收藏：`cost.rarities` 支持 rare / epic / legendary；`canAfford` 检查未装备收藏，`buyUpgrade` 优先消耗重复件，已装备收藏不消耗。
 - 玩法解锁：Lv.3 解锁船员「阿岚」，Lv.5 解锁「老周」。
 - 当前外观：五个照片模块（甲板 / 净水舱 / 声呐桅杆 / 工作间 / 潮汐核心）按等级解锁，当前等级高亮，未解锁灰显。
 - 旧存档 `shelterLevel` 默认 1，不改变已有设施等级。
@@ -568,7 +569,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 
 ```text
 audio.js      本地 BGM / 程序化音景 / 音效
-collectibles.js 15 件收藏、稀有度、权重与合成配方
+collectibles.js 38 件收藏、稀有度、权重与合成配方
 hub.js        localStorage、经济、仓库、过滤器、扩建、Hub 界面
 hub-scene.js  照片背景合成、雨、光照与暗角
 arcade.js     小游戏外壳 + 沉城抓钩 + 稀有过滤器
@@ -583,7 +584,7 @@ assets/bgm-hub.mp3                标题 / 避难所 BGM（RUOK Loop A）
 assets/bgm-floodline.mp3          抓钩 BGM（RUOK Loop D）
 assets/bgm-match.mp3              三消 BGM（RUOK Loop I）
 assets/bgm-sonar.mp3              声呐 BGM（RUOK Loop C）
-assets/collectibles/*.webp        15 件收藏写实照片（Pexels）
+assets/collectibles/*.webp        收藏与升级件写实照片（部分新藏品复用仓库照片）
 assets/real/*.webp                抓钩 / 三消 / 声呐 / 材料 / 扩建写实照片
 assets/icons/*.svg                仅 5 个界面操作图标
 assets/seawater-filter.webp       用户提供图片（竖图，已裁水印）
@@ -616,6 +617,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
