@@ -3073,6 +3073,7 @@
   };
 
   Hub.prototype.renderCollection = function () {
+    if (['all', 'owned', 'set', 'special'].indexOf(this.collectionFilter) < 0) this.collectionFilter = 'all';
     var unique = this.collectionUnique();
     var total = this.collectionTotal();
     var map = this.data.collectibles || {};
@@ -3117,7 +3118,7 @@
     milestoneHtml += '</div></div>';
     var filterHtml = '<div class="collection-filters">';
     var filters = [
-      ['all', '全部'], ['owned', '已发现'], ['missing', '未发现'], ['set', '套装'], ['special', '升级件']
+      ['all', '全部'], ['owned', '已拥有'], ['set', '套装'], ['special', '升级件']
     ];
     for (var ff = 0; ff < filters.length; ff++) {
       filterHtml += '<button class="' + (this.collectionFilter === filters[ff][0] ? 'active' : '') + '" data-action="collection-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + '</button>';
@@ -3191,11 +3192,11 @@
       for (var vq = 0; vq < group.length; vq++) {
         var vItem = group[vq];
         var vn = vItem.special === 'filter' ? filterCount : vItem.special === 'material' ? (this.data.specials[vItem.id] || 0) : (map[vItem.id] || 0);
-        var pass = this.collectionFilter === 'all' ||
-          (this.collectionFilter === 'owned' && vn > 0) ||
-          (this.collectionFilter === 'missing' && vn === 0) ||
+        var pass = vn > 0 && (
+          this.collectionFilter === 'all' ||
+          this.collectionFilter === 'owned' ||
           (this.collectionFilter === 'set' && !!setIds[vItem.id]) ||
-          (this.collectionFilter === 'special' && !!vItem.special);
+          (this.collectionFilter === 'special' && !!vItem.special));
         if (pass) visible.push(vItem);
       }
       if (!visible.length) continue;
@@ -3210,7 +3211,7 @@
         shownTotal++;
         html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + (this.data.trackedCollection === item.id ? ' tracked' : '') + '" style="--rarity:' + rarity.color + '">' +
           '<button class="collectible-open" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情"></button>' +
-          '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
+          '<span class="collectible-art"><img src="' + item.icon + '" alt=""><button class="img-detail collectible-detail-btn" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情">i</button></span>' +
           '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em>' +
             (n && relicInfo ? '<span class="collectible-power">' + relicInfo.label + '</span>' : '') +
             (n && isSpecial ? '<span class="collectible-power">' + (item.special === 'filter' ? '净水核心 · 净水舱材料' : '稀有升级件 · 避难所材料') + '</span>' : '') + '</span>' +
@@ -3224,7 +3225,7 @@
       }
       html += '</div></section>';
     }
-    if (!shownTotal) html += '<div class="collection-empty">没有符合当前筛选的收藏。</div>';
+    if (!shownTotal) html += '<div class="collection-empty">' + (unique ? '没有符合当前筛选的收藏。' : '还没有藏品。去打捞一局，结算会带回新的沉船档案。') + '</div>';
     html += '<p class="collection-note">打捞结算时按表现提高收藏掉落率；史诗与传说也可以由低级收藏逐级合成。</p>';
     this.dom.panelContent.innerHTML = html;
   };
