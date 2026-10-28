@@ -295,6 +295,7 @@
     else if (action === 'arcade-permit') this.choosePermit(el ? el.getAttribute('data-permit') : null);
     else if (action === 'arcade-start') this.startCountdown();
     else if (action === 'arcade-close') this.close();
+    else if (action === 'arcade-story') this.hub.openStoryDetail('mission', this.type);
     else if (action === 'arcade-again') this.restart();
     else if (action === 'arcade-action') {
       if (this.phase === 'playing' && this.game && this.game.drop) this.game.drop();
