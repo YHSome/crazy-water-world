@@ -10,10 +10,10 @@
   var rand = CW.rand;
 
   var TILE = {
-    fish: { name: '银鱼', glyph: '鱼', color: '#8fe7ff', value: 55, mats: { fiber: 1 }, img: 'assets/icons/fish.svg' },
-    crate: { name: '漂流货箱', glyph: '箱', color: '#ffcf72', value: 95, mats: { metal: 2, glass: 1 }, img: 'assets/real/storage.webp' },
-    gold: { name: '黄金鱼', glyph: '金', color: '#ffdf72', value: 220, mats: { chip: 1 }, img: 'assets/real/gold.webp' },
-    pearl: { name: '深海珍珠', glyph: '珠', color: '#d9b8ff', value: 140, collectible: true, img: 'assets/collectibles/tide-crown.webp' },
+    fish: { name: '银鱼', glyph: '鱼', color: '#8fe7ff', value: 35, mats: { fiber: 1 }, img: 'assets/icons/fish.svg' },
+    crate: { name: '漂流货箱', glyph: '箱', color: '#ffcf72', value: 65, mats: { metal: 2, glass: 1 }, img: 'assets/real/storage.webp' },
+    gold: { name: '黄金鱼', glyph: '金', color: '#ffdf72', value: 150, mats: { chip: 1 }, img: 'assets/real/gold.webp' },
+    pearl: { name: '深海珍珠', glyph: '珠', color: '#d9b8ff', value: 95, collectible: true, img: 'assets/collectibles/tide-crown.webp' },
     magnet: { name: '磁力网', glyph: '磁', color: '#79d8ff', value: 0, power: 'magnet', img: 'assets/real/core.webp' },
     slow: { name: '缓流符', glyph: '缓', color: '#9be2a9', value: 0, power: 'slow', img: 'assets/real/sonar.webp' },
     shield: { name: '护网盾', glyph: '盾', color: '#ffd166', value: 0, power: 'shield', img: 'assets/seawater-filter-icon.webp' },
@@ -166,7 +166,7 @@
     this.caught += 1;
     this.combo = Math.min(9, this.combo + 1);
     this.bestCombo = Math.max(this.bestCombo, this.combo);
-    var gained = Math.round(data.value * (1 + (this.combo - 1) * 0.07));
+    var gained = Math.round(data.value * (1 + (this.combo - 1) * 0.06));
     this.credits += gained;
     for (var key in data.mats) {
       if (Object.prototype.hasOwnProperty.call(data.mats, key)) this.counts[key] = (this.counts[key] || 0) + data.mats[key];
@@ -431,3 +431,4 @@
 
   CW.TrawlGame = TrawlGame;
 })();
+
