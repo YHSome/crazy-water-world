@@ -10,11 +10,11 @@
   var rand = CW.rand;
 
   var LOOT = {
-    glass: { name: '玻璃瓶', glyph: '玻', img: 'assets/collectibles/sea-bottle.webp', color: '#8fe0d8', credits: 45, mats: { glass: 2 } },
-    copper: { name: '铜罗盘', glyph: '铜', img: 'assets/collectibles/brass-compass.webp', color: '#e2a06a', credits: 70, mats: { copper: 2 } },
-    chip: { name: '芯片箱', glyph: '芯', img: 'assets/real/chip.webp', color: '#79d8ff', credits: 95, mats: { chip: 2 } },
-    gold: { name: '金条', glyph: '金', img: 'assets/real/gold.webp', color: '#ffdf72', credits: 220, mats: {} },
-    relic: { name: '沉船遗物', glyph: '遗', img: 'assets/collectibles/captain-log.webp', color: '#d9b8ff', credits: 120, collectible: true },
+    glass: { name: '玻璃瓶', glyph: '玻', img: 'assets/collectibles/sea-bottle.webp', color: '#8fe0d8', credits: 32, mats: { glass: 2 } },
+    copper: { name: '铜罗盘', glyph: '铜', img: 'assets/collectibles/brass-compass.webp', color: '#e2a06a', credits: 50, mats: { copper: 2 } },
+    chip: { name: '芯片箱', glyph: '芯', img: 'assets/real/chip.webp', color: '#79d8ff', credits: 70, mats: { chip: 2 } },
+    gold: { name: '金条', glyph: '金', img: 'assets/real/gold.webp', color: '#ffdf72', credits: 160, mats: {} },
+    relic: { name: '沉船遗物', glyph: '遗', img: 'assets/collectibles/captain-log.webp', color: '#d9b8ff', credits: 95, collectible: true },
     oxygen: { name: '氧气瓶', glyph: '氧', img: 'assets/seawater-filter-icon.webp', color: '#9feeff', power: 'oxygen' },
     shield: { name: '潜航护盾', glyph: '盾', img: 'assets/real/core.webp', color: '#ffd166', power: 'shield' },
     magnet: { name: '磁力钩', glyph: '磁', img: 'assets/real/sonar.webp', color: '#79d8ff', power: 'magnet' },
@@ -159,7 +159,7 @@
     }
     this.caught += 1;
     this.combo = Math.min(9, this.combo + 1);
-    var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.07));
+    var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.06));
     this.credits += gained;
     for (var k in data.mats) {
       if (Object.prototype.hasOwnProperty.call(data.mats, k)) this.counts[k] = (this.counts[k] || 0) + data.mats[k];
@@ -386,3 +386,4 @@
 
   CW.DiveGame = DiveGame;
 })();
+
