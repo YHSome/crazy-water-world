@@ -2397,6 +2397,14 @@ body:not(.is-title) #scene { clip-path: none !important; }
   .panel-tabs { flex-direction: row; }
 }
 
+/* ── Collection set rewards ──────────────────────────────── */
+.set-reward { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 5px; border-top: 1px dashed rgba(19, 93, 96, 0.12); }
+.set-reward span { font-family: var(--mono); font-size: 8px; line-height: 1.4; color: #8a6b3e; }
+.set-reward button { flex: 0 0 auto; min-height: 28px; padding: 0 9px; border: 1px solid transparent; border-radius: 7px; background: linear-gradient(135deg, #ffdc91, #ffb547); color: #6d430f; font-family: var(--mono); font-size: 8px; font-weight: 800; box-shadow: 0 2px 0 #d2943a; }
+.set-reward button:disabled { background: #e9e3d7; color: #9a9183; box-shadow: none; }
+.set-card.claimed .set-reward button { background: #e4f7ee; color: #0b7774; }
+.set-card.claimed { opacity: 0.92; }
+
 /* ── Collection filters / milestones ─────────────────────── */
 .collection-milestones { margin: 10px 0; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 14px; background: linear-gradient(135deg, #fff8e9, #eefaf6); box-shadow: 0 6px 0 -3px #e1d2b8, 0 12px 22px rgba(31, 84, 84, 0.08); }
 .collection-milestone-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
