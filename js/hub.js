@@ -191,27 +191,52 @@
     {
       id: 'fisher', name: '阿盐', role: '老渔夫', iconImg: 'assets/real/hook.webp',
       duration: 180, cost: 250, desc: '熟悉旧城区的潮沟，带回归废铁和纤维。',
-      credits: [180, 320], mats: { metal: [3, 6], fiber: [2, 4] }, collectibleChance: 0
+      credits: [180, 320], mats: { metal: [3, 6], fiber: [2, 4] }, collectibleChance: 0,
+      gearName: '潮汐钩', gearCosts: [
+        { credits: 500, metal: 6, fiber: 4 },
+        { credits: 1600, metal: 14, fiber: 10, copper: 5 },
+        { credits: 4000, metal: 24, fiber: 18, copper: 10 }
+      ]
     },
     {
       id: 'diver', name: '小满', role: '潜水员', iconImg: 'assets/collectibles/diving-helmet.webp',
       duration: 480, cost: 700, desc: '能在沉船里待很久，专挑玻璃、铜线和旧收藏。',
-      credits: [80, 160], mats: { glass: [3, 6], copper: [2, 4], chip: [1, 2] }, collectibleChance: 0.45
+      credits: [80, 160], mats: { glass: [3, 6], copper: [2, 4], chip: [1, 2] }, collectibleChance: 0.45,
+      gearName: '深潜服', gearCosts: [
+        { credits: 800, glass: 8, copper: 5 },
+        { credits: 2200, glass: 16, copper: 10, chip: 5 },
+        { credits: 5200, glass: 26, copper: 18, chip: 10 }
+      ]
     },
     {
       id: 'sonar', name: '老陈', role: '声呐员', iconImg: 'assets/real/sonar.webp',
       duration: 900, cost: 1500, desc: '用旧声呐扫描外海，偶尔能带回净水核心。',
-      credits: [700, 1300], mats: { chip: [3, 6], fuel: [2, 4] }, collectibleChance: 0, filterChance: 0.1
+      credits: [700, 1300], mats: { chip: [3, 6], fuel: [2, 4] }, collectibleChance: 0, filterChance: 0.1,
+      gearName: '声呐仪', gearCosts: [
+        { credits: 1200, chip: 6, glass: 6 },
+        { credits: 3200, chip: 14, glass: 12, copper: 8 },
+        { credits: 7000, chip: 24, glass: 20, copper: 14 }
+      ]
     },
     {
       id: 'navigator', name: '阿岚', role: '海图师', iconImg: 'assets/collectibles/chart-tube.webp', unlockLevel: 3,
       duration: 1200, cost: 2600, desc: '沿着旧海图找沉船，专带稀有收藏与玻璃铜件。',
-      credits: [400, 700], mats: { glass: [5, 9], copper: [4, 7], chip: [2, 4] }, collectibleChance: 0.65
+      credits: [400, 700], mats: { glass: [5, 9], copper: [4, 7], chip: [2, 4] }, collectibleChance: 0.65,
+      gearName: '海图仪', gearCosts: [
+        { credits: 1800, glass: 10, chip: 8, copper: 6 },
+        { credits: 4500, glass: 18, chip: 14, copper: 10 },
+        { credits: 9000, glass: 28, chip: 22, copper: 16 }
+      ]
     },
     {
       id: 'captain', name: '老周', role: '打捞长', iconImg: 'assets/collectibles/captain-log.webp', unlockLevel: 5,
       duration: 2100, cost: 5200, desc: '指挥整支打捞队，带回大批物资，偶尔有净水核心。',
-      credits: [1500, 2600], mats: { metal: [8, 14], fiber: [6, 10], chip: [4, 8] }, collectibleChance: 0.2, filterChance: 0.18
+      credits: [1500, 2600], mats: { metal: [8, 14], fiber: [6, 10], chip: [4, 8] }, collectibleChance: 0.2, filterChance: 0.18,
+      gearName: '打捞绞盘', gearCosts: [
+        { credits: 2800, metal: 16, fiber: 12, chip: 8 },
+        { credits: 7000, metal: 28, fiber: 20, chip: 14, glass: 10 },
+        { credits: 14000, metal: 44, fiber: 32, chip: 22, glass: 16 }
+      ]
     }
   ]);
 
@@ -555,6 +580,7 @@
       shelterLevel: 1,
       crew: {},
       crewXp: {},
+      crewGear: {},
       contractRound: 1,
       contractRerollUsed: false,
       daily: null,
@@ -678,6 +704,12 @@
           if (crewDef(cx)) data.crewXp[cx] = Math.max(0, Math.floor(Number(raw.crewXp[cx]) || 0));
         }
       }
+      data.crewGear = {};
+      if (raw.crewGear && typeof raw.crewGear === 'object') {
+        for (var cg in raw.crewGear) {
+          if (crewDef(cg)) data.crewGear[cg] = clamp(Math.floor(Number(raw.crewGear[cg]) || 0), 0, 3);
+        }
+      }
       data.crew = {};
       if (raw.crew && typeof raw.crew === 'object') {
         for (var cr in raw.crew) {
@@ -739,6 +771,7 @@
     this.marketBusy = false;
     this.lastMarketTick = marketTick();
     this.lastCrewReady = -1;
+    this.crewGearOpen = null;
     this.shelterView = 'upgrades';
     this.w = 0;
     this.h = 0;
@@ -1224,19 +1257,53 @@
     return crewLevelFromXp(this.data.crewXp && this.data.crewXp[id]);
   };
 
+  Hub.prototype.crewGearLevel = function (id) {
+    return clamp(Math.floor(Number(this.data.crewGear && this.data.crewGear[id]) || 0), 0, 3);
+  };
+
+  Hub.prototype.crewGearMult = function (def) {
+    return 1 + this.crewGearLevel(def.id) * 0.08;
+  };
+
   Hub.prototype.crewDuration = function (def) {
     var lvl = this.crewLevel(def.id);
-    return Math.round(def.duration * (1 - (lvl - 1) * 0.06));
+    var gear = this.crewGearLevel(def.id);
+    return Math.round(def.duration * (1 - (lvl - 1) * 0.06) * (1 - gear * 0.04));
   };
 
   Hub.prototype.crewMasteryMult = function (def) {
     return 1 + (this.crewLevel(def.id) - 1) * 0.08;
   };
 
+  Hub.prototype.upgradeCrewGear = function (id) {
+    var def = crewDef(id);
+    if (!def) return;
+    if ((def.unlockLevel || 1) > this.shelterLevel()) return;
+    var level = this.crewGearLevel(id);
+    if (level >= 3) return;
+    var cost = def.gearCosts[level];
+    if (!cost || !this.canAfford(cost)) {
+      this.audio.warn();
+      this.showToast('NOT ENOUGH', '改装材料不足', def.gearName + ' 需要更多打捞币 / 材料');
+      return;
+    }
+    this.data.credits -= cost.credits;
+    for (var k = 0; k < MATERIALS.length; k++) {
+      var m = MATERIALS[k];
+      if (cost[m.id]) this.data.materials[m.id] -= cost[m.id];
+    }
+    this.data.crewGear[id] = level + 1;
+    this.audio.craft();
+    this.showToast('GEAR UPGRADED', def.name + ' · ' + def.gearName + ' Lv.' + (level + 1), '产出 +' + ((level + 1) * 8) + '% · 作业时长 -' + ((level + 1) * 4) + '%');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
   Hub.prototype.crewReward = function (def) {
     var seed = 0.5;
     var job = this.data.crew[def.id];
-    var mastery = this.crewMasteryMult(def);
+    var mastery = this.crewMasteryMult(def) * this.crewGearMult(def);
     if (job) seed = Number(job.seed) || 0.5;
     function rnd(i) {
       var x = Math.sin(seed * 9173.13 + i * 47.71) * 43758.5453;
@@ -1251,7 +1318,8 @@
       mats[key] = Math.round((range[0] + (range[1] - range[0]) * rnd(i++)) * mastery);
     }
     var level = this.crewLevel(def.id);
-    var rareBonus = (level - 1) * 0.02;
+    var gearLevel = this.crewGearLevel(def.id);
+    var rareBonus = (level - 1) * 0.02 + gearLevel * 0.01;
     return {
       credits: credits, mats: mats,
       collectible: rnd(i++) < Math.min(1, (def.collectibleChance || 0) + rareBonus),
@@ -1330,6 +1398,10 @@
       var curBase = CREW_LEVEL_XP[level - 1] || 0;
       var xpPct = nextXp ? Math.min(1, (xp - curBase) / Math.max(1, nextXp - curBase)) : 1;
       var mastery = Math.round((this.crewMasteryMult(def) - 1) * 100);
+      var gearLv = this.crewGearLevel(def.id);
+      var gearOpen = this.crewGearOpen === def.id;
+      var gearCost = gearLv < 3 ? def.gearCosts[gearLv] : null;
+      var gearAfford = gearCost ? this.canAfford(gearCost) : false;
       var ready = !!(job && Number(job.remaining) <= 0);
       var working = !!(job && !ready);
       var stateClass = ready ? ' ready' : working ? ' working' : ' idle';
@@ -1354,12 +1426,26 @@
         btn = '<button class="crew-btn hire" data-action="crew-hire" data-id="' + def.id + '"' + ((this.data.credits || 0) < def.cost ? ' disabled' : '') + '>雇佣 · ' + fmt(def.cost) + '</button>';
         timer = '<span class="crew-time">' + this.crewTimeText(this.crewDuration(def) * 1000) + '</span>';
       }
+      var gearPanel = '';
+      if (gearOpen) {
+        var gearChips = '';
+        if (gearCost) {
+          gearChips += '<span class="' + ((this.data.credits || 0) < gearCost.credits ? 'poor' : '') + '">币 ' + fmt(gearCost.credits) + '</span>';
+          for (var gi = 0; gi < MATERIALS.length; gi++) {
+            var gm = MATERIALS[gi];
+            if (gearCost[gm.id]) gearChips += '<span class="' + ((this.data.materials[gm.id] || 0) < gearCost[gm.id] ? 'poor' : '') + '">' + gm.name + ' ' + gearCost[gm.id] + '</span>';
+          }
+        }
+        gearPanel = '<div class="crew-gear-panel"><div class="crew-gear-head"><b>' + def.gearName + ' Lv.' + gearLv + '/3</b><span>产出 +' + (gearLv * 8) + '% · 时长 -' + (gearLv * 4) + '%</span></div>' +
+          (gearCost ? '<div class="crew-gear-costs">' + gearChips + '</div><button class="crew-gear-up" data-action="crew-gear-up" data-id="' + def.id + '"' + (gearAfford ? '' : ' disabled') + '>' + (gearAfford ? '升级工具' : '材料不足') + '</button>' :
+            '<p class="crew-gear-max">工具已满级 · 稀有概率 +3%</p>') + '</div>';
+      }
       html += '<article class="crew-card' + stateClass + '">' +
         '<div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + level + '</em></div>' +
         '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>' + timer + '</em></div><p>' + def.desc + '</p>' +
           '<div class="crew-mastery"><span>熟练度 ' + (nextXp ? xp + ' / ' + nextXp : 'MAX') + '</span><i><b style="width:' + (xpPct * 100).toFixed(0) + '%"></b></i></div>' +
-          '<div class="crew-reward">' + (mastery > 0 ? 'M Lv.' + level + ' · 产出 +' + mastery + '%<br>' : '') + rewardText + '</div></div>' +
-        '<div class="crew-action">' + btn + '</div>' +
+          '<div class="crew-reward">' + (mastery > 0 ? 'M Lv.' + level + ' · 产出 +' + mastery + '%' : '') + (gearLv ? ' · 工具 +' + (gearLv * 8) + '%' : '') + (mastery > 0 || gearLv ? '<br>' : '') + rewardText + '</div></div>' +
+        '<div class="crew-action">' + btn + '<button class="crew-gear-btn" data-action="crew-gear" data-id="' + def.id + '">' + def.gearName + ' · Lv.' + gearLv + '</button>' + gearPanel + '</div>' +
       '</article>';
     }
     html += '</div><p class="crew-foot">收获会进入仓库；仓库满时材料按报价折算成打捞币。作业只在避难所开启时推进，关闭页面会暂停。</p>';
@@ -2935,6 +3021,13 @@
         else if (action === 'market-modal-close') self.closeMarketModal();
         else if (action === 'crew-hire') self.hireCrew(actionEl.getAttribute('data-id'));
         else if (action === 'crew-claim') self.claimCrew(actionEl.getAttribute('data-id'));
+        else if (action === 'crew-gear') {
+          var gearId = actionEl.getAttribute('data-id');
+          self.crewGearOpen = self.crewGearOpen === gearId ? null : gearId;
+          self.audio.tab();
+          self.renderPanel();
+        }
+        else if (action === 'crew-gear-up') self.upgradeCrewGear(actionEl.getAttribute('data-id'));
         else if (action === 'shelter-levelup') self.upgradeShelter();
         return;
       }
