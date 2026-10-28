@@ -751,6 +751,7 @@
       equipped: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
+      quality: 'auto',
       crew: {},
       crewXp: {},
       crewGear: {},
@@ -913,6 +914,7 @@
     data.activeMissions = rotation.active;
     data.candidateMissions = rotation.candidates;
       data.shelterLevel = clamp(Math.floor(Number(raw.shelterLevel) || 1), 1, 5);
+      data.quality = ['auto', 'high', 'low'].indexOf(raw.quality) >= 0 ? raw.quality : 'auto';
       data.crewXp = {};
       if (raw.crewXp && typeof raw.crewXp === 'object') {
         for (var cx in raw.crewXp) {
@@ -998,6 +1000,10 @@
     this.lastCrewReady = -1;
     this.crewGearOpen = null;
     this.collectionFilter = 'all';
+    this.autoLowFx = false;
+    this.lowFx = false;
+    this.fpsTime = 0;
+    this.fpsFrames = 0;
     this.shelterView = 'upgrades';
     this.w = 0;
     this.h = 0;
@@ -1039,6 +1045,7 @@
       startLabel: id('start-btn') ? id('start-btn').querySelector('span') : null,
       guide: id('guide-screen'),
       settings: id('settings-screen'),
+      qualityToggle: document.querySelector('.quality-toggle span'),
     marketModal: id('market-modal'),
     marketBody: id('market-modal-body'),
     collectibleModal: id('collectible-modal'),
@@ -1055,6 +1062,7 @@
       arcade: id('arcade')
     };
 
+    this.applyQuality(false);
     this.resize();
     this.initScene();
     if (window.CW && CW.Arcade) this.arcade = new CW.Arcade(this);
@@ -1204,12 +1212,39 @@
   Hub.prototype.sonarProbes = function () { return 10 + Math.floor((this.data.upgrades.core || 0) / 2) + this.collectionRelicBonuses().probes; };
   Hub.prototype.dayNumber = function () { return 1281 + this.data.runs * 2; };
 
-  /* ── resize / layout ─────────────────────────────────────── */
+  /* ── quality / resize / layout ───────────────────────────── */
+  Hub.prototype.applyQuality = function (refresh) {
+    var mode = (this.data && this.data.quality) || 'auto';
+    var low = mode === 'low' || (mode === 'auto' && this.autoLowFx);
+    this.lowFx = low;
+    document.body.classList.toggle('low-fx', low);
+    if (this.dom && this.dom.qualityToggle) {
+      this.dom.qualityToggle.textContent = mode === 'high' ? '高' : mode === 'low' ? '省电' : (low ? '自动 · 省电' : '自动');
+    }
+    if (refresh) {
+      this.resize();
+      if (this.arcade) this.arcade.resize();
+      this.buildRain();
+    }
+  };
+
+  Hub.prototype.cycleQuality = function () {
+    var order = ['auto', 'high', 'low'];
+    var idx = order.indexOf(this.data.quality);
+    this.data.quality = order[(idx + 1) % order.length];
+    this.autoLowFx = false;
+    this.applyQuality(true);
+    this.saveGame();
+    this.audio.click();
+    var labels = { auto: '自动检测', high: '高画质', low: '省电' };
+    this.showToast('DISPLAY', '画质 · ' + labels[this.data.quality], this.lowFx ? '已减少雨幕、粒子和像素密度' : '保留完整画面效果');
+  };
+
   Hub.prototype.resize = function () {
     this.w = Math.max(280, window.innerWidth);
     this.h = Math.max(280, window.innerHeight);
-    var dpr = Math.min(1.5, window.devicePixelRatio || 1);
-    var maxPixels = 2400000;
+    var dpr = Math.min(this.lowFx ? 1.0 : 1.5, window.devicePixelRatio || 1);
+    var maxPixels = this.lowFx ? 1200000 : 2400000;
     var raw = this.w * this.h * dpr * dpr;
     if (raw > maxPixels) dpr *= Math.sqrt(maxPixels / raw);
     this.dpr = dpr;
@@ -1290,6 +1325,18 @@
     if (dt > 0.05) dt = 0.05;
     if (dt < 0) dt = 0;
     this.time += dt;
+    this.fpsTime = (this.fpsTime || 0) + dt;
+    this.fpsFrames = (this.fpsFrames || 0) + 1;
+    if (this.fpsTime >= 1.5) {
+      var fps = this.fpsFrames / this.fpsTime;
+      this.fpsTime = 0;
+      this.fpsFrames = 0;
+      if (this.data && this.data.quality === 'auto' && !this.autoLowFx && fps < 38) {
+        this.autoLowFx = true;
+        this.applyQuality(true);
+        this.showToast('DISPLAY', '已自动切换省电画质', '检测到帧率偏低 · 可在设置中改回高画质');
+      }
+    }
 
     if (this.arcade && this.arcade.active) {
       this.arcade.update(dt);
@@ -3687,6 +3734,7 @@
         else if (action === 'settings') self.openSettings();
         else if (action === 'close-settings') self.closeSettings();
         else if (action === 'mute') self.toggleMute();
+        else if (action === 'quality') self.cycleQuality();
         else if (action === 'reset-save') self.resetSave();
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
         else if (action === 'mission-detail') self.openStoryDetail('mission', actionEl.getAttribute('data-id'));
