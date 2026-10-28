@@ -258,6 +258,13 @@
       var rect = self.canvas.getBoundingClientRect();
       self.game.pointerDown(e.clientX - rect.left, e.clientY - rect.top, e);
     });
+    this.canvas.addEventListener('pointermove', function (e) {
+      if (!self.active || self.phase !== 'playing' || !self.game) return;
+      if (!self.game.pointerMove) return;
+      if (e.pointerType === 'mouse' && !e.buttons) return;
+      var rect = self.canvas.getBoundingClientRect();
+      self.game.pointerMove(e.clientX - rect.left, e.clientY - rect.top, e);
+    });
     this.canvas.addEventListener('pointerup', function (e) {
       if (!self.active || self.phase !== 'playing' || !self.game) return;
       var rect = self.canvas.getBoundingClientRect();
@@ -379,6 +386,7 @@
     else if (this.type === 'cut' && CW.CutGame) this.game = new CW.CutGame(this, config);
     else if (this.type === 'sort' && CW.SortGame) this.game = new CW.SortGame(this, config);
     else if (this.type === 'beacon' && CW.BeaconGame) this.game = new CW.BeaconGame(this, config);
+    else if (this.type === 'trawl' && CW.TrawlGame) this.game = new CW.TrawlGame(this, config);
     else this.game = new CW.HookGame(this, config);
     if (this.condition && this.dom.kicker) {
       var mission = null;
