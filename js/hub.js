@@ -242,6 +242,8 @@
   ]);
 
   var CREW_LEVEL_XP = [0, 1, 3, 6, 10];
+  var CREW_EXPEDITION_COST = 2500;
+  var CREW_EXPEDITION_TIME = 900;
   var COLLECTION_MILESTONES = (CW.COLLECTION_MILESTONES = [
     { count: 5, credits: 500, mats: { metal: 5, fiber: 5 } },
     { count: 10, credits: 1500, mats: { glass: 6, chip: 6 } },
@@ -592,6 +594,7 @@
       crew: {},
       crewXp: {},
       crewGear: {},
+      crewExpedition: null,
       contractRound: 1,
       contractRerollUsed: false,
       daily: null,
@@ -751,6 +754,12 @@
             data.crew[cr] = { remaining: Math.max(0, rem), seed: Number(cjob.seed) || 0 };
           }
         }
+      }
+      data.crewExpedition = null;
+      if (raw.crewExpedition && Array.isArray(raw.crewExpedition.members) && raw.crewExpedition.members.length === 2) {
+        var exMembers = [];
+        for (var emi = 0; emi < 2; emi++) if (crewDef(raw.crewExpedition.members[emi])) exMembers.push(raw.crewExpedition.members[emi]);
+        if (exMembers.length === 2) data.crewExpedition = { members: exMembers, remaining: Math.max(0, Number(raw.crewExpedition.remaining) || 0), seed: Number(raw.crewExpedition.seed) || 0.5 };
       }
       data.grades = {};
       data.sGrades = {};
@@ -1127,6 +1136,10 @@
         cjob.remaining = Math.max(0, Number(cjob.remaining) - dt);
         if (cjob.remaining <= 0) this.saveGame();
       }
+      if (this.data.crewExpedition && Number(this.data.crewExpedition.remaining) > 0) {
+        this.data.crewExpedition.remaining = Math.max(0, Number(this.data.crewExpedition.remaining) - dt);
+        if (this.data.crewExpedition.remaining <= 0) this.saveGame();
+      }
     }
     var crewReady = this.crewReadyCount();
     if (crewReady !== this.lastCrewReady) {
@@ -1140,6 +1153,8 @@
         var tjob = this.crewJob(timers[ci].getAttribute('data-crew-id'));
         timers[ci].textContent = tjob ? this.crewTimeText(Number(tjob.remaining) * 1000) : '0:00';
       }
+      var expTimer = document.querySelector('[data-expedition]');
+      if (expTimer && this.data.crewExpedition) expTimer.textContent = this.crewTimeText(Number(this.data.crewExpedition.remaining) * 1000);
     }
     requestAnimationFrame(this.loop);
   };
@@ -1281,13 +1296,82 @@
 
   Hub.prototype.crewReadyCount = function () {
     var n = 0;
-    var now = Date.now();
     for (var i = 0; i < CREW.length; i++) {
       if ((CREW[i].unlockLevel || 1) > this.shelterLevel()) continue;
       var job = this.crewJob(CREW[i].id);
       if (job && Number(job.remaining) <= 0) n++;
     }
+    if (this.data.crewExpedition && Number(this.data.crewExpedition.remaining) <= 0) n++;
     return n;
+  };
+
+  Hub.prototype.crewExpeditionMembers = function () {
+    var out = [];
+    if (this.data.crewExpedition) return out;
+    for (var i = 0; i < CREW.length; i++) {
+      var def = CREW[i];
+      if ((def.unlockLevel || 1) > this.shelterLevel()) continue;
+      if (this.crewJob(def.id)) continue;
+      out.push(def);
+    }
+    out.sort(function (a, b) {
+      var sa = this.crewLevel(a.id) * 10 + this.crewGearLevel(a.id);
+      var sb = this.crewLevel(b.id) * 10 + this.crewGearLevel(b.id);
+      return sb - sa;
+    }.bind(this));
+    return out;
+  };
+
+  Hub.prototype.startCrewExpedition = function () {
+    if (this.shelterLevel() < 3) {
+      this.audio.warn();
+      this.showToast('LOCKED', '联合远征尚未开放', '避难所达到 Lv.3 后解锁');
+      return;
+    }
+    if (this.data.crewExpedition) return;
+    var candidates = this.crewExpeditionMembers();
+    if (candidates.length < 2) {
+      this.audio.warn();
+      this.showToast('CREW BUSY', '需要 2 名空闲船员', '先等待当前作业结束');
+      return;
+    }
+    if ((this.data.credits || 0) < CREW_EXPEDITION_COST) {
+      this.audio.warn();
+      this.showToast('NOT ENOUGH', '联合远征需要 ' + fmt(CREW_EXPEDITION_COST) + ' 打捞币', '再去集市或契约凑一凑');
+      return;
+    }
+    this.data.credits -= CREW_EXPEDITION_COST;
+    this.data.crewExpedition = { members: [candidates[0].id, candidates[1].id], remaining: CREW_EXPEDITION_TIME, seed: Math.random() };
+    this.audio.claim();
+    this.showToast('JOINT EXPEDITION', candidates[0].name + ' + ' + candidates[1].name, '15 分钟后带回稀有升级件');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.claimCrewExpedition = function () {
+    var exp = this.data.crewExpedition;
+    if (!exp || Number(exp.remaining) > 0) return;
+    var totalLevel = 0;
+    var totalGear = 0;
+    for (var i = 0; i < exp.members.length; i++) {
+      totalLevel += this.crewLevel(exp.members[i]);
+      totalGear += this.crewGearLevel(exp.members[i]);
+    }
+    var credits = 900 + totalLevel * 130 + totalGear * 90;
+    var mats = { metal: 4 + totalLevel, fiber: 4 + totalLevel, glass: 3 + Math.floor(totalGear / 2), copper: 3 + Math.floor(totalGear / 2), chip: 2 + totalGear };
+    var gained = this.grantContractReward({ credits: credits, mats: mats });
+    var cdef = CW.rollCollectibleDef();
+    this.data.collectibles[cdef.id] = (this.data.collectibles[cdef.id] || 0) + 1;
+    var sid = CW.rollSpecialMaterial();
+    var sdef = CW.COLLECTIBLE_MAP[sid];
+    this.data.specials[sid] = (this.data.specials[sid] || 0) + 1;
+    this.data.crewExpedition = null;
+    this.audio.relic();
+    this.showToast('EXPEDITION RETURNED', '联合远征返航', '+' + fmt(gained.credits) + ' 打捞币 · ' + cdef.name + ' · ' + sdef.name);
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
   };
 
   Hub.prototype.crewLevel = function (id) {
@@ -1372,6 +1456,11 @@
       this.showToast('LOCKED', def.name + ' 尚未解锁', '需要避难所 Lv.' + def.unlockLevel);
       return;
     }
+    if (this.data.crewExpedition && this.data.crewExpedition.members.indexOf(id) >= 0) {
+      this.audio.warn();
+      this.showToast('ON EXPEDITION', def.name + ' 正在远征', '等待联合远征返航');
+      return;
+    }
     var job = this.crewJob(id);
     if (job && Number(job.remaining) > 0) return;
     if ((this.data.credits || 0) < def.cost) {
@@ -1418,7 +1507,23 @@
   };
 
   Hub.prototype.renderCrew = function () {
-    var html = '<div class="crew-head"><div><span>CREW DOCK · 打捞队</span><b>把等待变成下一船物资</b><p>雇佣后在避难所开启期间倒计时；每个船员一次只能跑一个岗位。</p></div><div class="crew-ready"><b>' + this.crewReadyCount() + '</b><span>可领取</span></div></div><div class="crew-grid">';
+    var exp = this.data.crewExpedition;
+    var expSaved = '';
+    if (this.shelterLevel() < 3) {
+      expSaved = '<div class="crew-expedition locked"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>避难所 Lv.3 解锁</b><p>派出两名船员，15 分钟后带回打捞币、收藏与至少 1 件稀有升级件。</p></div><button disabled>未解锁</button></div>';
+    } else if (exp) {
+      var ready = Number(exp.remaining) <= 0;
+      var expNames = [];
+      for (var ei = 0; ei < exp.members.length; ei++) { var ed = crewDef(exp.members[ei]); if (ed) expNames.push(ed.name); }
+      expSaved = '<div class="crew-expedition' + (ready ? ' ready' : ' running') + '"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>' + expNames.join(' + ') + '</b><p>保底 1 件收藏 + 1 件稀有升级件 · ' +
+        (ready ? '已返航' : '剩余 <em data-expedition>' + this.crewTimeText(Number(exp.remaining) * 1000) + '</em>') + '</p></div><button data-action="crew-expedition-claim"' + (ready ? '' : ' disabled') + '>' + (ready ? '领取远征' : '远征中') + '</button></div>';
+    } else {
+      var candidates = this.crewExpeditionMembers();
+      var canStart = candidates.length >= 2 && (this.data.credits || 0) >= CREW_EXPEDITION_COST;
+      expSaved = '<div class="crew-expedition"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>两人一队，去更远的海域</b><p>消耗 ' + fmt(CREW_EXPEDITION_COST) + ' 币 · 15 分钟 · 保底 1 件收藏 + 1 件稀有升级件 · 空闲船员 ' + candidates.length + ' 名</p></div>' +
+        '<button data-action="crew-expedition-start"' + (canStart ? '' : ' disabled') + '>' + (candidates.length < 2 ? '需要 2 名空闲' : (this.data.credits || 0) < CREW_EXPEDITION_COST ? '打捞币不足' : '发起远征') + '</button></div>';
+    }
+    var html = '<div class="crew-head"><div><span>CREW DOCK · 打捞队</span><b>把等待变成下一船物资</b><p>雇佣后在避难所开启期间倒计时；每个船员一次只能跑一个岗位。</p></div><div class="crew-ready"><b>' + this.crewReadyCount() + '</b><span>可领取</span></div></div>' + expSaved + '<div class="crew-grid">';
     for (var i = 0; i < CREW.length; i++) {
       var def = CREW[i];
       var locked = (def.unlockLevel || 1) > this.shelterLevel();
@@ -1439,6 +1544,7 @@
       var gearOpen = this.crewGearOpen === def.id;
       var gearCost = gearLv < 3 ? def.gearCosts[gearLv] : null;
       var gearAfford = gearCost ? this.canAfford(gearCost) : false;
+      var onExpedition = !!(this.data.crewExpedition && this.data.crewExpedition.members.indexOf(def.id) >= 0);
       var ready = !!(job && Number(job.remaining) <= 0);
       var working = !!(job && !ready);
       var stateClass = ready ? ' ready' : working ? ' working' : ' idle';
@@ -1459,6 +1565,9 @@
       } else if (working) {
         btn = '<button class="crew-btn" disabled>作业中</button>';
         timer = '<span class="crew-time" data-crew-id="' + def.id + '">' + this.crewTimeText(Number(job.remaining) * 1000) + '</span>';
+      } else if (onExpedition) {
+        btn = '<button class="crew-btn" disabled>远征中</button>';
+        timer = '<span class="crew-time ready">远航中</span>';
       } else {
         btn = '<button class="crew-btn hire" data-action="crew-hire" data-id="' + def.id + '"' + ((this.data.credits || 0) < def.cost ? ' disabled' : '') + '>雇佣 · ' + fmt(def.cost) + '</button>';
         timer = '<span class="crew-time">' + this.crewTimeText(this.crewDuration(def) * 1000) + '</span>';
@@ -3223,6 +3332,8 @@
           self.renderPanel();
         }
         else if (action === 'crew-gear-up') self.upgradeCrewGear(actionEl.getAttribute('data-id'));
+        else if (action === 'crew-expedition-start') self.startCrewExpedition();
+        else if (action === 'crew-expedition-claim') self.claimCrewExpedition();
         else if (action === 'shelter-levelup') self.upgradeShelter();
         else if (action === 'market-urgent') self.fulfillUrgent();
         return;
