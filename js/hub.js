@@ -634,6 +634,7 @@
       collectibles: {},
       specials: {},
       collectionMilestones: [],
+      trackedCollection: '',
       setRewards: [],
       urgentDone: {},
       equipped: [],
@@ -709,6 +710,7 @@
         }
       }
     }
+    data.trackedCollection = CW.COLLECTIBLE_MAP[raw.trackedCollection] ? String(raw.trackedCollection) : '';
     data.collectionMilestones = [];
     if (Array.isArray(raw.collectionMilestones)) {
       for (var cmi = 0; cmi < raw.collectionMilestones.length; cmi++) {
@@ -1753,8 +1755,23 @@
       '<p>' + msg + '</p><div class="chain-pips">' + pips + '</div></div>';
   };
 
+  Hub.prototype.renderTrackCard = function () {
+    var id = this.data.trackedCollection;
+    var def = id ? CW.COLLECTIBLE_MAP[id] : null;
+    if (!def) return '';
+    var count = def.special === 'filter' ? (this.data.filters || 0) : def.special === 'material' ? (this.data.specials[id] || 0) : (this.data.collectibles[id] || 0);
+    var sources = this.collectibleSources(id);
+    var buttons = '';
+    for (var i = 0; i < sources.length; i++) {
+      var m = null;
+      for (var mi = 0; mi < MISSIONS.length; mi++) if (MISSIONS[mi].id === sources[i]) m = MISSIONS[mi];
+      if (m) buttons += '<button data-action="track-source" data-mission="' + m.id + '">' + m.name + '</button>';
+    }
+    return '<div class="track-card" style="--rarity:' + CW.COLLECTIBLE_RARITY_MAP[def.rarity].color + '"><img src="' + def.icon + '" alt=""><div class="track-copy"><span>ARCHIVE TRACK · 正在追踪</span><b>' + def.name + ' · ' + (count ? '已发现 ×' + count : '未发现') + '</b><p>从这些打捞点更容易带回它</p><div class="track-sources">' + buttons + '</div></div><button class="track-off" data-action="collectible-track" data-id="' + id + '">取消</button></div>';
+  };
+
   Hub.prototype.renderTasks = function () {
-    var html = this.renderDailyCard() + this.renderTaskChain() + '<div class="mission-list">';
+    var html = this.renderDailyCard() + this.renderTaskChain() + this.renderTrackCard() + '<div class="mission-list">';
     for (var i = 0; i < MISSIONS.length; i++) {
       var m = MISSIONS[i];
       var best = this.data.best[m.id] || 0;
@@ -2299,6 +2316,25 @@
     };
   };
 
+  Hub.prototype.collectibleSources = function (id) {
+    var def = CW.COLLECTIBLE_MAP[id];
+    if (!def) return [];
+    if (id === 'seawater-filter') return ['hook', 'sonar'];
+    if (def.special) return ['hook', 'match'];
+    return ['hook', 'match', 'sonar', 'trawl'];
+  };
+
+  Hub.prototype.trackCollectible = function (id) {
+    if (!CW.COLLECTIBLE_MAP[id]) return;
+    this.data.trackedCollection = this.data.trackedCollection === id ? '' : id;
+    this.audio.tab();
+    if (this.data.trackedCollection) this.showToast('ARCHIVE TRACKED', '正在追踪 · ' + CW.COLLECTIBLE_MAP[id].name, '任务页会标出能带回它的打捞点');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    if (this.dom.collectibleModal && !this.dom.collectibleModal.classList.contains('hidden')) this.openCollectibleDetail(id);
+  };
+
   Hub.prototype.openCollectibleDetail = function (id) {
     var def = CW.COLLECTIBLE_MAP[id];
     if (!def || !this.dom.collectibleModal) return;
@@ -2318,16 +2354,17 @@
       if (req && req.specials && req.specials[id]) uses.push('避难所 Lv.' + req.level + ' 升级');
     }
     var source = isSpecial ? '来源：抓钩的沉船秘宝 / 黄金宝箱，或三消高分深海馈赠' : '来源：抓钩、三消、声呐、切割等打捞结算';
-    var actions = '';
+    var tracked = this.data.trackedCollection === id;
+    var actions = '<button class="detail-action' + (tracked ? ' tracking' : '') + '" data-action="collectible-track" data-id="' + id + '">' + (tracked ? '取消追踪' : '追踪这件') + '</button>';
     if (count > 0 && !isSpecial) {
-      actions = '<button class="detail-action primary" data-action="equip-collectible" data-id="' + id + '">' + (equipped ? '从档案卸下' : '装备到档案') + '</button>';
+      actions += '<button class="detail-action primary" data-action="equip-collectible" data-id="' + id + '">' + (equipped ? '从档案卸下' : '装备到档案') + '</button>';
     }
     actions += '<button class="detail-action" data-action="collectible-close">关闭</button>';
     var html = '<div class="collectible-detail' + (count ? '' : ' unknown') + '" style="--rarity:' + rarity.color + '">' +
       '<div class="collectible-detail-hero"><img src="' + def.icon + '" alt=""><span class="detail-rarity">' + rarity.name + '</span><span class="detail-count">' + (count ? '拥有 ×' + count : '未发现') + '</span></div>' +
       '<div class="collectible-detail-copy"><p class="detail-kicker">SUNKEN ARCHIVE · 收藏详情</p><h3>' + def.name + '</h3>' +
         '<p class="detail-desc">' + (count ? def.desc : '档案里只有一张模糊的照片。继续打捞或完成小游戏，才能看清它。') + '</p>' +
-        '<div class="detail-chips"><span>' + rarity.name + '</span><span>' + (equipped ? '已装备' : isSpecial ? (id === 'seawater-filter' ? '净水核心' : '稀有升级件') : '可装备') + '</span>' + (set ? '<span>' + set.name + ' ' + this.collectionSetOwned(set) + '/' + set.items.length + '</span>' : '') + '</div>' +
+        '<div class="detail-chips"><span>' + rarity.name + '</span><span>' + (equipped ? '已装备' : isSpecial ? (id === 'seawater-filter' ? '净水核心' : '稀有升级件') : '可装备') + '</span>' + (tracked ? '<span>追踪中</span>' : '') + (set ? '<span>' + set.name + ' ' + this.collectionSetOwned(set) + '/' + set.items.length + '</span>' : '') + '</div>' +
         (uses.length ? '<div class="detail-block"><b>用途</b><p>' + uses.join(' · ') + '</p></div>' : '') +
         (!isSpecial && relic ? '<div class="detail-block"><b>档案效果</b><p>' + relic.label + (equipped ? ' · 当前生效' : '') + '</p></div>' : '') +
         (set ? '<div class="detail-block"><b>套装</b><p>' + set.desc + ' · ' + set.bonusText + '</p></div>' : '') +
@@ -2814,7 +2851,7 @@
         var isEquipped = !isSpecial && equipped.indexOf(item.id) >= 0;
         var relicInfo = CW.COLLECTIBLE_RELICS[item.id];
         shownTotal++;
-        html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + '" style="--rarity:' + rarity.color + '">' +
+        html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + (this.data.trackedCollection === item.id ? ' tracked' : '') + '" style="--rarity:' + rarity.color + '">' +
           '<button class="collectible-open" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情"></button>' +
           '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
           '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em>' +
@@ -2825,6 +2862,7 @@
             '<button class="collectible-dismantle" data-action="dismantle" data-id="' + item.id + '" title="分解 1 件为材料">分解</button>' +
           '</span>' : '') +
           (n && isSpecial ? '<span class="collectible-special-mark">' + (item.special === 'filter' ? '净水舱' : '升级件') + '</span>' : '') +
+          (this.data.trackedCollection === item.id ? '<span class="collectible-tracked">追踪</span>' : '') +
         '</article>';
       }
       html += '</div></section>';
@@ -3451,6 +3489,8 @@
         } else if (action === 'equip-collectible') self.collectionEquip(actionEl.getAttribute('data-id'));
         else if (action === 'collectible-detail') self.openCollectibleDetail(actionEl.getAttribute('data-id'));
         else if (action === 'collectible-close') self.closeCollectibleDetail();
+        else if (action === 'collectible-track') self.trackCollectible(actionEl.getAttribute('data-id'));
+        else if (action === 'track-source') self.startMission(actionEl.getAttribute('data-mission'));
         else if (action === 'collection-filter') {
           self.collectionFilter = actionEl.getAttribute('data-filter') || 'all';
           self.audio.tab();
