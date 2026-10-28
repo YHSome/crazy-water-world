@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.11 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.11.1 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -387,11 +387,12 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 - 海水过滤器与 3 件稀有升级件进入收藏档案，但不参与拍卖 / 分解 / 合成 / 装备。
 - 稀有升级件是避难所 Lv.3–5 的必需材料：声呐核心、耐压阀、潮汐电池。
 - 抓钩与三消都会产出升级件；避难所升级条件直接检查 `specials`。
-- 收藏详情：点击任意卡打开模态框，展示大图、稀有度、数量、描述、两段 `COLLECTIBLE_LORE` 档案记录、套装进度、遗物效果、升级用途、来源；未发现档案显示模糊图与探索提示。
+- 收藏页仅渲染已拥有收藏，未拥有的档案不进入列表；每张卡图片右下角有 `i` 详情按钮，透明卡覆盖层与按钮分层。
+- 收藏详情：点击卡或 `i` 打开模态框，展示大图、稀有度、数量、描述、两段 `COLLECTIBLE_LORE` 档案记录、套装进度、遗物效果、升级用途、来源。
 - 图片详情：任务卡 / 船员照片 / 扩建图标右下角 `i` 按钮，打开通用 `story-modal`；任务含 3 段 `MISSION_LORE`，船员含 2 段 `CREW_LORE`，设施含 `UPGRADE_LORE`。
 - 小游戏简报页提供「任务档案 · 背景故事」按钮，由 Arcade 调用 `hub.openStoryDetail('mission', type)`。
 - 详情内可装备 / 卸下普通收藏；特殊升级件只展示用途。卡片使用绝对定位透明按钮覆盖层，避免移动端点按失败，内部装备 / 分解按钮位于更高层。
-- 收藏筛选：`collectionFilter` 为 all / owned / missing / set / special；筛选后空稀有度分组隐藏。
+- 收藏筛选：`collectionFilter` 为 all / owned / set / special；未拥有项恒不渲染，筛选后空稀有度分组隐藏，旧 `missing` 状态自动回 all。
 - 收藏追踪：`trackedCollection` 保存目标 id；详情内切换；任务页 `renderTrackCard()` 显示来源任务按钮，点击走 `startMission`。
 - 来源映射：普通收藏 `hook/match/sonar/trawl`，升级件 `hook/match`，过滤器 `hook/sonar`。
 - 图鉴里程碑：5/10/20/30/38 件，手动领取；记录 `collectionMilestones`。奖励走 `grantContractReward`，38 件额外发放过滤器。
@@ -619,6 +620,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
