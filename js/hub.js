@@ -858,6 +858,8 @@
     marketBody: id('market-modal-body'),
     collectibleModal: id('collectible-modal'),
     collectibleBody: id('collectible-modal-body'),
+    expeditionModal: id('expedition-modal'),
+    expeditionBody: id('expedition-modal-body'),
       reset: id('reset-save'),
       toast: id('toast'),
       toastKicker: id('toast-kicker'),
@@ -1349,29 +1351,89 @@
     this.renderPanel();
   };
 
-  Hub.prototype.claimCrewExpedition = function () {
+  Hub.prototype.expeditionOptions = function () {
     var exp = this.data.crewExpedition;
-    if (!exp || Number(exp.remaining) > 0) return;
+    if (!exp) return [];
     var totalLevel = 0;
     var totalGear = 0;
     for (var i = 0; i < exp.members.length; i++) {
       totalLevel += this.crewLevel(exp.members[i]);
       totalGear += this.crewGearLevel(exp.members[i]);
     }
-    var credits = 900 + totalLevel * 130 + totalGear * 90;
+    var base = 900 + totalLevel * 130 + totalGear * 90;
     var mats = { metal: 4 + totalLevel, fiber: 4 + totalLevel, glass: 3 + Math.floor(totalGear / 2), copper: 3 + Math.floor(totalGear / 2), chip: 2 + totalGear };
-    var gained = this.grantContractReward({ credits: credits, mats: mats });
-    var cdef = CW.rollCollectibleDef();
-    this.data.collectibles[cdef.id] = (this.data.collectibles[cdef.id] || 0) + 1;
-    var sid = CW.rollSpecialMaterial();
-    var sdef = CW.COLLECTIBLE_MAP[sid];
-    this.data.specials[sid] = (this.data.specials[sid] || 0) + 1;
+    return [
+      { id: 0, name: '满舱而归', icon: 'assets/real/gold.webp', desc: '优先带回打捞币与五大类材料，适合扩建。', credits: base, mats: mats, collectibles: 1, specials: 0 },
+      { id: 1, name: '档案优先', icon: 'assets/collectibles/tide-crown.webp', desc: '少拿材料，多带两件随机收藏，适合补图鉴。', credits: Math.round(base * 0.55), mats: {}, collectibles: 2, specials: 0 },
+      { id: 2, name: '工程优先', icon: 'assets/real/core.webp', desc: '保底一件稀有升级件，附带芯片与铜线。', credits: Math.round(base * 0.65), mats: { chip: 4 + totalGear, copper: 3 + Math.floor(totalGear / 2) }, collectibles: 0, specials: 1 }
+    ];
+  };
+
+  Hub.prototype.openExpeditionEvent = function () {
+    var exp = this.data.crewExpedition;
+    if (!exp || Number(exp.remaining) > 0 || !this.dom.expeditionModal) return;
+    var opts = this.expeditionOptions();
+    var html = '<div class="expedition-event"><p class="expedition-kicker">EXPEDITION RETURN · 远征返航</p><h3>选择带回什么</h3><p class="expedition-copy">船员已经靠岸，只能优先卸下其中一类收获。</p><div class="expedition-options">';
+    for (var i = 0; i < opts.length; i++) {
+      var o = opts[i];
+      var reward = '+' + fmt(o.credits) + ' 币';
+      if (o.collectibles) reward += ' · 收藏 ×' + o.collectibles;
+      if (o.specials) reward += ' · 稀有升级件 ×' + o.specials;
+      if (o.mats) {
+        for (var mk in o.mats) {
+          if (!Object.prototype.hasOwnProperty.call(o.mats, mk)) continue;
+          var mn = null;
+          for (var mi = 0; mi < MATERIALS.length; mi++) if (MATERIALS[mi].id === mk) mn = MATERIALS[mi].name;
+          reward += ' · ' + (mn || mk) + '+' + o.mats[mk];
+        }
+      }
+      html += '<button class="expedition-option" data-action="expedition-choose" data-choice="' + o.id + '"><img src="' + o.icon + '" alt=""><b>' + o.name + '</b><span>' + o.desc + '</span><em>' + reward + '</em></button>';
+    }
+    html += '</div></div>';
+    this.dom.expeditionBody.innerHTML = html;
+    this.dom.expeditionModal.classList.remove('hidden');
+    this.dom.expeditionModal.setAttribute('aria-hidden', 'false');
+    this.audio.tab();
+  };
+
+  Hub.prototype.closeExpeditionEvent = function () {
+    if (!this.dom.expeditionModal) return;
+    this.dom.expeditionModal.classList.add('hidden');
+    this.dom.expeditionModal.setAttribute('aria-hidden', 'true');
+  };
+
+  Hub.prototype.chooseExpeditionReward = function (choice) {
+    var exp = this.data.crewExpedition;
+    if (!exp || Number(exp.remaining) > 0) return;
+    var opts = this.expeditionOptions();
+    var opt = opts[Number(choice)];
+    if (!opt) return;
+    var gained = this.grantContractReward({ credits: opt.credits, mats: opt.mats });
+    var extras = [];
+    for (var c = 0; c < opt.collectibles; c++) {
+      var cdef = CW.rollCollectibleDef();
+      this.data.collectibles[cdef.id] = (this.data.collectibles[cdef.id] || 0) + 1;
+      extras.push(cdef.name);
+    }
+    for (var s = 0; s < opt.specials; s++) {
+      var sid = CW.rollSpecialMaterial();
+      var sdef = CW.COLLECTIBLE_MAP[sid];
+      this.data.specials[sid] = (this.data.specials[sid] || 0) + 1;
+      extras.push(sdef.name);
+    }
     this.data.crewExpedition = null;
+    this.closeExpeditionEvent();
     this.audio.relic();
-    this.showToast('EXPEDITION RETURNED', '联合远征返航', '+' + fmt(gained.credits) + ' 打捞币 · ' + cdef.name + ' · ' + sdef.name);
+    this.showToast('EXPEDITION RETURNED', '联合远征返航', '+' + fmt(gained.credits) + ' 打捞币' + (extras.length ? ' · ' + extras.join(' / ') : ''));
     this.saveGame();
     this.updateUI();
     this.renderPanel();
+  };
+
+  Hub.prototype.claimCrewExpedition = function () {
+    var exp = this.data.crewExpedition;
+    if (!exp || Number(exp.remaining) > 0) return;
+    this.openExpeditionEvent();
   };
 
   Hub.prototype.crewLevel = function (id) {
@@ -1516,7 +1578,7 @@
       var expNames = [];
       for (var ei = 0; ei < exp.members.length; ei++) { var ed = crewDef(exp.members[ei]); if (ed) expNames.push(ed.name); }
       expSaved = '<div class="crew-expedition' + (ready ? ' ready' : ' running') + '"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>' + expNames.join(' + ') + '</b><p>保底 1 件收藏 + 1 件稀有升级件 · ' +
-        (ready ? '已返航' : '剩余 <em data-expedition>' + this.crewTimeText(Number(exp.remaining) * 1000) + '</em>') + '</p></div><button data-action="crew-expedition-claim"' + (ready ? '' : ' disabled') + '>' + (ready ? '领取远征' : '远征中') + '</button></div>';
+        (ready ? '已返航 · 三选一' : '剩余 <em data-expedition>' + this.crewTimeText(Number(exp.remaining) * 1000) + '</em>') + '</p></div><button data-action="crew-expedition-claim"' + (ready ? '' : ' disabled') + '>' + (ready ? '选择奖励' : '远征中') + '</button></div>';
     } else {
       var candidates = this.crewExpeditionMembers();
       var canStart = candidates.length >= 2 && (this.data.credits || 0) >= CREW_EXPEDITION_COST;
@@ -3334,6 +3396,8 @@
         else if (action === 'crew-gear-up') self.upgradeCrewGear(actionEl.getAttribute('data-id'));
         else if (action === 'crew-expedition-start') self.startCrewExpedition();
         else if (action === 'crew-expedition-claim') self.claimCrewExpedition();
+        else if (action === 'expedition-close') self.closeExpeditionEvent();
+        else if (action === 'expedition-choose') self.chooseExpeditionReward(Number(actionEl.getAttribute('data-choice')));
         else if (action === 'shelter-levelup') self.upgradeShelter();
         else if (action === 'market-urgent') self.fulfillUrgent();
         return;
@@ -3354,13 +3418,19 @@
         if (e.target === self.dom.collectibleModal) self.closeCollectibleDetail();
       });
     }
+    if (this.dom.expeditionModal) {
+      this.dom.expeditionModal.addEventListener('click', function (e) {
+        if (e.target === self.dom.expeditionModal) self.closeExpeditionEvent();
+      });
+    }
 
     window.addEventListener('keydown', function (e) {
       self.audio.unlock();
       if (e.repeat) return;
       if (e.code === 'KeyM') { self.toggleMute(); return; }
       if (e.code === 'Escape') {
-        if (self.dom.collectibleModal && !self.dom.collectibleModal.classList.contains('hidden')) self.closeCollectibleDetail();
+        if (self.dom.expeditionModal && !self.dom.expeditionModal.classList.contains('hidden')) self.closeExpeditionEvent();
+        else if (self.dom.collectibleModal && !self.dom.collectibleModal.classList.contains('hidden')) self.closeCollectibleDetail();
         else if (self.dom.marketModal && !self.dom.marketModal.classList.contains('hidden')) self.closeMarketModal();
         else if (!self.dom.guide.classList.contains('hidden')) self.closeGuide();
         else if (!self.dom.settings.classList.contains('hidden')) self.closeSettings();
