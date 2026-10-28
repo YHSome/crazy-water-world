@@ -51,7 +51,7 @@
         { credits: 1800, metal: 40, fiber: 24, glass: 10, copper: 8 },
         { credits: 4200, metal: 60, fiber: 36, glass: 18, copper: 14 },
         { credits: 9000, metal: 70, fiber: 45, glass: 22, copper: 18 },
-        { credits: 20000, metal: 100, fiber: 60, glass: 35, copper: 30, chip: 20 }
+        { credits: 20000, metal: 100, fiber: 60, glass: 35, copper: 30, chip: 20, rarities: { rare: 2 } }
       ]
     },
     {
@@ -65,8 +65,8 @@
         { credits: 1000, metal: 20, chip: 9, glass: 5 },
         { credits: 2200, metal: 32, chip: 15, glass: 8, copper: 10 },
         { credits: 4800, metal: 50, chip: 24, glass: 16, copper: 16 },
-        { credits: 10000, metal: 65, chip: 30, glass: 20, copper: 22 },
-        { credits: 24000, metal: 90, chip: 45, glass: 30, copper: 35 }
+        { credits: 10000, metal: 65, chip: 30, glass: 20, copper: 22, rarities: { rare: 2 } },
+        { credits: 24000, metal: 90, chip: 45, glass: 30, copper: 35, rarities: { epic: 1 } }
       ]
     },
     {
@@ -79,8 +79,8 @@
         { credits: 650, fuel: 12, chip: 7, glass: 3 },
         { credits: 1500, fuel: 20, chip: 12, copper: 5 },
         { credits: 3400, fuel: 32, chip: 20, glass: 8, copper: 8 },
-        { credits: 7000, fuel: 50, chip: 30, glass: 20, copper: 18 },
-        { credits: 16000, fuel: 75, chip: 50, glass: 30, copper: 30 }
+        { credits: 7000, fuel: 50, chip: 30, glass: 20, copper: 18, rarities: { rare: 2 } },
+        { credits: 16000, fuel: 75, chip: 50, glass: 30, copper: 30, rarities: { epic: 1 } }
       ]
     },
     {
@@ -92,8 +92,8 @@
         { credits: 600, metal: 10, fuel: 8, fiber: 8, chip: 6 },
         { credits: 1600, metal: 18, fuel: 15, fiber: 15, chip: 11, copper: 5 },
         { credits: 3800, metal: 30, fuel: 26, fiber: 26, chip: 20, glass: 6, copper: 8 },
-        { credits: 8000, metal: 50, fuel: 40, fiber: 40, chip: 30, glass: 15, copper: 15 },
-        { credits: 18000, metal: 80, fuel: 60, fiber: 60, chip: 45, glass: 25, copper: 25 }
+        { credits: 8000, metal: 50, fuel: 40, fiber: 40, chip: 30, glass: 15, copper: 15, rarities: { epic: 1 } },
+        { credits: 18000, metal: 80, fuel: 60, fiber: 60, chip: 45, glass: 25, copper: 25, rarities: { epic: 2 } }
       ]
     },
     {
@@ -106,7 +106,7 @@
         { credits: 1400, filters: 1, metal: 14, fiber: 10, chip: 8, glass: 5 },
         { credits: 3200, filters: 1, metal: 22, fiber: 16, chip: 12, glass: 10, copper: 6 },
         { credits: 7000, filters: 1, metal: 35, fiber: 25, chip: 20, glass: 20, copper: 12 },
-        { credits: 16000, filters: 1, metal: 55, fiber: 40, chip: 35, glass: 35, copper: 25 }
+        { credits: 16000, filters: 1, metal: 55, fiber: 40, chip: 35, glass: 35, copper: 25, rarities: { legendary: 1 } }
       ]
     }
   ]);
@@ -369,8 +369,9 @@
   var COLLECTION_MILESTONES = (CW.COLLECTION_MILESTONES = [
     { count: 5, credits: 500, mats: { metal: 5, fiber: 5 } },
     { count: 10, credits: 1500, mats: { glass: 6, chip: 6 } },
-    { count: 15, credits: 3000, mats: { copper: 8, chip: 8 } },
-    { count: 19, credits: 8000, mats: { glass: 10, chip: 10 }, filters: 1 }
+    { count: 20, credits: 3200, mats: { copper: 8, chip: 8 } },
+    { count: 30, credits: 6800, mats: { glass: 12, chip: 12 } },
+    { count: 38, credits: 14000, mats: { glass: 16, chip: 16, copper: 12 }, filters: 1 }
   ]);
 
   var SHELTER_LEVELS = (CW.SHELTER_LEVELS = [
@@ -661,12 +662,12 @@
     },
     {
       id: 'set-master', name: '套装藏家', iconImg: 'assets/collectibles/tide-crown.webp',
-      metric: 'setRewardsCount', target: 3, desc: '领取全部三套收藏的完成奖励。',
+      metric: 'setRewardsCount', target: 5, desc: '领取全部五套收藏的完成奖励。',
       reward: { credits: 2200, mats: { chip: 10, glass: 8 } }
     },
     {
       id: 'archive-complete', name: '完整档案', iconImg: 'assets/collectibles/silver-musicbox.webp',
-      metric: 'collectionUnique', target: 19, desc: '发现全部 19 件沉船档案。',
+      metric: 'collectionUnique', target: 38, desc: '发现全部 38 件沉船档案。',
       reward: { credits: 5000, mats: { metal: 12, fuel: 12, fiber: 12, chip: 12, glass: 12, copper: 12 } }
     }
   ]);
@@ -2243,6 +2244,46 @@
     return n;
   };
 
+  Hub.prototype.collectibleRarityAvailable = function (rarity) {
+    var n = 0;
+    var map = this.data.collectibles || {};
+    var equipped = this.data.equipped || [];
+    for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
+      var item = CW.COLLECTIBLES[i];
+      if (item.special || item.rarity !== rarity) continue;
+      if (equipped.indexOf(item.id) >= 0) continue;
+      n += map[item.id] || 0;
+    }
+    return n;
+  };
+
+  Hub.prototype.consumeCollectibleRarity = function (rarity, amount) {
+    var need = Math.max(0, Math.floor(Number(amount) || 0));
+    if (!need) return true;
+    var map = this.data.collectibles || {};
+    var equipped = this.data.equipped || [];
+    var pool = [];
+    for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
+      var item = CW.COLLECTIBLES[i];
+      if (item.special || item.rarity !== rarity) continue;
+      if (equipped.indexOf(item.id) >= 0) continue;
+      var count = map[item.id] || 0;
+      if (count <= 0) continue;
+      pool.push({ id: item.id, count: count });
+    }
+    var total = 0;
+    for (var p = 0; p < pool.length; p++) total += pool[p].count;
+    if (total < need) return false;
+    pool.sort(function (a, b) { return b.count - a.count; });
+    for (var q = 0; q < pool.length && need > 0; q++) {
+      var used = Math.min(need, pool[q].count);
+      map[pool[q].id] -= used;
+      if (map[pool[q].id] <= 0) delete map[pool[q].id];
+      need -= used;
+    }
+    return true;
+  };
+
   Hub.prototype.collectionMilestoneClaimed = function (count) {
     return (this.data.collectionMilestones || []).indexOf(count) >= 0;
   };
@@ -2624,6 +2665,18 @@
     for (var s = 1; s < SHELTER_LEVELS.length; s++) {
       var req = SHELTER_LEVELS[s];
       if (req && req.specials && req.specials[id]) uses.push('避难所 Lv.' + req.level + ' 升级');
+    }
+    if (!isSpecial) {
+      for (var ui = 0; ui < UPGRADES.length; ui++) {
+        var uu = UPGRADES[ui];
+        for (var ci = 0; ci < uu.costs.length; ci++) {
+          var uc = uu.costs[ci];
+          if (uc.rarities && uc.rarities[def.rarity]) {
+            var useName = uu.name + ' Lv.' + (ci + 1);
+            if (uses.indexOf(useName) < 0) uses.push(useName);
+          }
+        }
+      }
     }
     var source = isSpecial ? '来源：抓钩的沉船秘宝 / 黄金宝箱，或三消高分深海馈赠' : '来源：抓钩、三消、声呐、拖网等打捞结算';
     var tracked = this.data.trackedCollection === id;
@@ -3385,7 +3438,13 @@
           }
         }
       }
-      var canSalvage = !maxed && !locked && !missingFilter && missingMats && this.collectionDuplicateStats().count > 0;
+      var missingRarity = false;
+    if (cost && cost.rarities) {
+      for (var mr in cost.rarities) {
+        if (Object.prototype.hasOwnProperty.call(cost.rarities, mr) && this.collectibleRarityAvailable(mr) < cost.rarities[mr]) { missingRarity = true; break; }
+      }
+    }
+    var canSalvage = !maxed && !locked && !missingFilter && !missingRarity && missingMats && this.collectionDuplicateStats().count > 0;
       var pips = '';
       for (var p = 0; p < up.max; p++) pips += '<span class="pip ' + (p < level ? 'on' : '') + '"></span>';
       var chips = '';
@@ -3398,6 +3457,14 @@
           var m = MATERIALS[k];
           if (!cost[m.id]) continue;
           chips += '<span class="cost-chip' + ((this.data.materials[m.id] || 0) < cost[m.id] ? ' poor' : '') + '" style="--tone:' + m.color + '">' + cost[m.id] + ' ' + m.name + '</span>';
+        }
+        if (cost.rarities) {
+          for (var rq in cost.rarities) {
+            if (!Object.prototype.hasOwnProperty.call(cost.rarities, rq)) continue;
+            var rdef = CW.COLLECTIBLE_RARITY_MAP[rq];
+            var have = this.collectibleRarityAvailable(rq);
+            chips += '<span class="cost-chip' + (have < cost.rarities[rq] ? ' poor' : '') + '" style="--tone:' + (rdef ? rdef.color : '#d9b8ff') + '">' + (rdef ? rdef.name : rq) + '收藏 ' + have + '/' + cost.rarities[rq] + '</span>';
+          }
         }
       }
       var iconHtml = up.iconImg ? '<img src="' + up.iconImg + '" alt="">' : up.icon;
@@ -3469,6 +3536,11 @@
     if (!cost) return false;
     if (this.data.credits < cost.credits) return false;
     if (cost.filters && (this.data.filters || 0) < cost.filters) return false;
+    if (cost.rarities) {
+      for (var r in cost.rarities) {
+        if (Object.prototype.hasOwnProperty.call(cost.rarities, r) && this.collectibleRarityAvailable(r) < cost.rarities[r]) return false;
+      }
+    }
     for (var i = 0; i < MATERIALS.length; i++) {
       var m = MATERIALS[i];
       if (cost[m.id] && (this.data.materials[m.id] || 0) < cost[m.id]) return false;
@@ -3498,6 +3570,11 @@
     for (var k = 0; k < MATERIALS.length; k++) {
       var m = MATERIALS[k];
       if (cost[m.id]) this.data.materials[m.id] -= cost[m.id];
+    }
+    if (cost.rarities) {
+      for (var rr in cost.rarities) {
+        if (Object.prototype.hasOwnProperty.call(cost.rarities, rr)) this.consumeCollectibleRarity(rr, cost.rarities[rr]);
+      }
     }
     this.data.upgrades[up.id] = level + 1;
     this.saveGame();
