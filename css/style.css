@@ -2591,6 +2591,18 @@ body:not(.is-title) #scene { clip-path: none !important; }
   .shelter-up-btn { width: 100%; }
 }
 
+/* ── Quality mode ────────────────────────────────────────── */
+.quality-toggle { min-width: 72px; min-height: 32px; padding: 0 10px; border: 1px solid rgba(19, 93, 96, 0.14); border-radius: 99px; background: #eaf8f2; color: #0b7774; font-family: var(--mono); font-size: 9px; font-weight: 800; }
+body.low-fx .grain,
+body.low-fx .rain-glass,
+body.low-fx .vignette { display: none !important; }
+body.low-fx .mission-card,
+body.low-fx .crew-card,
+body.low-fx .collectible-card,
+body.low-fx .market-item { transition: none !important; }
+body.low-fx .title-inner,
+body.low-fx .logo { animation: none !important; }
+
 /* Layered components must not override the global hidden state. */
 #hub-panel.hidden { display: none !important; }
 #hud.hidden, #arcade.hidden, #title-screen.hidden { display: none !important; }
