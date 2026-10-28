@@ -1957,16 +1957,6 @@
       '</article>';
     }
     html += '</div>';
-    var candidateIds = Array.isArray(this.data.candidateMissions) ? this.data.candidateMissions : [];
-    if (candidateIds.length) {
-      html += '<div class="candidate-board"><div class="candidate-head"><span>候选区 · ROTATION POOL</span><small>打完一个任务后自动补位</small></div><div class="candidate-grid">';
-      for (var ci = 0; ci < candidateIds.length; ci++) {
-        var cm = this.missionById(candidateIds[ci]);
-        if (!cm) continue;
-        html += '<article class="candidate-card"><span class="candidate-pic"><img src="' + cm.iconImg + '" alt=""><button class="img-detail" data-action="mission-detail" data-id="' + cm.id + '" aria-label="查看 ' + cm.name + ' 详情">i</button></span><div><b>' + cm.name + '</b><span>候补</span></div><button data-action="mission-promote" data-mission="' + cm.id + '">换上</button></article>';
-      }
-      html += '</div></div>';
-    }
     this.dom.panelContent.innerHTML = html;
   };
 
