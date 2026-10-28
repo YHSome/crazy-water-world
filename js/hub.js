@@ -250,6 +250,13 @@
   var CREW_LEVEL_XP = [0, 1, 3, 6, 10];
   var CREW_EXPEDITION_COST = 2500;
   var CREW_EXPEDITION_TIME = 900;
+  var CREW_WEATHERS = (CW.CREW_WEATHERS = [
+    { id: 'calm', name: '平静海面', desc: '标准航程与收益', duration: 900, color: '#79d8ff' },
+    { id: 'tailwind', name: '顺风', desc: '航程缩短 20%', duration: 720, color: '#9be2a9' },
+    { id: 'shoal', name: '鱼汛', desc: '档案方向额外 +1 件收藏', duration: 900, color: '#d9b8ff' },
+    { id: 'cold', name: '寒流', desc: '工程方向的芯片 / 铜翻倍', duration: 900, color: '#8fe0d8' },
+    { id: 'storm', name: '风暴', desc: '所有打捞币 +25%，航程 +10%', duration: 990, color: '#ff8a6b' }
+  ]);
   var COLLECTION_MILESTONES = (CW.COLLECTION_MILESTONES = [
     { count: 5, credits: 500, mats: { metal: 5, fiber: 5 } },
     { count: 10, credits: 1500, mats: { glass: 6, chip: 6 } },
@@ -807,7 +814,11 @@
       if (raw.crewExpedition && Array.isArray(raw.crewExpedition.members) && raw.crewExpedition.members.length === 2) {
         var exMembers = [];
         for (var emi = 0; emi < 2; emi++) if (crewDef(raw.crewExpedition.members[emi])) exMembers.push(raw.crewExpedition.members[emi]);
-        if (exMembers.length === 2) data.crewExpedition = { members: exMembers, remaining: Math.max(0, Number(raw.crewExpedition.remaining) || 0), seed: Number(raw.crewExpedition.seed) || 0.5 };
+        if (exMembers.length === 2) {
+          var exWeather = 'calm';
+          for (var ewi = 0; ewi < CREW_WEATHERS.length; ewi++) if (CREW_WEATHERS[ewi].id === raw.crewExpedition.weather) exWeather = CREW_WEATHERS[ewi].id;
+          data.crewExpedition = { members: exMembers, remaining: Math.max(0, Number(raw.crewExpedition.remaining) || 0), seed: Number(raw.crewExpedition.seed) || 0.5, weather: exWeather };
+        }
       }
       data.grades = {};
       data.sGrades = {};
@@ -1372,6 +1383,12 @@
     return out;
   };
 
+  Hub.prototype.expeditionWeather = function () {
+    var id = this.data.crewExpedition ? this.data.crewExpedition.weather : 'calm';
+    for (var i = 0; i < CREW_WEATHERS.length; i++) if (CREW_WEATHERS[i].id === id) return CREW_WEATHERS[i];
+    return CREW_WEATHERS[0];
+  };
+
   Hub.prototype.startCrewExpedition = function () {
     if (this.shelterLevel() < 3) {
       this.audio.warn();
@@ -1391,9 +1408,10 @@
       return;
     }
     this.data.credits -= CREW_EXPEDITION_COST;
-    this.data.crewExpedition = { members: [candidates[0].id, candidates[1].id], remaining: CREW_EXPEDITION_TIME, seed: Math.random() };
+    var weather = CREW_WEATHERS[(Math.random() * CREW_WEATHERS.length) | 0];
+    this.data.crewExpedition = { members: [candidates[0].id, candidates[1].id], remaining: weather.duration, seed: Math.random(), weather: weather.id };
     this.audio.claim();
-    this.showToast('JOINT EXPEDITION', candidates[0].name + ' + ' + candidates[1].name, '15 分钟后带回稀有升级件');
+    this.showToast('JOINT EXPEDITION · ' + weather.name, candidates[0].name + ' + ' + candidates[1].name, weather.desc + ' · 保底稀有升级件');
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -1408,12 +1426,17 @@
       totalLevel += this.crewLevel(exp.members[i]);
       totalGear += this.crewGearLevel(exp.members[i]);
     }
-    var base = 900 + totalLevel * 130 + totalGear * 90;
+    var weather = this.expeditionWeather();
+    var creditMult = weather.id === 'storm' ? 1.25 : 1;
+    var base = Math.round((900 + totalLevel * 130 + totalGear * 90) * creditMult);
     var mats = { metal: 4 + totalLevel, fiber: 4 + totalLevel, glass: 3 + Math.floor(totalGear / 2), copper: 3 + Math.floor(totalGear / 2), chip: 2 + totalGear };
+    var archiveBonus = weather.id === 'shoal' ? 1 : 0;
+    var gearMats = { chip: 4 + totalGear, copper: 3 + Math.floor(totalGear / 2) };
+    if (weather.id === 'cold') { gearMats.chip *= 2; gearMats.copper *= 2; }
     return [
       { id: 0, name: '满舱而归', icon: 'assets/real/gold.webp', desc: '优先带回打捞币与五大类材料，适合扩建。', credits: base, mats: mats, collectibles: 1, specials: 0 },
-      { id: 1, name: '档案优先', icon: 'assets/collectibles/tide-crown.webp', desc: '少拿材料，多带两件随机收藏，适合补图鉴。', credits: Math.round(base * 0.55), mats: {}, collectibles: 2, specials: 0 },
-      { id: 2, name: '工程优先', icon: 'assets/real/core.webp', desc: '保底一件稀有升级件，附带芯片与铜线。', credits: Math.round(base * 0.65), mats: { chip: 4 + totalGear, copper: 3 + Math.floor(totalGear / 2) }, collectibles: 0, specials: 1 }
+      { id: 1, name: '档案优先', icon: 'assets/collectibles/tide-crown.webp', desc: '少拿材料，多带两件随机收藏，适合补图鉴。', credits: Math.round(base * 0.55), mats: {}, collectibles: 2 + archiveBonus, specials: 0 },
+      { id: 2, name: '工程优先', icon: 'assets/real/core.webp', desc: '保底一件稀有升级件，附带芯片与铜线。', credits: Math.round(base * 0.65), mats: gearMats, collectibles: 0, specials: 1 }
     ];
   };
 
@@ -1421,7 +1444,8 @@
     var exp = this.data.crewExpedition;
     if (!exp || Number(exp.remaining) > 0 || !this.dom.expeditionModal) return;
     var opts = this.expeditionOptions();
-    var html = '<div class="expedition-event"><p class="expedition-kicker">EXPEDITION RETURN · 远征返航</p><h3>选择带回什么</h3><p class="expedition-copy">船员已经靠岸，只能优先卸下其中一类收获。</p><div class="expedition-options">';
+    var weather = this.expeditionWeather();
+    var html = '<div class="expedition-event"><p class="expedition-kicker">EXPEDITION RETURN · 远征返航</p><h3>选择带回什么</h3><p class="expedition-copy">船员已经靠岸，只能优先卸下其中一类收获。</p><p class="expedition-weather">海况 · <b>' + weather.name + '</b> · ' + weather.desc + '</p><div class="expedition-options">';
     for (var i = 0; i < opts.length; i++) {
       var o = opts[i];
       var reward = '+' + fmt(o.credits) + ' 币';
@@ -1624,14 +1648,15 @@
       expSaved = '<div class="crew-expedition locked"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>避难所 Lv.3 解锁</b><p>派出两名船员，15 分钟后带回打捞币、收藏与至少 1 件稀有升级件。</p></div><button disabled>未解锁</button></div>';
     } else if (exp) {
       var ready = Number(exp.remaining) <= 0;
+      var weather = this.expeditionWeather();
       var expNames = [];
       for (var ei = 0; ei < exp.members.length; ei++) { var ed = crewDef(exp.members[ei]); if (ed) expNames.push(ed.name); }
-      expSaved = '<div class="crew-expedition' + (ready ? ' ready' : ' running') + '"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>' + expNames.join(' + ') + '</b><p>保底 1 件收藏 + 1 件稀有升级件 · ' +
+      expSaved = '<div class="crew-expedition' + (ready ? ' ready' : ' running') + '"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>' + expNames.join(' + ') + ' · ' + weather.name + '</b><p>' + weather.desc + ' · 保底 1 件收藏 + 1 件稀有升级件 · ' +
         (ready ? '已返航 · 三选一' : '剩余 <em data-expedition>' + this.crewTimeText(Number(exp.remaining) * 1000) + '</em>') + '</p></div><button data-action="crew-expedition-claim"' + (ready ? '' : ' disabled') + '>' + (ready ? '选择奖励' : '远征中') + '</button></div>';
     } else {
       var candidates = this.crewExpeditionMembers();
       var canStart = candidates.length >= 2 && (this.data.credits || 0) >= CREW_EXPEDITION_COST;
-      expSaved = '<div class="crew-expedition"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>两人一队，去更远的海域</b><p>消耗 ' + fmt(CREW_EXPEDITION_COST) + ' 币 · 15 分钟 · 保底 1 件收藏 + 1 件稀有升级件 · 空闲船员 ' + candidates.length + ' 名</p></div>' +
+      expSaved = '<div class="crew-expedition"><div class="crew-expedition-copy"><span>JOINT EXPEDITION · 联合远征</span><b>两人一队，去更远的海域</b><p>消耗 ' + fmt(CREW_EXPEDITION_COST) + ' 币 · 约 15 分钟 · 海况随机 · 保底 1 件收藏 + 1 件稀有升级件 · 空闲船员 ' + candidates.length + ' 名</p></div>' +
         '<button data-action="crew-expedition-start"' + (canStart ? '' : ' disabled') + '>' + (candidates.length < 2 ? '需要 2 名空闲' : (this.data.credits || 0) < CREW_EXPEDITION_COST ? '打捞币不足' : '发起远征') + '</button></div>';
     }
     var html = '<div class="crew-head"><div><span>CREW DOCK · 打捞队</span><b>把等待变成下一船物资</b><p>雇佣后在避难所开启期间倒计时；每个船员一次只能跑一个岗位。</p></div><div class="crew-ready"><b>' + this.crewReadyCount() + '</b><span>可领取</span></div></div>' + expSaved + '<div class="crew-grid">';
