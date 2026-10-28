@@ -149,6 +149,24 @@
     }
   ]);
 
+  function normalizeMissionRotation(active, candidates) {
+    var valid = {};
+    for (var i = 0; i < MISSIONS.length; i++) valid[MISSIONS[i].id] = true;
+    var a = [], c = [];
+    function place(list, id) {
+      if (!valid[id] || a.indexOf(id) >= 0 || c.indexOf(id) >= 0) return;
+      if (list === a && a.length < 3) a.push(id);
+      else c.push(id);
+    }
+    var ra = Array.isArray(active) ? active : [];
+    var rc = Array.isArray(candidates) ? candidates : [];
+    for (var ai = 0; ai < ra.length; ai++) place(a, ra[ai]);
+    for (var ci = 0; ci < rc.length; ci++) place(c, rc[ci]);
+    for (var mi = 0; mi < MISSIONS.length && a.length < 3; mi++) place(a, MISSIONS[mi].id);
+    for (var mj = 0; mj < MISSIONS.length; mj++) place(c, MISSIONS[mj].id);
+    return { active: a, candidates: c };
+  }
+
   var MISSION_GRADES = (CW.MISSION_GRADES = {
     hook: { S: 1100, A: 750, B: 400 },
     match: { S: 2400, A: 1600, B: 800 },
@@ -672,6 +690,8 @@
       taskChain: 0,
       taskChainTypes: [],
       lastTask: '',
+      activeMissions: ['hook', 'match', 'sonar'],
+      candidateMissions: ['cut', 'sort', 'beacon', 'trawl'],
       runs: 0
     };
   }
@@ -788,6 +808,9 @@
       data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
     data.best.trawl = Math.max(0, Number(raw.best.trawl) || 0);
+    var rotation = normalizeMissionRotation(raw.activeMissions, raw.candidateMissions);
+    data.activeMissions = rotation.active;
+    data.candidateMissions = rotation.candidates;
       data.shelterLevel = clamp(Math.floor(Number(raw.shelterLevel) || 1), 1, 5);
       data.crewXp = {};
       if (raw.crewXp && typeof raw.crewXp === 'object') {
@@ -1270,8 +1293,8 @@
     if (crewTab) crewTab.classList.toggle('has-ready', this.crewReadyCount() > 0);
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
-      this.dom.panelTag.textContent = MISSIONS.length + ' 个任务';
-      this.dom.panelNote.textContent = '今日挑战与物资都会存进避难所';
+      this.dom.panelTag.textContent = (this.data.activeMissions || []).length + ' 个轮换';
+      this.dom.panelNote.textContent = '完成一个任务后它会进入候选区，由候补补位';
     } else if (this.tab === 'crew') {
       this.dom.panelTitle.textContent = '打捞队';
       this.dom.panelTag.textContent = this.crewReadyCount() ? this.crewReadyCount() + ' 可领取' : CREW.length + ' 个岗位';
@@ -1755,6 +1778,41 @@
       '<p>' + msg + '</p><div class="chain-pips">' + pips + '</div></div>';
   };
 
+  Hub.prototype.missionById = function (id) {
+    for (var i = 0; i < MISSIONS.length; i++) if (MISSIONS[i].id === id) return MISSIONS[i];
+    return null;
+  };
+
+  Hub.prototype.rotateMission = function (finishedId) {
+    if (!Array.isArray(this.data.activeMissions) || !Array.isArray(this.data.candidateMissions)) return;
+    var at = this.data.activeMissions.indexOf(finishedId);
+    if (at < 0) return;
+    this.data.activeMissions.splice(at, 1);
+    this.data.candidateMissions.push(finishedId);
+    if (this.data.candidateMissions.length) this.data.activeMissions.push(this.data.candidateMissions.shift());
+  };
+
+  Hub.prototype.rotateActiveMission = function (id) {
+    if (!Array.isArray(this.data.activeMissions) || this.data.activeMissions.indexOf(id) < 0) return;
+    this.rotateMission(id);
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    this.audio.tab();
+    var next = this.data.activeMissions[this.data.activeMissions.length - 1];
+    var nextDef = this.missionById(next);
+    this.showToast('ROUTE ROTATED', '已换下 ' + (this.missionById(id) || {}).name, nextDef ? nextDef.name + ' 进入打捞位' : '');
+  };
+
+  Hub.prototype.promoteMission = function (id) {
+    if (!Array.isArray(this.data.candidateMissions) || this.data.candidateMissions.indexOf(id) < 0) return;
+    if (!Array.isArray(this.data.activeMissions)) this.data.activeMissions = [];
+    var outgoing = this.data.activeMissions.pop();
+    this.data.candidateMissions.splice(this.data.candidateMissions.indexOf(id), 1);
+    this.data.activeMissions.push(id);
+    if (outgoing) this.data.candidateMissions.push(outgoing);
+  };
+
   Hub.prototype.renderTrackCard = function () {
     var id = this.data.trackedCollection;
     var def = id ? CW.COLLECTIBLE_MAP[id] : null;
@@ -1772,8 +1830,10 @@
 
   Hub.prototype.renderTasks = function () {
     var html = this.renderDailyCard() + this.renderTaskChain() + this.renderTrackCard() + '<div class="mission-list">';
-    for (var i = 0; i < MISSIONS.length; i++) {
-      var m = MISSIONS[i];
+    var activeIds = Array.isArray(this.data.activeMissions) ? this.data.activeMissions : [];
+    for (var i = 0; i < activeIds.length; i++) {
+      var m = this.missionById(activeIds[i]);
+      if (!m) continue;
       var best = this.data.best[m.id] || 0;
       var tags = m.tags.slice();
       if (m.id === 'trawl') tags[0] = '45 秒';
@@ -1791,12 +1851,22 @@
           '<div class="mission-tags">' + tags.map(function (t) {
             if (t === '稀有过滤器') return '<span class="mission-tag rare"><img src="assets/seawater-filter-icon.webp" alt="">稀有过滤器</span>';
             return '<span class="mission-tag">' + t + '</span>';
-          }).join('') + '</div>' +
+          }).join('') + '<button class="mission-rotate" data-action="mission-rotate" data-mission="' + m.id + '">轮换</button></div>' +
         '</div>' +
         '<button class="mission-btn" data-action="mission" data-mission="' + m.id + '">开始打捞</button>' +
       '</article>';
     }
     html += '</div>';
+    var candidateIds = Array.isArray(this.data.candidateMissions) ? this.data.candidateMissions : [];
+    if (candidateIds.length) {
+      html += '<div class="candidate-board"><div class="candidate-head"><span>候选区 · ROTATION POOL</span><small>打完一个任务后自动补位</small></div><div class="candidate-grid">';
+      for (var ci = 0; ci < candidateIds.length; ci++) {
+        var cm = this.missionById(candidateIds[ci]);
+        if (!cm) continue;
+        html += '<article class="candidate-card"><img src="' + cm.iconImg + '" alt=""><div><b>' + cm.name + '</b><span>候补</span></div><button data-action="mission-promote" data-mission="' + cm.id + '">换上</button></article>';
+      }
+      html += '</div></div>';
+    }
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -3222,6 +3292,10 @@
     var def = null;
     for (var i = 0; i < MISSIONS.length; i++) if (MISSIONS[i].id === type) def = MISSIONS[i];
     if (!def) return;
+    if (this.data.activeMissions.indexOf(type) < 0 && this.data.candidateMissions.indexOf(type) >= 0) {
+      this.promoteMission(type);
+      this.saveGame();
+    }
     this.audio.click();
     this.hudVisible(false);
     this.panelVisible(false);
@@ -3326,6 +3400,7 @@
     stats.collectiblesFound = (stats.collectiblesFound || 0) + collectibles.length;
     stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits + chainBonus + sBonus;
     if (result.type === 'sonar' && Number(result.found || 0) >= 4) stats.sonarPerfect = (stats.sonarPerfect || 0) + 1;
+    this.rotateMission(key);
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -3471,6 +3546,13 @@
         else if (action === 'mute') self.toggleMute();
         else if (action === 'reset-save') self.resetSave();
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
+        else if (action === 'mission-rotate') self.rotateActiveMission(actionEl.getAttribute('data-mission'));
+        else if (action === 'mission-promote') {
+          self.promoteMission(actionEl.getAttribute('data-mission'));
+          self.saveGame();
+          self.renderPanel();
+          self.audio.tab();
+        }
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
         else if (action === 'reroll-contracts') self.rerollContracts();
