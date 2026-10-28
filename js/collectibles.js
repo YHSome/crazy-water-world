@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    疯狂水世界 · 沉船收藏
-   15 collectible artefacts, five rarity tiers, and the forge recipes.
+   38 collectible artefacts, five rarity tiers, and the forge recipes.
    Icons are local SVG files sourced from Game-icons.net.
    ═══════════════════════════════════════════════════════════════ */
 (function () {
@@ -32,6 +32,25 @@
     { id: 'captain-log', name: '船长航海日志', rarity: 'epic', icon: 'assets/collectibles/captain-log.webp', desc: '最后一页只写了两个字：上浮。' },
     { id: 'black-box', name: '黑匣子', rarity: 'epic', icon: 'assets/collectibles/black-box.webp', desc: '记录着沉没前最后十七分钟的无线电。' },
     { id: 'tide-crown', name: '潮汐王冠', rarity: 'legendary', icon: 'assets/collectibles/tide-crown.webp', desc: '不是黄金，是被海水压成王冠形状的月光。' },
+    { id: 'brass-barometer', name: '铜制气压计', rarity: 'uncommon', icon: 'assets/collectibles/brass-compass.webp', desc: '停在“持续降雨”那一格，已经停了十七年。' },
+    { id: 'sextant', name: '船用六分仪', rarity: 'rare', icon: 'assets/collectibles/copper-telescope.webp', desc: '黄铜弧尺上刻着一条早已不存在的航线。' },
+    { id: 'matchbook', name: '防水火柴盒', rarity: 'common', icon: 'assets/real/medkit.webp', desc: '盒面印着旧港旅馆的名字，里面还剩三根火柴。' },
+    { id: 'stamp-album', name: '旧港邮票册', rarity: 'uncommon', icon: 'assets/collectibles/chart-tube.webp', desc: '每个港口一张，最后一张没有盖邮戳。' },
+    { id: 'glass-float', name: '玻璃浮球', rarity: 'common', icon: 'assets/collectibles/sea-bottle.webp', desc: '渔网留下的浮球，里面还晃着一点旧海水。' },
+    { id: 'rusty-gear', name: '锈蚀齿轮', rarity: 'common', icon: 'assets/real/scrap.webp', desc: '从吊臂上拆下来的齿轮，齿牙缺了两颗。' },
+    { id: 'copper-spool', name: '铜线卷', rarity: 'common', icon: 'assets/real/fiber.webp', desc: '绝缘皮已经开裂，铜芯仍然很亮。' },
+    { id: 'ship-lamp', name: '船用灯泡', rarity: 'uncommon', icon: 'assets/seawater-filter.webp', desc: '灯丝断了一截，玻璃里却还留着一点暖光。' },
+    { id: 'telegraph-key', name: '旧式电报键', rarity: 'rare', icon: 'assets/real/chip.webp', desc: '按下时仍会发出很轻的滴答声。' },
+    { id: 'signal-flag', name: '航海信号旗', rarity: 'common', icon: 'assets/real/fiber.webp', desc: '旗角绣着“全员平安”，边缘被风撕开。' },
+    { id: 'brass-lantern', name: '铜制油灯', rarity: 'uncommon', icon: 'assets/real/fuel.webp', desc: '灯罩上有烟熏的痕迹，灯芯还是湿的。' },
+    { id: 'mess-tin', name: '船员饭盒', rarity: 'common', icon: 'assets/real/medkit.webp', desc: '盒底刻着名字，被刀划掉了一半。' },
+    { id: 'sewing-machine', name: '脚踏缝纫机', rarity: 'rare', icon: 'assets/real/workshop.webp', desc: '针还穿着线，线头一直延伸到舱门外。' },
+    { id: 'old-radio', name: '老式收音机', rarity: 'epic', icon: 'assets/real/sonar.webp', desc: '旋钮停在无人使用的频率上，偶尔有人呼吸。' },
+    { id: 'safe-plate', name: '保险柜铭牌', rarity: 'uncommon', icon: 'assets/real/safe.webp', desc: '编号 0417，正是洪水漫过码头的那一天。' },
+    { id: 'deep-tape', name: '深海录音带', rarity: 'epic', icon: 'assets/collectibles/black-box.webp', desc: '磁带里只有水压和一段很远的敲击。' },
+    { id: 'tide-compass', name: '潮汐罗盘', rarity: 'legendary', icon: 'assets/collectibles/brass-compass.webp', desc: '不指北，只指向当天潮水最高的地方。' },
+    { id: 'captain-pipe', name: '船长烟斗', rarity: 'rare', icon: 'assets/collectibles/captain-log.webp', desc: '斗钵里没有烟丝，只有一层白色的盐。' },
+    { id: 'moon-coral', name: '月光珊瑚', rarity: 'legendary', icon: 'assets/collectibles/tide-crown.webp', desc: '在暗处会发出很淡的蓝光，像一小片不会退潮的海。' },
     { id: 'seawater-filter', name: '海水过滤器', rarity: 'legendary', icon: 'assets/seawater-filter-icon.webp', desc: '沉船医疗舱里的净水核心，也是净水舱的升级材料。', special: 'filter' },
     { id: 'sonar-core', name: '声呐核心', rarity: 'epic', icon: 'assets/real/sonar.webp', desc: '旧声呐阵列的主控核心，避难所升级的关键部件。', special: 'material' },
     { id: 'pressure-valve', name: '耐压阀', rarity: 'epic', icon: 'assets/collectibles/brass-compass.webp', desc: '能承受深海压力的黄铜阀门，用于扩建船体。', special: 'material' },
@@ -82,6 +101,22 @@
       bonus: { credit: 0.1, mat: 0.1 },
       bonusText: '打捞币 +10% · 物资 +10%',
       reward: { credits: 3200, mats: { chip: 10, copper: 8 }, filters: 1 }
+    },
+    {
+      id: 'harbor', name: '旧港务局', color: '#e2a06a',
+      desc: '铜制气压计、旧港邮票册、航海信号旗、保险柜铭牌',
+      items: ['brass-barometer', 'stamp-album', 'signal-flag', 'safe-plate'],
+      bonus: { credit: 0.08, mat: 0.08 },
+      bonusText: '打捞币 +8% · 物资 +8%',
+      reward: { credits: 2600, mats: { metal: 8, glass: 8, fiber: 8 } }
+    },
+    {
+      id: 'tide-lab', name: '潮汐研究站', color: '#d9b8ff',
+      desc: '老式收音机、深海录音带、潮汐罗盘、月光珊瑚',
+      items: ['old-radio', 'deep-tape', 'tide-compass', 'moon-coral'],
+      bonus: { credit: 0.12, mat: 0.12 },
+      bonusText: '打捞币 +12% · 物资 +12%',
+      reward: { credits: 4800, mats: { chip: 12, copper: 10, glass: 8 }, filters: 1 }
     }
   ];
 
@@ -147,6 +182,82 @@
       '王冠不是黄金，而是被海水反复打磨的月白色珊瑚。旧世界的贵族不会承认它，新世界的孩子却把它戴在头上扮演海神。',
       '潮汐王冠出现的那片海域没有沉船，只有一座被淹没的剧场。有人说它是舞台道具，也有人说它是最后一任岛主留给潮水的加冕。'
     ],
+    'brass-barometer': [
+      '气压计挂在旧港调度室的墙上，指针在洪水前三天就停在“持续降雨”。值班员以为仪器坏了，直到海水漫过窗台。',
+      '现在它被放在避难所的天气台前。阿岚每天出门前都会看一眼，尽管指针从未动过；她说这不是预测，是提醒。'
+    ],
+    'sextant': [
+      '六分仪的弧尺上刻着一条从旧港到北方群岛的航线。那条航线在地图上已经不存在，但仪器还记得角度。',
+      '阿岚用它校准过三次太阳。第三次，她算出避难所正漂在一片没有名字的海上，于是把结果写进了新的海图。'
+    ],
+    'matchbook': [
+      '火柴盒来自码头边一间没有招牌的旅馆。盒内衬纸上印着一句话：最后一根留给需要光的人。',
+      '避难所只在停电的夜里打开它。三根火柴至今一根没少，阿盐说留着比点着更有用。'
+    ],
+    'stamp-album': [
+      '邮票册收集了旧世界十二个港口的邮票，每个港口都已沉没。最后一页留着一枚没有邮戳的空白票。',
+      '小满说那枚空白票是给未来的港口留的。她把它夹在航海日志里，等有一天找到一个能寄信的地方。'
+    ],
+    'glass-float': [
+      '浮球原本属于一张远洋渔网。渔网被暗流撕碎后，它独自漂了两年，最后撞上避难所的船壳。',
+      '球里封着一小撮海水和几粒沙。孩子们把它举到耳边，说能听见很远的地方在退潮。'
+    ],
+    'rusty-gear': [
+      '齿轮是从旧码头吊臂上拆下来的，齿牙缺了两颗，轴上还缠着断掉的钢缆。',
+      '老周没有把它回炉。他把它钉在工作间门口，当作一块提醒：机器可以旧，但不能不知道什么时候停。'
+    ],
+    'copper-spool': [
+      '铜线卷曾属于岛上的广播站。洪水来临时，值班员用它把最后一句话送了出去，然后剪断了线。',
+      '线头还留着剪痕。老陈试过把它接回电台，但每次接通，喇叭里都只有海浪。'
+    ],
+    'ship-lamp': [
+      '船用灯泡来自一艘夜航渡轮。灯丝断了一截，玻璃罩却完好无损，像有人特意把它从灯座上拧下来。',
+      '避难所把它挂在档案室的角落。灯泡不再发亮，但所有人在那里说话都会不自觉放轻声音。'
+    ],
+    'telegraph-key': [
+      '电报键连接过旧港与北岸的灯塔。最后一份电报只有六个字：灯已灭，勿靠岸。',
+      '老陈把它接在声呐台上当测试键。按下时，整座避难所的灯会同步暗一下，像旧世界在回电。'
+    ],
+    'signal-flag': [
+      '信号旗是救援队留下的，旗角绣着“全员平安”。旗面被风撕开，但那四个字没有散。',
+      '现在它挂在避难所入口。每次有人出海，值班的人都会把旗子重新系紧一次。'
+    ],
+    'brass-lantern': [
+      '油灯来自沉船船长室。灯罩上的烟熏痕迹说明它被点了很久，灯芯却还是湿的。',
+      '老周把它放在工作间备用。他说这盏灯照不远，但刚好够看清手边的东西。'
+    ],
+    'mess-tin': [
+      '饭盒底部刻着一个名字，被刀划掉了一半。盒盖内侧贴着一张褪色的值班表。',
+      '避难所把它当零件盒用。阿盐每次打开都会先看一眼那个名字，虽然没有人知道那是谁。'
+    ],
+    'sewing-machine': [
+      '缝纫机来自旧港的裁缝铺。针还穿着线，线头一直延伸到舱门外，像有人缝到一半被叫走了。',
+      '小满用它补过三次帆布。每次踩踏板，机器都会先顿一下，然后才慢慢转起来。'
+    ],
+    'old-radio': [
+      '收音机的旋钮停在无人使用的频率上。老陈说那是旧世界的应急频道，只在整点前后有人呼吸。',
+      '避难所没有人敢把它关掉。它耗电很少，却让夜晚显得不那么空。'
+    ],
+    'safe-plate': [
+      '保险柜铭牌编号 0417，正是洪水漫过码头的那一天。铭牌背面粘着一小片烧焦的收据。',
+      '阿盐把它钉在仓库门口。他说这不是纪念灾难，是提醒大家：东西锁得再紧，也得有人记得密码。'
+    ],
+    'deep-tape': [
+      '磁带是在沉船声呐舱里找到的。标签上只写着“深度 1,200”，录音里只有水压和一段很远的敲击。',
+      '老陈听了一遍就收了起来。他说那不是求救，是有人在很深的地方确认上面还有没有活人。'
+    ],
+    'tide-compass': [
+      '罗盘不指北，只指向当天潮水最高的地方。指针会在日出和日落时轻轻转半圈，像在换气。',
+      '阿岚用它找到过一片只在满潮出现的浅滩。她坚持说这不是魔法，只是海把路藏得比较深。'
+    ],
+    'captain-pipe': [
+      '烟斗属于一位没有留下名字的船长。斗钵里没有烟丝，只有一层白色的盐。',
+      '老周把它放在吊臂控制台旁。每次放货箱前，他都会敲一敲烟斗，像在跟谁打招呼。'
+    ],
+    'moon-coral': [
+      '珊瑚在暗处会发出很淡的蓝光。它不属于任何沉船，像是在海底自己长出来的一小片月亮。',
+      '小满把它养在净水舱里。每到夜里，舱壁就会亮起一条细细的蓝线，像潮水留下的刻度。'
+    ],
     'seawater-filter': [
       '过滤器来自沉船医疗舱。它还在工作，只是滤芯里积着十七年的盐和铁锈。拆开它的时候，流出来的水是清的。',
       '净水舱的第一任工程师说，这不是一台机器，是一个还在替旧世界赎罪的器官。'
@@ -182,7 +293,26 @@
     'ship-bell': { label: '声呐 +2 次', bonus: { probes: 2 } },
     'captain-log': { label: '抓钩 +2 秒 · 三消 +2 步', bonus: { time: 2, moves: 2 } },
     'black-box': { label: '打捞币 +6% · 声呐 +1 次', bonus: { credit: 0.06, probes: 1 } },
-    'tide-crown': { label: '全收益 +8% · 抓钩 +3 秒 · 三消 +2 步 · 声呐 +2 次', bonus: { credit: 0.08, mat: 0.08, time: 3, moves: 2, probes: 2 } }
+    'tide-crown': { label: '全收益 +8% · 抓钩 +3 秒 · 三消 +2 步 · 声呐 +2 次', bonus: { credit: 0.08, mat: 0.08, time: 3, moves: 2, probes: 2 } },
+    'brass-barometer': { label: '物资 +2%', bonus: { mat: 0.02 } },
+    'sextant': { label: '声呐 +1 次 · 物资 +3%', bonus: { probes: 1, mat: 0.03 } },
+    'matchbook': { label: '打捞币 +1%', bonus: { credit: 0.01 } },
+    'stamp-album': { label: '打捞币 +2%', bonus: { credit: 0.02 } },
+    'glass-float': { label: '物资 +1%', bonus: { mat: 0.01 } },
+    'rusty-gear': { label: '抓钩 +1 秒', bonus: { time: 1 } },
+    'copper-spool': { label: '三消 +1 步', bonus: { moves: 1 } },
+    'ship-lamp': { label: '打捞币 +2%', bonus: { credit: 0.02 } },
+    'telegraph-key': { label: '声呐 +1 次', bonus: { probes: 1 } },
+    'signal-flag': { label: '物资 +1%', bonus: { mat: 0.01 } },
+    'brass-lantern': { label: '抓钩 +2 秒', bonus: { time: 2 } },
+    'mess-tin': { label: '打捞币 +1%', bonus: { credit: 0.01 } },
+    'sewing-machine': { label: '三消 +1 步 · 物资 +2%', bonus: { moves: 1, mat: 0.02 } },
+    'old-radio': { label: '声呐 +2 次 · 打捞币 +4%', bonus: { probes: 2, credit: 0.04 } },
+    'safe-plate': { label: '打捞币 +2%', bonus: { credit: 0.02 } },
+    'deep-tape': { label: '全收益 +4%', bonus: { credit: 0.04, mat: 0.04 } },
+    'tide-compass': { label: '抓钩 +4 秒 · 声呐 +2 次', bonus: { time: 4, probes: 2 } },
+    'captain-pipe': { label: '打捞币 +3% · 抓钩 +1 秒', bonus: { credit: 0.03, time: 1 } },
+    'moon-coral': { label: '全收益 +6% · 三消 +2 步', bonus: { credit: 0.06, mat: 0.06, moves: 2 } }
   };
 
   CW.collectiblesOfRarity = function (rarity) {
