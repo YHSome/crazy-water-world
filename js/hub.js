@@ -241,6 +241,13 @@
   ]);
 
   var CREW_LEVEL_XP = [0, 1, 3, 6, 10];
+  var COLLECTION_MILESTONES = (CW.COLLECTION_MILESTONES = [
+    { count: 5, credits: 500, mats: { metal: 5, fiber: 5 } },
+    { count: 10, credits: 1500, mats: { glass: 6, chip: 6 } },
+    { count: 15, credits: 3000, mats: { copper: 8, chip: 8 } },
+    { count: 19, credits: 8000, mats: { glass: 10, chip: 10 }, filters: 1 }
+  ]);
+
   var SHELTER_LEVELS = (CW.SHELTER_LEVELS = [
     null,
     { level: 2, credits: 4000, mats: { metal: 20, fiber: 20 }, unique: 4, runs: 10, unlock: '开放高级扩建等级' },
@@ -575,6 +582,7 @@
       filterPity: 0,
       collectibles: {},
       specials: {},
+      collectionMilestones: [],
       equipped: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
@@ -642,6 +650,13 @@
         if (CW.COLLECTIBLE_MAP[spid] && CW.COLLECTIBLE_MAP[spid].special === 'material') {
           data.specials[spid] = clamp(Math.floor(Number(raw.specials[spid]) || 0), 0, 999);
         }
+      }
+    }
+    data.collectionMilestones = [];
+    if (Array.isArray(raw.collectionMilestones)) {
+      for (var cmi = 0; cmi < raw.collectionMilestones.length; cmi++) {
+        var cmv = Number(raw.collectionMilestones[cmi]);
+        if (cmv) data.collectionMilestones.push(cmv);
       }
     }
     data.achievements = {};
@@ -772,6 +787,7 @@
     this.lastMarketTick = marketTick();
     this.lastCrewReady = -1;
     this.crewGearOpen = null;
+    this.collectionFilter = 'all';
     this.shelterView = 'upgrades';
     this.w = 0;
     this.h = 0;
@@ -1726,6 +1742,24 @@
     return n;
   };
 
+  Hub.prototype.collectionMilestoneClaimed = function (count) {
+    return (this.data.collectionMilestones || []).indexOf(count) >= 0;
+  };
+
+  Hub.prototype.claimCollectionMilestone = function (count) {
+    var def = null;
+    for (var i = 0; i < COLLECTION_MILESTONES.length; i++) if (COLLECTION_MILESTONES[i].count === count) def = COLLECTION_MILESTONES[i];
+    if (!def || this.collectionMilestoneClaimed(count) || this.collectionUnique() < count) return;
+    var gained = this.grantContractReward({ credits: def.credits, mats: def.mats });
+    if (def.filters) this.data.filters = (this.data.filters || 0) + def.filters;
+    this.data.collectionMilestones.push(count);
+    this.audio.claim();
+    this.showToast('ARCHIVE REWARD', '图鉴里程碑 · ' + count + ' 件', '+' + fmt(gained.credits) + ' 打捞币 · 材料已入库' + (def.filters ? ' · 过滤器 +1' : ''));
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
   Hub.prototype.collectionTotal = function () {
     var n = this.data.filters || 0;
     var map = this.data.collectibles || {};
@@ -2323,11 +2357,28 @@
       '<button class="auction-btn" data-action="auction-duplicates"' + (dup.count ? '' : ' disabled') + '>' +
       (dup.count ? '拍卖 ' + dup.count + ' 件 · +' + fmt(dup.value) : '暂无重复件') +
       '</button></div>';
+    var milestoneHtml = '<div class="collection-milestones"><div class="collection-milestone-head"><span>图鉴里程碑</span><small>已发现 ' + unique + ' / ' + CW.COLLECTIBLES.length + '</small></div><div class="collection-milestone-list">';
+    for (var cm = 0; cm < COLLECTION_MILESTONES.length; cm++) {
+      var ms = COLLECTION_MILESTONES[cm];
+      var claimed = this.collectionMilestoneClaimed(ms.count);
+      var canClaim = !claimed && unique >= ms.count;
+      milestoneHtml += '<button class="collection-milestone' + (claimed ? ' claimed' : canClaim ? ' ready' : '') + '" data-action="claim-collection-milestone" data-count="' + ms.count + '"' + (canClaim ? '' : ' disabled') + '>' +
+        '<b>' + ms.count + ' 件</b><span>' + (claimed ? '已领取' : canClaim ? '领取 +' + fmt(ms.credits) : '还差 ' + Math.max(0, ms.count - unique) + ' 件') + '</span></button>';
+    }
+    milestoneHtml += '</div></div>';
+    var filterHtml = '<div class="collection-filters">';
+    var filters = [
+      ['all', '全部'], ['owned', '已发现'], ['missing', '未发现'], ['set', '套装'], ['special', '升级件']
+    ];
+    for (var ff = 0; ff < filters.length; ff++) {
+      filterHtml += '<button class="' + (this.collectionFilter === filters[ff][0] ? 'active' : '') + '" data-action="collection-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + '</button>';
+    }
+    filterHtml += '</div>';
     var html = this.warehouseSwitch() + '<div class="collection-summary">' +
       '<span class="collection-kicker">SUNKEN ARCHIVE · 沉船收藏</span>' +
       '<div class="collection-headline"><b>' + unique + ' / ' + CW.COLLECTIBLES.length + '</b><span>已发现 · 共 ' + total + ' 件</span></div>' +
       '<p>收藏品不占仓库容量，会在局内作为普通掉落出现。装备最多 3 件可激活本局加成，重复件可拍卖、分解或合成；海水过滤器也收录在档案里，并作为净水舱材料。</p>' +
-      '</div>' + relicHtml + auctionHtml + '<div class="craft-board">' +
+      '</div>' + milestoneHtml + filterHtml + relicHtml + auctionHtml + '<div class="craft-board">' +
       '<div class="craft-head"><span>合成台</span><small>3 件同级 + 打捞币 → 1 件更高稀有度</small></div><div class="craft-list">';
     for (var r = 0; r < CW.CRAFT_RECIPES.length; r++) {
       var rec = CW.CRAFT_RECIPES[r];
@@ -2362,6 +2413,11 @@
       '</div>';
     }
     html += '</div></div>';
+    var setIds = {};
+    for (var ss = 0; ss < CW.COLLECTION_SETS.length; ss++) {
+      for (var sii = 0; sii < CW.COLLECTION_SETS[ss].items.length; sii++) setIds[CW.COLLECTION_SETS[ss].items[sii]] = true;
+    }
+    var shownTotal = 0;
     for (var q = 0; q < CW.COLLECTIBLE_RARITIES.length; q++) {
       var rarity = CW.COLLECTIBLE_RARITIES[q];
       var group = [];
@@ -2372,14 +2428,27 @@
         var ownedCount = gd.special === 'filter' ? filterCount : gd.special === 'material' ? (this.data.specials[gd.id] || 0) : (map[gd.id] || 0);
         if (ownedCount > 0) discovered++;
       }
+      var visible = [];
+      for (var vq = 0; vq < group.length; vq++) {
+        var vItem = group[vq];
+        var vn = vItem.special === 'filter' ? filterCount : vItem.special === 'material' ? (this.data.specials[vItem.id] || 0) : (map[vItem.id] || 0);
+        var pass = this.collectionFilter === 'all' ||
+          (this.collectionFilter === 'owned' && vn > 0) ||
+          (this.collectionFilter === 'missing' && vn === 0) ||
+          (this.collectionFilter === 'set' && !!setIds[vItem.id]) ||
+          (this.collectionFilter === 'special' && !!vItem.special);
+        if (pass) visible.push(vItem);
+      }
+      if (!visible.length) continue;
       html += '<section class="collection-group" style="--rarity:' + rarity.color + '">' +
         '<header><b>' + rarity.name + '</b><span>' + discovered + ' / ' + group.length + '</span></header><div class="collectible-grid">';
-      for (var g = 0; g < group.length; g++) {
-        var item = group[g];
+      for (var g = 0; g < visible.length; g++) {
+        var item = visible[g];
         var isSpecial = !!item.special;
         var n = item.special === 'filter' ? filterCount : item.special === 'material' ? (this.data.specials[item.id] || 0) : (map[item.id] || 0);
         var isEquipped = !isSpecial && equipped.indexOf(item.id) >= 0;
         var relicInfo = CW.COLLECTIBLE_RELICS[item.id];
+        shownTotal++;
         html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + '" style="--rarity:' + rarity.color + '">' +
           '<button class="collectible-open" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情"></button>' +
           '<span class="collectible-art"><img src="' + item.icon + '" alt=""></span>' +
@@ -2395,6 +2464,7 @@
       }
       html += '</div></section>';
     }
+    if (!shownTotal) html += '<div class="collection-empty">没有符合当前筛选的收藏。</div>';
     html += '<p class="collection-note">打捞结算时按表现提高收藏掉落率；史诗与传说也可以由低级收藏逐级合成。</p>';
     this.dom.panelContent.innerHTML = html;
   };
@@ -3004,6 +3074,12 @@
         } else if (action === 'equip-collectible') self.collectionEquip(actionEl.getAttribute('data-id'));
         else if (action === 'collectible-detail') self.openCollectibleDetail(actionEl.getAttribute('data-id'));
         else if (action === 'collectible-close') self.closeCollectibleDetail();
+        else if (action === 'collection-filter') {
+          self.collectionFilter = actionEl.getAttribute('data-filter') || 'all';
+          self.audio.tab();
+          self.renderPanel();
+        }
+        else if (action === 'claim-collection-milestone') self.claimCollectionMilestone(Number(actionEl.getAttribute('data-count')));
         else if (action === 'auction-duplicates') self.auctionDuplicates();
         else if (action === 'sell-materials') self.sellMaterials(10);
         else if (action === 'upgrade-salvage') self.salvageForUpgrade(actionEl.getAttribute('data-upgrade'));
