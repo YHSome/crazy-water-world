@@ -2458,6 +2458,24 @@ body:not(.is-title) #scene { clip-path: none !important; }
 .set-card.claimed .set-reward button { background: #e4f7ee; color: #0b7774; }
 .set-card.claimed { opacity: 0.92; }
 
+/* ── Archive tracking ────────────────────────────────────── */
+.track-card { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 9px 11px; border: 1px solid color-mix(in srgb, var(--rarity) 38%, #fff); border-radius: 14px; background: linear-gradient(135deg, #fffdf8, #f1faf4); box-shadow: 0 5px 0 -2px #e2d4bc, 0 12px 20px rgba(31, 84, 84, 0.07); }
+.track-card > img { width: 46px; height: 46px; flex: 0 0 auto; border-radius: 10px; object-fit: cover; border: 2px solid #fffdf8; }
+.track-copy { flex: 1; min-width: 0; }
+.track-copy > span { display: block; font-family: var(--mono); font-size: 7px; letter-spacing: 0.1em; color: #b06b28; }
+.track-copy > b { display: block; margin: 2px 0; font-size: 12px; color: #173f47; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-copy > p { margin: 0 0 5px; font-size: 9px; color: #7a8e8d; }
+.track-sources { display: flex; flex-wrap: wrap; gap: 4px; }
+.track-sources button { min-height: 27px; padding: 0 7px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 6px; background: #eaf8f2; color: #0b7774; font-family: var(--mono); font-size: 8px; }
+.track-off { flex: 0 0 auto; min-height: 30px; padding: 0 8px; border: 1px solid rgba(180, 70, 50, 0.15); border-radius: 7px; background: #fbeee9; color: #a4563f; font-family: var(--mono); font-size: 8px; }
+.detail-action.tracking { background: #e4f7ee; color: #0b7774; border-color: #18b8b0; }
+.collectible-card.tracked { box-shadow: 0 0 0 2px #18b8b0, 0 7px 18px rgba(0, 4, 8, 0.18); }
+.collectible-tracked { position: relative; z-index: 2; flex: 0 0 auto; padding: 3px 5px; border-radius: 5px; background: #18b8b0; color: #fff; font-family: var(--mono); font-size: 7px; }
+@media (max-width: 420px) {
+  .track-card { align-items: flex-start; }
+  .track-off { align-self: flex-start; }
+}
+
 /* ── Collection filters / milestones ─────────────────────── */
 .collection-milestones { margin: 10px 0; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 14px; background: linear-gradient(135deg, #fff8e9, #eefaf6); box-shadow: 0 6px 0 -3px #e1d2b8, 0 12px 22px rgba(31, 84, 84, 0.08); }
 .collection-milestone-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
