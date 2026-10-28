@@ -1393,7 +1393,7 @@
     if (this.tab === 'tasks') {
       this.dom.panelTitle.textContent = '打捞任务';
       this.dom.panelTag.textContent = (this.data.activeMissions || []).length + ' 个轮换';
-      this.dom.panelNote.textContent = '任务完成后不自动轮换 · 可主动探索新的打捞点';
+      this.dom.panelNote.textContent = '完成一个任务后自动换入新的打捞点';
     } else if (this.tab === 'crew') {
       this.dom.panelTitle.textContent = '打捞队';
       this.dom.panelTag.textContent = this.crewReadyCount() ? this.crewReadyCount() + ' 可领取' : CREW.length + ' 个岗位';
@@ -1891,36 +1891,6 @@
     if (this.data.candidateMissions.length) this.data.activeMissions.push(this.data.candidateMissions.shift());
   };
 
-  Hub.prototype.exploreMission = function () {
-    if (!Array.isArray(this.data.activeMissions) || !Array.isArray(this.data.candidateMissions)) return;
-    if (!this.data.activeMissions.length || !this.data.candidateMissions.length) return;
-    var slot = (Math.random() * this.data.activeMissions.length) | 0;
-    var pick = (Math.random() * this.data.candidateMissions.length) | 0;
-    var outgoing = this.data.activeMissions[slot];
-    var incoming = this.data.candidateMissions[pick];
-    this.data.activeMissions[slot] = incoming;
-    this.data.candidateMissions.splice(pick, 1);
-    this.data.candidateMissions.push(outgoing);
-    this.saveGame();
-    this.updateUI();
-    this.renderPanel();
-    this.audio.tab();
-    var def = this.missionById(incoming);
-    this.showToast('NEW SALVAGE SITE', '发现新打捞点', def ? def.name + ' 已出现在任务栏' : '');
-  };
-
-  Hub.prototype.rotateActiveMission = function (id) {
-    if (!Array.isArray(this.data.activeMissions) || this.data.activeMissions.indexOf(id) < 0) return;
-    this.rotateMission(id);
-    this.saveGame();
-    this.updateUI();
-    this.renderPanel();
-    this.audio.tab();
-    var next = this.data.activeMissions[this.data.activeMissions.length - 1];
-    var nextDef = this.missionById(next);
-    this.showToast('ROUTE ROTATED', '已换下 ' + (this.missionById(id) || {}).name, nextDef ? nextDef.name + ' 进入打捞位' : '');
-  };
-
   Hub.prototype.promoteMission = function (id) {
     if (!Array.isArray(this.data.candidateMissions) || this.data.candidateMissions.indexOf(id) < 0) return;
     if (!Array.isArray(this.data.activeMissions)) this.data.activeMissions = [];
@@ -1975,9 +1945,6 @@
       '</article>';
     }
     html += '</div>';
-    if (Array.isArray(this.data.candidateMissions) && this.data.candidateMissions.length) {
-      html += '<div class="mission-explore"><div><b>探索新的打捞点</b><span>打完不会自动轮换；主动探索会换入一个尚未展示的任务。</span></div><button data-action="mission-explore">探索</button></div>';
-    }
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -3567,6 +3534,7 @@
     stats.collectiblesFound = (stats.collectiblesFound || 0) + collectibles.length;
     stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits + chainBonus + sBonus;
     if (result.type === 'sonar' && Number(result.found || 0) >= 4) stats.sonarPerfect = (stats.sonarPerfect || 0) + 1;
+    this.rotateMission(key);
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -3712,7 +3680,6 @@
         else if (action === 'mute') self.toggleMute();
         else if (action === 'reset-save') self.resetSave();
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
-        else if (action === 'mission-explore') self.exploreMission();
         else if (action === 'mission-detail') self.openStoryDetail('mission', actionEl.getAttribute('data-id'));
         else if (action === 'crew-detail') self.openStoryDetail('crew', actionEl.getAttribute('data-id'));
         else if (action === 'upgrade-detail') self.openStoryDetail('upgrade', actionEl.getAttribute('data-id'));
