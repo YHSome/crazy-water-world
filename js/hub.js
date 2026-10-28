@@ -146,6 +146,16 @@
       id: 'trawl', name: '潮汐拖网', icon: '网', iconImg: 'assets/real/hook.webp', kicker: 'MISSION 07',
       desc: '把渔网放进潮沟，接住随潮水落下的鱼获与货箱。锈雷会炸掉时间，黄金鱼和珍珠能带来惊喜。',
       tags: ['45 秒', '拖网', '收藏'], stat: 'time', goal: '接住 30 件海货'
+    },
+    {
+      id: 'dive', name: '深海潜航', icon: '潜', iconImg: 'assets/collectibles/diving-helmet.webp', kicker: 'MISSION 08',
+      desc: '穿上旧潜水服，在断裂的沉船断面间穿行。漂过来的货箱会带回材料，遗物则可能进入收藏档案。',
+      tags: ['45 秒', '潜航', '收藏'], stat: 'time', goal: '带回 30 件漂浮物'
+    },
+    {
+      id: 'stack', name: '码头吊装', icon: '吊', iconImg: 'assets/real/storage.webp', kicker: 'MISSION 09',
+      desc: '旧码头的吊臂还能用。看准摆动位置放下货箱，把六只箱子稳稳码上栈桥；偏太多会掉进海里。',
+      tags: ['6 箱', '吊装', '保险箱'], stat: 'time', goal: '码好 6 只货箱'
     }
   ]);
 
@@ -202,6 +212,16 @@
       '潮汐拖网是避难所最年轻的岗位。渔网用旧缆绳和防雨布缝成，网眼大得能漏掉小鱼，却刚好兜住随潮水冲下来的货箱。',
       '鱼汛来的时候，海面会先浮起一层银色。阿盐说那是鱼群在换气，也是提醒：网要放低一点，锈雷也会跟着上来。',
       '珍珠是拖网最不可靠的收获。它们不属于任何一艘沉船，像是海自己长出来的东西。'
+    ],
+    dive: [
+      '深海潜航沿着一条断裂的沉船断面进行。船体被海流撕成几层，货箱、玻璃瓶和旧罗盘卡在钢梁之间，像一座倒挂的仓库。',
+      '小满负责这条线路。她说潜航最重要的不是游得快，而是知道哪里可以停：停错地方，海流会把你推向更深的一层。',
+      '漂浮物里偶尔会混着旧船员的遗物。它们不属于任何材料清单，只会安静地跟着气泡一起浮上来。'
+    ],
+    stack: [
+      '码头吊装是避难所最像旧世界的工作。吊臂从沉船里拆来，钢缆换过三次，操作员只有老周一个。',
+      '货箱在钩下会来回摆动。放得太早，箱子会砸在栈桥边缘；放得太晚，吊臂会把它甩进海里。六只箱子码稳，才算一趟完整的卸货。',
+      '老周说，码货和带人一样：位置差一点没关系，重心不能偏。'
     ]
   };
 
@@ -243,7 +263,9 @@
     cut: { S: 800, A: 550, B: 300 },
     sort: { S: 1050, A: 750, B: 400 },
     beacon: { S: 560, A: 400, B: 250 },
-    trawl: { S: 1700, A: 1100, B: 600 }
+    trawl: { S: 1700, A: 1100, B: 600 },
+    dive: { S: 1500, A: 950, B: 500 },
+    stack: { S: 1200, A: 800, B: 420 }
   });
   var GRADE_RANK = { C: 0, B: 1, A: 2, S: 3 };
   var AUCTION_PRICES = { common: 180, uncommon: 450, rare: 1100, epic: 2600, legendary: 6000 };
@@ -573,8 +595,8 @@
       reward: { credits: 200, mats: { copper: 1, chip: 1 } }
     },
     {
-      id: 'all-six', name: '七面手', iconImg: 'assets/real/sonar.webp',
-      metric: 'missionsPlayed', target: 7, desc: '七种打捞任务都至少完成一次。',
+      id: 'all-six', name: '九面手', iconImg: 'assets/real/sonar.webp',
+      metric: 'missionsPlayed', target: 9, desc: '九种打捞任务都至少完成一次。',
       reward: { credits: 900, mats: { metal: 6, fuel: 4, fiber: 4, chip: 4, glass: 4, copper: 4 } }
     },
     {
@@ -583,8 +605,8 @@
       reward: { credits: 500, mats: { glass: 3, copper: 2 } }
     },
     {
-      id: 'all-s', name: '七项全能 S', iconImg: 'assets/collectibles/tide-crown.webp',
-      metric: 'sGradesCount', target: 7, desc: '七个打捞任务都拿到 S 评级。',
+      id: 'all-s', name: '九项全能 S', iconImg: 'assets/collectibles/tide-crown.webp',
+      metric: 'sGradesCount', target: 9, desc: '九个打捞任务都拿到 S 评级。',
       reward: { credits: 1500, mats: { metal: 8, fuel: 6, fiber: 6, chip: 6, glass: 6, copper: 6 } }
     },
     {
@@ -749,18 +771,20 @@
         sortRuns: 0,
         beaconRuns: 0,
         trawlRuns: 0,
+        diveRuns: 0,
+        stackRuns: 0,
         expeditionRuns: 0,
         urgentOrders: 0
       },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
-      best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0, trawl: 0 },
+      best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0, trawl: 0, dive: 0, stack: 0 },
       grades: {},
       sGrades: {},
       taskChain: 0,
       taskChainTypes: [],
       lastTask: '',
       activeMissions: ['hook', 'match', 'sonar'],
-      candidateMissions: ['cut', 'sort', 'beacon', 'trawl'],
+      candidateMissions: ['cut', 'sort', 'beacon', 'trawl', 'dive', 'stack'],
       runs: 0
     };
   }
@@ -842,6 +866,8 @@
     data.stats.sortRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sortRuns) || 0));
     data.stats.beaconRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.beaconRuns) || 0));
     data.stats.trawlRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.trawlRuns) || 0));
+    data.stats.diveRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.diveRuns) || 0));
+    data.stats.stackRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.stackRuns) || 0));
     data.stats.expeditionRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.expeditionRuns) || 0));
     data.stats.urgentOrders = Math.max(0, Math.floor(Number(raw.stats && raw.stats.urgentOrders) || 0));
     data.contracts = normalizeContractSet(raw.contracts);
@@ -877,6 +903,8 @@
       data.best.sort = Math.max(0, Number(raw.best.sort) || 0);
       data.best.beacon = Math.max(0, Number(raw.best.beacon) || 0);
     data.best.trawl = Math.max(0, Number(raw.best.trawl) || 0);
+    data.best.dive = Math.max(0, Number(raw.best.dive) || 0);
+    data.best.stack = Math.max(0, Number(raw.best.stack) || 0);
     var rotation = normalizeMissionRotation(raw.activeMissions, raw.candidateMissions);
     data.activeMissions = rotation.active;
     data.candidateMissions = rotation.candidates;
@@ -1907,7 +1935,8 @@
       if (!m) continue;
       var best = this.data.best[m.id] || 0;
       var tags = m.tags.slice();
-      if (m.id === 'trawl') tags[0] = '45 秒';
+      if (m.id === 'trawl' || m.id === 'dive') tags[0] = '45 秒';
+      else if (m.id === 'stack') tags[0] = '6 箱';
       else if (m.id === 'hook' || m.stat === 'time') tags[0] = this.hookTime() + ' 秒';
       if (m.id === 'match') tags[0] = this.matchMoves() + ' 步';
       if (m.id === 'sonar') tags[0] = this.sonarProbes() + ' 次声呐';
@@ -3158,6 +3187,8 @@
         if ((this.data.stats.sortRuns || 0) > 0) n++;
         if ((this.data.stats.beaconRuns || 0) > 0) n++;
         if ((this.data.stats.trawlRuns || 0) > 0) n++;
+        if ((this.data.stats.diveRuns || 0) > 0) n++;
+        if ((this.data.stats.stackRuns || 0) > 0) n++;
         return n;
       }
       case 'level': return this.level();
@@ -3486,7 +3517,9 @@
     else if (result.type === 'sort') this.data.stats.sortRuns = (this.data.stats.sortRuns || 0) + 1;
     else if (result.type === 'beacon') this.data.stats.beaconRuns = (this.data.stats.beaconRuns || 0) + 1;
     else if (result.type === 'trawl') this.data.stats.trawlRuns = (this.data.stats.trawlRuns || 0) + 1;
-    var key = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon', 'trawl'].indexOf(result.type) >= 0 ? result.type : 'hook';
+    else if (result.type === 'dive') this.data.stats.diveRuns = (this.data.stats.diveRuns || 0) + 1;
+    else if (result.type === 'stack') this.data.stats.stackRuns = (this.data.stats.stackRuns || 0) + 1;
+    var key = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon', 'trawl', 'dive', 'stack'].indexOf(result.type) >= 0 ? result.type : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
     var grade = gradeFor(key, result.score);
     if (gradeRank(grade) > gradeRank(this.data.grades[key])) this.data.grades[key] = grade;
