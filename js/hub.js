@@ -1608,9 +1608,9 @@
       contractTab.setAttribute('data-ready', String(readyCount));
     }
     var warehouseTab = document.querySelector('.panel-tab[data-tab="warehouse"]');
-    if (warehouseTab) warehouseTab.classList.toggle('has-ready', this.collectionCanCraftAny());
+    if (warehouseTab) warehouseTab.classList.toggle('has-ready', this.collectionCanCraftAny() || this.collectionRewardReady());
     var tasksTab = document.querySelector('.panel-tab[data-tab="tasks"]');
-    if (tasksTab) tasksTab.classList.toggle('has-ready', this.dailyReady() || this.contractsReadyCount() > 0);
+    if (tasksTab) tasksTab.classList.toggle('has-ready', this.dailyReady() || this.contractsReadyCount() > 0 || this.storyReadyCount() > 0);
     var shelterTab = document.querySelector('.panel-tab[data-tab="shelter"]');
     if (shelterTab) shelterTab.classList.toggle('has-ready', this.achievementsReadyCount() > 0);
     var crewTab = document.querySelector('.panel-tab[data-tab="crew"]');
@@ -2621,6 +2621,18 @@
     return false;
   };
 
+  Hub.prototype.collectionRewardReady = function () {
+    var unique = this.collectionUnique();
+    for (var i = 0; i < COLLECTION_MILESTONES.length; i++) {
+      if (!this.collectionMilestoneClaimed(COLLECTION_MILESTONES[i].count) && unique >= COLLECTION_MILESTONES[i].count) return true;
+    }
+    for (var s = 0; s < CW.COLLECTION_SETS.length; s++) {
+      var set = CW.COLLECTION_SETS[s];
+      if (!this.setRewardClaimed(set.id) && this.collectionSetOwned(set) >= set.items.length) return true;
+    }
+    return false;
+  };
+
   Hub.prototype.collectionSetOwned = function (set) {
     var n = 0;
     var map = this.data.collectibles || {};
@@ -3083,7 +3095,7 @@
         '<div class="story-task-copy"><b>' + chapter.title + '</b>' +
           '<p>' + (claimed ? '已记录 · 点击图片回看剧情' : ready ? '目标完成，可以领取剧情奖励' : unlocked ? '剧情已解锁 · 进度 ' + Math.min(have, chapter.target) + ' / ' + chapter.target : '先完成上一章') + '</p>' +
           '<i><b style="width:' + (pct * 100).toFixed(1) + '%"></b></i>' +
-          (ready ? '<button class="story-task-claim" data-action="story-claim" data-id="' + chapter.id + '">领取</button>' : '') +
+          (ready ? '<button class="story-task-claim claim-ready" data-action="story-claim" data-id="' + chapter.id + '">领取奖励</button>' : '') +
         '</div></article>';
     }
     html += '</div>';
@@ -3110,7 +3122,7 @@
       '<h3>' + chapter.title + '</h3>' + paras +
       '<div class="story-reward"><b>+ ' + fmt(chapter.reward.credits) + ' 打捞币</b>' + mats + '</div>' +
       '<div class="story-actions"><button class="story-action" data-action="story-close">' + (claimed ? '已记录' : '稍后再看') + '</button>' +
-      (claimed ? '' : '<button class="story-action primary" data-action="claim-story" data-id="' + chapter.id + '"' + (ready ? '' : ' disabled') + '>' + (ready ? '记录并领取' : '尚未解锁') + '</button>') +
+      (claimed ? '' : '<button class="story-action primary' + (ready ? ' claim-ready' : '') + '" data-action="claim-story" data-id="' + chapter.id + '"' + (ready ? '' : ' disabled') + '>' + (ready ? '记录并领取' : '尚未解锁') + '</button>') +
       '</div></div></div>';
     this.dom.storyModal.classList.remove('hidden');
     this.dom.storyModal.setAttribute('aria-hidden', 'false');
@@ -3751,7 +3763,7 @@
         '<div class="set-icons">' + icons + '</div>' +
         '<div class="set-copy"><b>' + set.name + '</b><span>' + set.desc + '</span></div>' +
         '<div class="set-status"><b>' + owned + ' / ' + set.items.length + '</b><em>' + set.bonusText + '</em></div>' +
-        '<div class="set-reward"><span>' + setRewardText + '</span><button data-action="claim-set-reward" data-set="' + set.id + '"' + (active && !setClaimed ? '' : ' disabled') + '>' + (setClaimed ? '已领取' : active ? '领取' : '未集齐') + '</button></div>' +
+        '<div class="set-reward"><span>' + setRewardText + '</span><button class="' + (active && !setClaimed ? 'claim-ready' : '') + '" data-action="claim-set-reward" data-set="' + set.id + '"' + (active && !setClaimed ? '' : ' disabled') + '>' + (setClaimed ? '已领取' : active ? '领取' : '未集齐') + '</button></div>' +
       '</div>';
     }
     html += '</div></div>';
@@ -3926,6 +3938,15 @@
     for (var i = 0; i < ACHIEVEMENTS.length; i++) {
       var def = ACHIEVEMENTS[i];
       if (!this.data.achievements[def.id] && this.achievementValue(def) >= def.target) n++;
+    }
+    return n;
+  };
+
+  Hub.prototype.storyReadyCount = function () {
+    var n = 0;
+    for (var i = 0; i < CW.STORY_CHAPTERS.length; i++) {
+      var chapter = CW.STORY_CHAPTERS[i];
+      if (!this.data.storyClaimed[chapter.id] && this.storyChapterReady(chapter)) n++;
     }
     return n;
   };
