@@ -48,8 +48,14 @@
 https://yhsome.github.io/crazy-water-world/promo/
 ```
 
-成片：
+在线成片（WebM）：
 
 ```text
-https://yhsome.github.io/crazy-water-world/promo/crazy-water-world-promo.mp4
+https://github.com/YHSome/crazy-water-world/releases/download/promo-v1/crazy-water-world-promo.webm
+```
+
+本地同时保留 1920×1080 / 24fps 的 MP4 母版：
+
+```text
+promo/crazy-water-world-promo.mp4
 ```
