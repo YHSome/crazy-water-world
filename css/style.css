@@ -2836,8 +2836,8 @@ body.low-fx .logo { animation: none !important; }
 
 /* ── 可领取奖励高亮 ─────────────────────────────────────── */
 @keyframes claimReadyPulse {
-  0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 0 rgba(255, 188, 76, 0.36), 0 0 16px rgba(255, 188, 76, 0.2); }
-  50% { transform: translateY(-1px) scale(1.025); box-shadow: 0 0 0 5px rgba(255, 188, 76, 0.1), 0 0 26px rgba(255, 188, 76, 0.42); }
+  0%, 100% { filter: brightness(1); box-shadow: 0 0 0 0 rgba(255, 188, 76, 0.36), 0 0 16px rgba(255, 188, 76, 0.2); }
+  50% { filter: brightness(1.045); box-shadow: 0 0 0 5px rgba(255, 188, 76, 0.1), 0 0 26px rgba(255, 188, 76, 0.42); }
 }
 @keyframes claimReadyShine {
   0% { transform: translateX(-130%) skewX(-18deg); }
@@ -2926,3 +2926,7 @@ body.low-fx .logo { animation: none !important; }
   .mission-deck-head { padding: 10px; }
   .mission-deck-head > b { font-size: 17px; }
 }
+
+.achievement-section-label { display: flex; align-items: baseline; gap: 7px; margin: 15px 1px 8px; padding-top: 10px; border-top: 1px dashed rgba(19, 93, 96, 0.16); }
+.achievement-section-label > span { font-family: var(--mono); font-size: 7px; letter-spacing: 0.16em; color: #d46e4b; }
+.achievement-section-label > b { color: #31595c; font-size: 12px; }
