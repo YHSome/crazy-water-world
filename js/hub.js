@@ -3063,25 +3063,31 @@
   };
 
   Hub.prototype.renderStoryLog = function () {
-    var active = null;
-    for (var i = 0; i < CW.STORY_CHAPTERS.length; i++) {
-      if (!this.data.storyClaimed[CW.STORY_CHAPTERS[i].id]) { active = CW.STORY_CHAPTERS[i]; break; }
+    var claimedCount = 0;
+    for (var i = 0; i < CW.STORY_CHAPTERS.length; i++) if (this.data.storyClaimed[CW.STORY_CHAPTERS[i].id]) claimedCount++;
+    var html = '<div class="story-log-board"><div class="story-log-head"><span>MAIN LOG · 航海日志</span><em>' + claimedCount + ' / ' + CW.STORY_CHAPTERS.length + ' 章</em></div>';
+    for (var c = 0; c < CW.STORY_CHAPTERS.length; c++) {
+      var chapter = CW.STORY_CHAPTERS[c];
+      var claimed = !!this.data.storyClaimed[chapter.id];
+      var have = this.storyChapterMetric(chapter);
+      var pct = clamp(have / chapter.target, 0, 1);
+      var ready = this.storyChapterReady(chapter) && !claimed;
+      var prevClaimed = c === 0 || !!this.data.storyClaimed[CW.STORY_CHAPTERS[c - 1].id];
+      var unlocked = claimed || ready || prevClaimed;
+      html += '<article class="story-task' + (claimed ? ' claimed' : ready ? ' ready' : '') + (unlocked ? '' : ' locked') + '">' +
+        '<button class="story-task-art" data-action="story-chapter" data-id="' + chapter.id + '"' + (unlocked ? '' : ' disabled') + '>' +
+          '<img src="' + chapter.img + '" alt="" loading="lazy" decoding="async">' +
+          '<span>' + chapter.no + '</span>' +
+          (claimed ? '<i class="story-task-detail" title="回看剧情">i</i>' : '') +
+        '</button>' +
+        '<div class="story-task-copy"><b>' + chapter.title + '</b>' +
+          '<p>' + (claimed ? '已记录 · 点击图片回看剧情' : ready ? '目标完成，可以领取剧情奖励' : unlocked ? '剧情已解锁 · 进度 ' + Math.min(have, chapter.target) + ' / ' + chapter.target : '先完成上一章') + '</p>' +
+          '<i><b style="width:' + (pct * 100).toFixed(1) + '%"></b></i>' +
+          (ready ? '<button class="story-task-claim" data-action="story-claim" data-id="' + chapter.id + '">领取</button>' : '') +
+        '</div></article>';
     }
-    if (!active) {
-      return '<div class="story-log done"><span>MAIN LOG · 航海日志</span><b>主线已读完</b><p>疯狂号的故事还在继续，下一段等潮水送来。</p></div>';
-    }
-    var have = this.storyChapterMetric(active);
-    var pct = clamp(have / active.target, 0, 1);
-    var ready = this.storyChapterReady(active);
-    var prevIdx = CW.STORY_CHAPTERS.indexOf(active) - 1;
-    var unlocked = ready || (prevIdx < 0 || this.data.storyClaimed[CW.STORY_CHAPTERS[prevIdx].id]);
-    return '<article class="story-log' + (ready ? ' ready' : '') + '">' +
-      '<span>MAIN LOG · 航海日志 · ' + active.no + '</span>' +
-      '<b>' + active.title + '</b>' +
-      '<p>' + (unlocked ? '故事已可阅读。' : '先完成上一章，再回到这里。') + ' · ' + Math.min(have, active.target) + ' / ' + active.target + '</p>' +
-      '<i><b style="width:' + (pct * 100).toFixed(1) + '%"></b></i>' +
-      '<button data-action="story-chapter" data-id="' + active.id + '"' + (unlocked ? '' : ' disabled') + '>' + (ready ? '继续故事' : unlocked ? '阅读故事' : '尚未解锁') + '</button>' +
-      '</article>';
+    html += '</div>';
+    return html;
   };
 
   Hub.prototype.openStoryChapter = function (id) {
@@ -3118,10 +3124,10 @@
     this.data.storyClaimed[id] = true;
     var reward = this.grantContractReward(chapter.reward);
     this.audio.claim();
-    this.showToast('MAIN LOG', chapter.no + ' · ' + chapter.title, '+' + fmt(reward.credits) + ' 打捞币 · 已记入航海日志');
-    this.closeStoryDetail();
     this.saveGame();
     this.renderPanel();
+    this.showToast('MAIN LOG', chapter.no + ' · ' + chapter.title, '+' + fmt(reward.credits) + ' 打捞币 · 已记入航海日志');
+    this.openStoryChapter(id);
   };
 
   Hub.prototype.openStoryDetail = function (kind, id) {
@@ -4509,6 +4515,7 @@
         else if (action === 'tutorial-skip') self.skipTutorial();
         else if (action === 'story-chapter') self.openStoryChapter(actionEl.getAttribute('data-id'));
         else if (action === 'claim-story') self.claimStoryChapter(actionEl.getAttribute('data-id'));
+        else if (action === 'story-claim') self.claimStoryChapter(actionEl.getAttribute('data-id'));
         else if (action === 'arcade-story' && self.arcade && self.arcade.type) self.openStoryDetail('mission', self.arcade.type);
         else if (action === 'story-start-mission') {
           var storyMission = actionEl.getAttribute('data-mission');
