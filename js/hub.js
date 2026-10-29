@@ -110,6 +110,20 @@
       ]
     },
     {
+      id: 'archive', name: '藏品室', icon: '藏', tone: '#d9b8ff',
+      desc: '收藏品容量 +12',
+      max: 6, iconImg: 'assets/real/storage.webp',
+      shelter: [1, 1, 2, 3, 4, 5],
+      costs: [
+        { credits: 500, metal: 10, fiber: 8, glass: 4 },
+        { credits: 1400, metal: 20, fiber: 15, glass: 8, chip: 4 },
+        { credits: 3200, metal: 32, fiber: 24, glass: 14, chip: 8 },
+        { credits: 7000, metal: 48, fiber: 36, glass: 22, chip: 14, copper: 8 },
+        { credits: 14000, metal: 70, fiber: 50, glass: 30, chip: 22, copper: 14 },
+        { credits: 26000, metal: 95, fiber: 70, glass: 42, chip: 32, copper: 22, rarities: { rare: 1 } }
+      ]
+    },
+    {
       id: 'eel', name: '电鳗发电机', icon: '鳗', tone: '#9feeff',
       desc: '抓钩 +2 秒 · 声呐 +1 次',
       max: 3, iconImg: 'assets/collectibles/unique-v2/eel-generator.webp?v=102',
@@ -288,6 +302,7 @@
     sonar: '声呐阵列最初只是监听站的一根天线。后来它长成了整座避难所的耳朵，替所有人听海底的回声。',
     core: '聚变核心是避难所的心脏。它不发光的时候像一块废铁，亮起来的时候整条船都会安静。',
     purifier: '净水舱是避难所最干净的房间。海水从一侧进来，盐和铁锈留在滤芯里，清水从另一侧流进每个人的杯子。',
+  archive: '藏品室由两排旧保险柜拼成。每件捞上来的东西都要先在这里登记、编号，然后才允许被带走。',
   eel: '电鳗发电机被安置在船尾的铜壳里。电鳗游动时，整条船的灯会跟着明灭，像一颗缓慢呼吸的心脏。',
   cannon: '黄金大炮架在船首，炮口朝向没有海图的海域。它从不开火，只在发现新的打捞点时鸣响，提醒所有人：又往前走了一点。'
   };
@@ -1746,8 +1761,8 @@
     var extras = [];
     for (var c = 0; c < opt.collectibles; c++) {
       var cdef = CW.rollCollectibleDef();
-      this.data.collectibles[cdef.id] = (this.data.collectibles[cdef.id] || 0) + 1;
-      extras.push(cdef.name);
+      var addR = this.addCollectibleToRoom(cdef.id);
+      extras.push(addR.added ? cdef.name : '藏品室已满 +' + fmt(addR.credits));
     }
     for (var s = 0; s < opt.specials; s++) {
       var sid = CW.rollSpecialMaterial();
@@ -1884,8 +1899,8 @@
     var extras = [];
     if (reward.collectible && CW.rollCollectibleDef) {
       var cdef = CW.rollCollectibleDef();
-      this.data.collectibles[cdef.id] = (this.data.collectibles[cdef.id] || 0) + 1;
-      extras.push(cdef.name);
+      var addR = this.addCollectibleToRoom(cdef.id);
+      extras.push(addR.added ? cdef.name : '藏品室已满 +' + fmt(addR.credits));
     }
     if (reward.filter) {
       this.data.filters = (this.data.filters || 0) + 1;
@@ -2446,6 +2461,37 @@
     return n;
   };
 
+  Hub.prototype.collectionRoomUsed = function () {
+    var n = 0;
+    var map = this.data.collectibles || {};
+    for (var id in map) {
+      if (Object.prototype.hasOwnProperty.call(map, id)) n += map[id];
+    }
+    return n;
+  };
+
+  Hub.prototype.collectionRoomCapacity = function () {
+    return 40 + (this.data.upgrades.archive || 0) * 12;
+  };
+
+  Hub.prototype.collectionRoomSpace = function () {
+    return Math.max(0, this.collectionRoomCapacity() - this.collectionRoomUsed());
+  };
+
+  Hub.prototype.addCollectibleToRoom = function (id) {
+    var def = CW.COLLECTIBLE_MAP[id];
+    if (!def || def.special) return { added: 0, credits: 0 };
+    if (!this.data.collectibles) this.data.collectibles = {};
+    if (this.collectionRoomSpace() > 0) {
+      this.data.collectibles[id] = (this.data.collectibles[id] || 0) + 1;
+      return { added: 1, credits: 0 };
+    }
+    var price = AUCTION_PRICES[def.rarity] || 300;
+    var credits = Math.max(40, Math.round(price * 0.35));
+    this.data.credits += credits;
+    return { added: 0, credits: credits };
+  };
+
   Hub.prototype.collectionDuplicateStats = function () {
     var map = this.data.collectibles || {};
     var count = 0;
@@ -2557,12 +2603,15 @@
   Hub.prototype.registerCollectibles = function (result) {
     if (!this.data.collectibles) this.data.collectibles = {};
     var out = [];
+    var overflowCredits = 0;
     if (!Array.isArray(result.collectibles)) return out;
     for (var i = 0; i < result.collectibles.length; i++) {
       var id = result.collectibles[i];
       var def = CW.COLLECTIBLE_MAP[id];
       if (!def || def.special) continue;
-      this.data.collectibles[id] = (this.data.collectibles[id] || 0) + 1;
+      var added = this.addCollectibleToRoom(id);
+      overflowCredits += added.credits;
+      if (!added.added) continue;
       out.push({
         id: def.id,
         name: def.name,
@@ -2571,6 +2620,7 @@
         icon: def.thumb || def.icon
       });
     }
+    result.collectionOverflowCredits = overflowCredits;
     return out;
   };
 
@@ -3120,13 +3170,18 @@
     var def = CW.COLLECTIBLE_MAP[id];
     if (!def || def.special) return;
     var quote = this.marketCollectibleQuote(def);
+    if (this.collectionRoomSpace() < 1) {
+      this.audio.warn();
+      this.showToast('ARCHIVE FULL', '藏品室已满', '先扩建藏品室（避难所 → 扩建）');
+      return;
+    }
     if (this.data.credits < quote.buy) {
       this.audio.warn();
       this.showToast('NOT ENOUGH', '打捞币不足', '买入需要 ' + fmt(quote.buy));
       return;
     }
     this.data.credits -= quote.buy;
-    this.data.collectibles[id] = (this.data.collectibles[id] || 0) + 1;
+    this.addCollectibleToRoom(id);
     this.audio.claim();
     this.showToast('MARKET BUY', def.name, '-' + fmt(quote.buy) + ' 打捞币 · 含买入手续费');
     this.saveGame();
@@ -3280,11 +3335,19 @@
       filterHtml += '<button class="' + (this.collectionFilter === filters[ff][0] ? 'active' : '') + '" data-action="collection-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + '</button>';
     }
     filterHtml += '</div>';
+    var roomUsed = this.collectionRoomUsed();
+    var roomCap = this.collectionRoomCapacity();
+    var roomPct = clamp(roomUsed / Math.max(1, roomCap), 0, 1);
+    var roomHtml = '<div class="collection-room' + (roomUsed >= roomCap ? ' full' : '') + '">' +
+      '<div class="collection-room-head"><span>藏品室容量</span><b>' + roomUsed + ' / ' + roomCap + '</b></div>' +
+      '<i><b style="width:' + (roomPct * 100).toFixed(1) + '%"></b></i>' +
+      '<div class="collection-room-foot"><span>' + (roomUsed >= roomCap ? '已满：新收藏会折算成打捞币' : '剩余 ' + (roomCap - roomUsed) + ' 格') + '</span>' +
+      '<button data-action="collection-room-upgrade">扩建藏品室</button></div></div>';
     var html = this.warehouseSwitch() + '<div class="collection-summary">' +
       '<span class="collection-kicker">SUNKEN ARCHIVE · 沉船收藏</span>' +
       '<div class="collection-headline"><b>' + unique + ' / ' + CW.COLLECTIBLES.length + '</b><span>已发现 · 共 ' + total + ' 件</span></div>' +
-      '<p>收藏品不占仓库容量，会在局内作为普通掉落出现。装备最多 3 件可激活本局加成，重复件可拍卖、分解或合成；海水过滤器也收录在档案里，并作为净水舱材料。</p>' +
-      '</div>' + milestoneHtml + filterHtml + relicHtml + auctionHtml + '<div class="craft-board">' +
+      '<p>收藏品不占仓库容量，但占用藏品室容量。装备最多 3 件可激活本局加成，重复件可拍卖、分解或合成；海水过滤器也收录在档案里，并作为净水舱材料。</p>' +
+      '</div>' + roomHtml + milestoneHtml + filterHtml + relicHtml + auctionHtml + '<div class="craft-board">' +
       '<div class="craft-head"><span>合成台</span><small>3 件同级 + 打捞币 → 1 件更高稀有度</small></div><div class="craft-list">';
     for (var r = 0; r < CW.CRAFT_RECIPES.length; r++) {
       var rec = CW.CRAFT_RECIPES[r];
@@ -3885,6 +3948,9 @@
       result.collectibles.push(CW.rollCollectibleDef().id);
     }
     var collectibles = this.registerCollectibles(result);
+    if (result.collectionOverflowCredits > 0) {
+      this.showToast('ARCHIVE FULL', '藏品室已满', '溢出收藏折算 +' + fmt(result.collectionOverflowCredits) + ' 打捞币 · 去扩建藏品室');
+    }
     result.collectibles = collectibles;
     var gainedSpecials = [];
     if (Array.isArray(result.specials)) {
@@ -4074,7 +4140,12 @@
           self.audio.tab();
           self.renderPanel();
         }
-        else if (action === 'warehouse-view') {
+        else if (action === 'collection-room-upgrade') {
+          self.tab = 'shelter';
+          self.shelterView = 'upgrades';
+          self.audio.tab();
+          self.renderPanel();
+        } else if (action === 'warehouse-view') {
           self.warehouseView = actionEl.getAttribute('data-view');
           self.audio.click();
           self.renderPanel();
