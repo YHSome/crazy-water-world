@@ -2846,7 +2846,7 @@
   };
 
   Hub.prototype.marketCollectibleQuote = function (def, tick) {
-    var base = MARKET_COLLECTIBLE_BASE[def.rarity] || 200;
+    var base = def.special === 'filter' ? 3200 : (MARKET_COLLECTIBLE_BASE[def.rarity] || 200);
     var t = tick === undefined ? marketTick() : tick;
     var price = Math.round(base * marketMultiplier('col:' + def.id, t));
     return {
@@ -3280,7 +3280,7 @@
       '<button data-action="market-urgent"' + (urgent.done || urgentHave < urgent.qty ? ' disabled' : '') + '>' + (urgent.done ? '已交付' : urgentHave < urgent.qty ? '数量不足' : '交付 · +' + fmt(urgent.total)) + '</button></div>';
     if (this.marketTab === 'collectibles') {
       var featured = this.marketCollectibleFeatured(tick);
-      html += '<div class="market-note">本期货架只摆 6 种藏品，每 20 秒换一批；买入受藏品格限制。卖出不受货架限制，下方可卖任意已拥有藏品。</div><div class="market-items">';
+      html += '<div class="market-note">本期货架只摆 6 种藏品，每 20 秒换一批；买入受藏品格限制。卖出不受货架限制，下方可卖任意已拥有藏品。海水过滤器只可卖出，不会出现在货架。</div><div class="market-items">';
       for (var i = 0; i < featured.length; i++) {
         var item = featured[i];
         var quote = this.marketCollectibleQuote(item, tick);
@@ -3296,6 +3296,14 @@
       }
       html += '</div><div class="market-owned"><div class="market-owned-head"><b>我的收藏 · 不限货架卖出</b><span>可直接卖 1 件；挂单与拍卖仍按原价</span></div><div class="market-owned-grid">';
       var ownedRows = 0;
+      var filterCount = this.data.filters || 0;
+      if (filterCount > 0) {
+        var filterDef = CW.COLLECTIBLE_MAP['seawater-filter'];
+        var filterQuote = this.marketCollectibleQuote(filterDef, tick);
+        ownedRows++;
+        html += '<div class="market-owned-row"><img src="' + filterDef.thumb + '" alt="" loading="lazy" decoding="async"><div><b>海水过滤器</b><span>×' + filterCount + ' · 卖 ' + fmt(filterQuote.sell) + ' · 不可买入</span></div>' +
+          '<button data-action="market-sell-filter">卖1</button></div>';
+      }
       for (var oi = 0; oi < CW.COLLECTIBLES.length; oi++) {
         var oitem = CW.COLLECTIBLES[oi];
         if (oitem.special) continue;
@@ -3402,6 +3410,20 @@
     this.data.credits += quote.sell;
     this.audio.claim();
     this.showToast('MARKET SELL', def.name + ' ×1', '+' + fmt(quote.sell) + ' 打捞币 · 已扣卖出手续费');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.marketSellFilter = function () {
+    var count = this.data.filters || 0;
+    if (count < 1) return;
+    var def = CW.COLLECTIBLE_MAP['seawater-filter'];
+    var quote = this.marketCollectibleQuote(def);
+    this.data.filters = count - 1;
+    this.data.credits += quote.sell;
+    this.audio.claim();
+    this.showToast('MARKET SELL', '海水过滤器 ×1', '+' + fmt(quote.sell) + ' 打捞币 · 已扣卖出手续费');
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -4418,6 +4440,7 @@
         } else if (action === 'market-buy-material') self.marketBuyMaterial(actionEl.getAttribute('data-id'));
         else if (action === 'market-sell-material') self.marketSellMaterial(actionEl.getAttribute('data-id'));
         else if (action === 'market-sell-collectible') self.marketSellCollectible(actionEl.getAttribute('data-id'));
+        else if (action === 'market-sell-filter') self.marketSellFilter();
         else if (action === 'market-buy-collectible') self.marketBuyCollectible(actionEl.getAttribute('data-id'));
         else if (action === 'market-list') self.openMarketListing(actionEl.getAttribute('data-id'));
         else if (action === 'market-list-confirm') self.confirmMarketListing(actionEl.getAttribute('data-id'), actionEl.getAttribute('data-mult'));
