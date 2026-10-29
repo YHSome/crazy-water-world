@@ -292,6 +292,11 @@
   cannon: '黄金大炮架在船首，炮口朝向没有海图的海域。它从不开火，只在发现新的打捞点时鸣响，提醒所有人：又往前走了一点。'
   };
 
+  var TASK_CREDIT_SCALE = (CW.TASK_CREDIT_SCALE = {
+    hook: 0.8, match: 0.8, sonar: 0.8, cut: 0.8, sort: 0.8, beacon: 0.8,
+    trawl: 0.5, dive: 0.5, stack: 0.7, gunnery: 0.65
+  });
+
   var MISSION_GRADES = (CW.MISSION_GRADES = {
     hook: { S: 1100, A: 750, B: 400 },
     match: { S: 2400, A: 1600, B: 800 },
@@ -3825,7 +3830,8 @@
     var cap = this.capacity();
     var used = this.used();
     var storeSpace = Math.max(0, cap - used);
-    var creditGain = Math.round((result.credits || 0) * this.creditMult());
+    var taskCreditScale = TASK_CREDIT_SCALE[taskType] || 1;
+    var creditGain = Math.round((result.credits || 0) * taskCreditScale * this.creditMult());
     var chainBonus = Math.round(creditGain * (chainMult - 1));
     var stored = {};
     var overflowUnits = 0;
@@ -3874,7 +3880,7 @@
       result.collectibles.push(CW.rollCollectibleDef().id);
     }
     if (!Array.isArray(result.collectibles)) result.collectibles = [];
-    var bonusDrops = 1 + (Math.random() < 0.35 ? 1 : 0);
+    var bonusDrops = 1 + (Math.random() < 0.65 ? 1 : 0);
     for (var bd = 0; bd < bonusDrops; bd++) {
       result.collectibles.push(CW.rollCollectibleDef().id);
     }
