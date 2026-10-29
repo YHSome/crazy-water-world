@@ -2949,3 +2949,21 @@ body.low-fx .logo { animation: none !important; }
 .mission-recommend.claimed > b { color: #31595c; }
 .mission-tag.recommend { border-color: rgba(224, 161, 60, 0.42); background: #fff0c7; color: #865a1d; }
 .mission-card.recommended { border-color: rgba(224, 161, 60, 0.55); box-shadow: 0 4px 0 -2px #e8cc95, 0 11px 18px rgba(153, 106, 30, 0.1), inset 0 1px 0 #fff; }
+
+/* ── 收藏筛选与分页 ─────────────────────────────────────── */
+.collection-tools { margin: 10px 0 12px; padding: 9px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 13px; background: #f7fbf5; }
+.collection-search { display: flex; gap: 5px; }
+.collection-search input { flex: 1; min-width: 0; min-height: 36px; padding: 0 10px; border: 1px solid rgba(19, 93, 96, 0.15); border-radius: 8px; background: #fffdf8; color: #173f47; font-size: 12px; }
+.collection-search button { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border: 1px solid rgba(19, 93, 96, 0.14); border-radius: 8px; background: #eaf8f2; color: #0b7774; font-family: var(--mono); font-size: 9px; font-weight: 800; }
+.collection-search button.clear { background: #fff; color: #8a9d9a; }
+.collection-rarity { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.collection-rarity button { min-height: 29px; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--rarity, #7c8f8f) 28%, #dfe9e3); border-radius: 7px; background: #fffdf8; color: #5f7f80; font-size: 9px; }
+.collection-rarity button.active { border-color: var(--rarity, #0b7774); background: color-mix(in srgb, var(--rarity, #0b7774) 14%, #fffdf8); color: #173f47; font-weight: 800; }
+.collection-rarity button em { margin-left: 3px; font-family: var(--mono); font-size: 7px; font-style: normal; opacity: 0.7; }
+.collection-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 4px; padding-top: 9px; border-top: 1px dashed rgba(19, 93, 96, 0.15); }
+.collection-pager > span { font-family: var(--mono); font-size: 8px; color: #7c8f8f; }
+.collection-pager > div { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.collection-pager button { min-width: 29px; min-height: 29px; padding: 0 6px; border: 1px solid rgba(19, 93, 96, 0.14); border-radius: 7px; background: #fffdf8; color: #0b7774; font-family: var(--mono); font-size: 8px; }
+.collection-pager button.active { background: #0b7774; color: #fff; border-color: #0b7774; }
+.collection-pager button:disabled { opacity: 0.38; }
+@media (max-width: 420px) { .collection-pager { align-items: flex-start; flex-direction: column; } .collection-pager > div { justify-content: flex-start; } }
