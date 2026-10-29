@@ -1615,8 +1615,6 @@ body::after {
 .collection-group > header span { font-size: 9px; color: #7a999b; }
 .collectible-grid { gap: 8px; margin-top: 8px; }
 .collectible-card {
-  content-visibility: auto;
-  contain-intrinsic-size: 64px 260px;
   gap: 8px;
   padding: 8px;
   border: 1px solid color-mix(in srgb, var(--rarity) 30%, #e5eee8);
