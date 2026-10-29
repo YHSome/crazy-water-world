@@ -369,9 +369,10 @@
   var COLLECTION_MILESTONES = (CW.COLLECTION_MILESTONES = [
     { count: 5, credits: 500, mats: { metal: 5, fiber: 5 } },
     { count: 10, credits: 1500, mats: { glass: 6, chip: 6 } },
-    { count: 20, credits: 3200, mats: { copper: 8, chip: 8 } },
-    { count: 30, credits: 6800, mats: { glass: 12, chip: 12 } },
-    { count: 38, credits: 14000, mats: { glass: 16, chip: 16, copper: 12 }, filters: 1 }
+    { count: 25, credits: 4000, mats: { copper: 10, chip: 10 } },
+    { count: 50, credits: 9000, mats: { glass: 16, chip: 16, copper: 12 } },
+    { count: 75, credits: 18000, mats: { glass: 24, chip: 24, copper: 20 }, filters: 1 },
+    { count: 102, credits: 40000, mats: { metal: 40, fuel: 40, fiber: 40, chip: 40, glass: 40, copper: 40 }, filters: 2 }
   ]);
 
   var SHELTER_LEVELS = (CW.SHELTER_LEVELS = [
@@ -662,12 +663,12 @@
     },
     {
       id: 'set-master', name: '套装藏家', iconImg: 'assets/collectibles/tide-crown.webp',
-      metric: 'setRewardsCount', target: 5, desc: '领取全部五套收藏的完成奖励。',
+      metric: 'setRewardsCount', target: 6, desc: '领取全部六套收藏的完成奖励。',
       reward: { credits: 2200, mats: { chip: 10, glass: 8 } }
     },
     {
       id: 'archive-complete', name: '完整档案', iconImg: 'assets/collectibles/silver-musicbox.webp',
-      metric: 'collectionUnique', target: 38, desc: '发现全部 38 件沉船档案。',
+      metric: 'collectionUnique', target: 102, desc: '发现全部 102 件沉船档案。',
       reward: { credits: 5000, mats: { metal: 12, fuel: 12, fiber: 12, chip: 12, glass: 12, copper: 12 } }
     }
   ]);
