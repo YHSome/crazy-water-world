@@ -810,6 +810,7 @@
     return {
       v: 1,
       started: false,
+      tutorialStep: 'intro',
       credits: 0,
       materials: { metal: 0, fuel: 0, fiber: 0, chip: 0, glass: 0, copper: 0 },
       filters: 0,
@@ -874,6 +875,10 @@
     if (!raw || typeof raw !== 'object') return null;
     var data = makeDefault();
     data.started = raw.started !== false;
+    var tutorialSteps = ['intro', 'mission', 'brief', 'run', 'archive', 'shelter', 'done'];
+    data.tutorialStep = tutorialSteps.indexOf(raw.tutorialStep) >= 0
+      ? raw.tutorialStep
+      : (raw.started ? 'done' : 'intro');
     data.credits = Math.max(0, Number(raw.credits) || 0);
     data.filters = Math.max(0, Math.floor(Number(raw.filters) || 0));
     data.filterPity = clamp(Math.floor(Number(raw.filterPity) || 0), 0, 7);
@@ -1107,6 +1112,9 @@
     this.lastCrewReady = -1;
     this.crewGearOpen = null;
     this.collectionFilter = 'all';
+    this.tutorialStoryPage = 0;
+    this.tutorialStoryOpen = false;
+    this.tutorialTarget = null;
     this.autoLowFx = false;
     this.lowFx = false;
     this.fpsTime = 0;
@@ -1166,6 +1174,11 @@
       toastKicker: id('toast-kicker'),
       toastTitle: id('toast-title'),
       toastSub: id('toast-sub'),
+      tutorialCoach: id('tutorial-coach'),
+      tutorialKicker: id('tutorial-kicker'),
+      tutorialTitle: id('tutorial-title'),
+      tutorialText: id('tutorial-text'),
+      tutorialAction: document.querySelector('.tutorial-next'),
       arcade: id('arcade')
     };
 
@@ -1416,7 +1429,21 @@
     var self = this;
     requestAnimationFrame(function () { self.updateLayout(); });
     window.setTimeout(function () { self.updateLayout(); }, 300);
-    if (this.data.runs === 0) {
+    if (this.data.tutorialStep === 'brief' || this.data.tutorialStep === 'run') {
+      this.data.tutorialStep = 'mission';
+      this.saveGame();
+    }
+    window.setTimeout(function () {
+      if (self.state !== 'playing') return;
+      if (self.data.tutorialStep === 'mission' || self.data.tutorialStep === 'archive' || self.data.tutorialStep === 'shelter') {
+        self.showTutorialCoach(self.data.tutorialStep);
+      }
+    }, 760);
+    if (this.data.tutorialStep === 'intro') {
+      window.setTimeout(function () {
+        if (self.state === 'playing') self.openTutorialStory();
+      }, 520);
+    } else if (this.data.runs === 0) {
       window.setTimeout(function () {
         if (self.state === 'playing') {
           self.showToast('DAY 1281', '两处打捞点已标记', '去沉城里捞回第一船物资');
@@ -2849,8 +2876,140 @@
     if (this.dom.collectibleModal && !this.dom.collectibleModal.classList.contains('hidden')) this.openCollectibleDetail(id);
   };
 
+  Hub.prototype.tutorialPages = [
+    {
+      img: 'assets/bg-title.webp',
+      kicker: 'PROLOGUE · 潮水把你送来',
+      title: '第三层甲板',
+      text: '潮水退到第三层甲板时，阿盐在缆绳堆里找到了你。你身上没有证件，只有一枚锈得看不清字的船牌。'
+    },
+    {
+      img: 'assets/bg-hub.webp',
+      kicker: 'FIRST TIDE · 疯狂号',
+      title: '这里没有免费的淡水',
+      text: '“这里是疯狂号。”阿盐把一只空桶踢到你脚边，“想留下，就先去沉城捞点东西。捞回来的藏品，才是这艘船认人的方式。”'
+    },
+    {
+      img: 'assets/collectibles/unique-v2/sea-bottle.webp?v=102',
+      kicker: 'FIRST TIDE · 第一网',
+      title: '先学会把东西带回来',
+      text: '沉城抓钩是最稳的第一课。看准钩子摆动的方向，抓回海床上的物资；等船舱里有了第一件藏品，我们再谈怎么活过下一个潮汐。'
+    }
+  ];
+
+  Hub.prototype.renderTutorialStory = function () {
+    if (!this.dom.storyBody) return;
+    var page = this.tutorialPages[this.tutorialStoryPage] || this.tutorialPages[0];
+    var dots = '';
+    for (var i = 0; i < this.tutorialPages.length; i++) {
+      dots += '<i class="' + (i === this.tutorialStoryPage ? 'on' : '') + '"></i>';
+    }
+    this.dom.storyBody.innerHTML = '<div class="tutorial-story">' +
+      '<div class="tutorial-story-art"><img src="' + page.img + '" alt=""><span>' + page.kicker + '</span></div>' +
+      '<div class="tutorial-story-copy"><span class="tutorial-story-kicker">SUNKEN COAST · 新手档案</span>' +
+      '<h3>' + page.title + '</h3><p>' + page.text + '</p>' +
+      '<div class="tutorial-story-dots">' + dots + '</div>' +
+      '<div class="story-actions"><button class="story-action" data-action="tutorial-skip">跳过引导</button>' +
+      '<button class="story-action primary" data-action="tutorial-story-next">' + (this.tutorialStoryPage >= this.tutorialPages.length - 1 ? '去任务页' : '继续') + '</button></div></div></div>';
+    this.dom.storyModal.classList.remove('hidden');
+    this.dom.storyModal.setAttribute('aria-hidden', 'false');
+    this.tutorialStoryOpen = true;
+    this.audio.tab();
+  };
+
+  Hub.prototype.openTutorialStory = function () {
+    this.tutorialStoryPage = 0;
+    this.renderTutorialStory();
+  };
+
+  Hub.prototype.tutorialStoryNext = function () {
+    if (this.tutorialStoryPage < this.tutorialPages.length - 1) {
+      this.tutorialStoryPage += 1;
+      this.renderTutorialStory();
+      return;
+    }
+    this.tutorialStoryOpen = false;
+    this.closeStoryDetail();
+    this.data.tutorialStep = 'mission';
+    this.saveGame();
+    this.renderPanel();
+    var self = this;
+    window.setTimeout(function () { if (self.state === 'playing') self.showTutorialCoach('mission'); }, 320);
+  };
+
+  Hub.prototype.hideTutorialCoach = function () {
+    if (!this.dom.tutorialCoach) return;
+    this.dom.tutorialCoach.classList.add('hidden');
+    var old = document.querySelector('.tutorial-glow');
+    if (old) old.classList.remove('tutorial-glow');
+    this.tutorialTarget = null;
+  };
+
+  Hub.prototype.showTutorialCoach = function (step) {
+    if (!this.dom.tutorialCoach) return;
+    if ((this.data.tutorialStep || 'done') === 'done') return;
+    var config = {
+      mission: { kicker: 'STEP 1 / 3 · 打捞任务', title: '先跟阿盐下一网', text: '任务页已经标出三个打捞点。先完成一次沉城抓钩，把第一件藏品带回疯狂号。', action: '带我打第一网', target: '.mission-card' },
+      brief: { kicker: 'STEP 2 / 3 · 出发', title: '看准钩子再放绳', text: '简报页会说明本局规则。准备好后点「开始打捞」，钩子会左右摆动，点击水面放下抓钩。', action: '开始第一局', target: '[data-action="arcade-start"]' },
+      archive: { kicker: 'STEP 3 / 3 · 藏品室', title: '把捞到的东西收好', text: '每次结算会带回 1–2 件藏品。藏品会进入藏品室，重复件可以分解成材料；容量满了就回来扩建。', action: '查看我的收藏', target: '[data-tab="warehouse"]' },
+      shelter: { kicker: 'FIRST TIDE · 收尾', title: '给疯狂号添一块新甲板', text: '这里可以升级仓库、工坊、藏品室和船体。先从最需要的设施开始，别让第一船物资白捞。', action: '去避难所', target: '[data-tab="shelter"]' }
+    };
+    var c = config[step];
+    if (!c) return;
+    this.tutorialTarget = step;
+    this.dom.tutorialKicker.textContent = c.kicker;
+    this.dom.tutorialTitle.textContent = c.title;
+    this.dom.tutorialText.textContent = c.text;
+    if (this.dom.tutorialAction) this.dom.tutorialAction.textContent = c.action;
+    this.dom.tutorialCoach.classList.remove('hidden');
+    var old = document.querySelector('.tutorial-glow');
+    if (old) old.classList.remove('tutorial-glow');
+    var target = document.querySelector(c.target);
+    if (target) target.classList.add('tutorial-glow');
+  };
+
+  Hub.prototype.tutorialAction = function () {
+    var step = this.tutorialTarget;
+    if (step === 'mission') {
+      this.hideTutorialCoach();
+      this.startMission('hook');
+    } else if (step === 'brief') {
+      this.hideTutorialCoach();
+      this.data.tutorialStep = 'run';
+      this.saveGame();
+      if (this.arcade) this.arcade.startCountdown();
+    } else if (step === 'archive') {
+      this.hideTutorialCoach();
+      this.tab = 'warehouse';
+      this.warehouseView = 'collection';
+      this.data.tutorialStep = 'shelter';
+      this.saveGame();
+      this.renderPanel();
+      var self = this;
+      window.setTimeout(function () { if (self.state === 'playing') self.showTutorialCoach('shelter'); }, 450);
+    } else if (step === 'shelter') {
+      this.hideTutorialCoach();
+      this.tab = 'shelter';
+      this.data.tutorialStep = 'done';
+      this.saveGame();
+      var reward = this.grantContractReward({ credits: 300, mats: { metal: 3, fiber: 3 } });
+      this.renderPanel();
+      this.showToast('FIRST TIDE COMPLETE', '你已经能自己出航了', '+' + fmt(reward.credits) + ' 打捞币 · 回到任务页继续打捞');
+    }
+  };
+
+  Hub.prototype.skipTutorial = function () {
+    this.tutorialStoryOpen = false;
+    this.data.tutorialStep = 'done';
+    this.hideTutorialCoach();
+    this.closeStoryDetail();
+    this.saveGame();
+    this.renderPanel();
+  };
+
   Hub.prototype.openStoryDetail = function (kind, id) {
     if (!this.dom.storyModal) return;
+    this.tutorialStoryOpen = false;
     var title = '', kicker = '', icon = '', tags = '', paras = [], actions = '';
     if (kind === 'mission') {
       var m = this.missionById(id);
@@ -2896,8 +3055,16 @@
 
   Hub.prototype.closeStoryDetail = function () {
     if (!this.dom.storyModal) return;
+    var wasTutorial = !!this.tutorialStoryOpen;
+    this.tutorialStoryOpen = false;
     this.dom.storyModal.classList.add('hidden');
     this.dom.storyModal.setAttribute('aria-hidden', 'true');
+    if (wasTutorial) {
+      this.data.tutorialStep = 'done';
+      this.hideTutorialCoach();
+      this.saveGame();
+      this.renderPanel();
+    }
   };
 
   Hub.prototype.openCollectibleDetail = function (id) {
@@ -3908,6 +4075,14 @@
     this.hudVisible(false);
     this.panelVisible(false);
     this.arcade.open(type);
+    if (this.data.tutorialStep === 'mission' || this.data.tutorialStep === 'brief') {
+      this.data.tutorialStep = 'brief';
+      this.saveGame();
+      var self = this;
+      window.setTimeout(function () {
+        if (self.state === 'playing' && self.arcade && self.arcade.phase === 'brief') self.showTutorialCoach('brief');
+      }, 520);
+    }
   };
 
   Hub.prototype.onArcadeClosed = function () {
@@ -3919,6 +4094,22 @@
     var self = this;
     requestAnimationFrame(function () { self.updateLayout(); });
     window.setTimeout(function () { self.updateLayout(); }, 260);
+    if (this.data.tutorialStep === 'run') {
+      this.data.tutorialStep = 'archive';
+      this.saveGame();
+      window.setTimeout(function () {
+        if (self.state === 'playing') self.showTutorialCoach('archive');
+      }, 460);
+      return;
+    }
+    if (this.data.tutorialStep === 'brief') {
+      this.data.tutorialStep = 'mission';
+      this.saveGame();
+      window.setTimeout(function () {
+        if (self.state === 'playing') self.showTutorialCoach('mission');
+      }, 420);
+      return;
+    }
     window.setTimeout(function () {
       var n = self.contractsReadyCount();
       if (n > 0 && self.state === 'playing') {
@@ -4174,6 +4365,9 @@
         else if (action === 'crew-detail') self.openStoryDetail('crew', actionEl.getAttribute('data-id'));
         else if (action === 'upgrade-detail') self.openStoryDetail('upgrade', actionEl.getAttribute('data-id'));
         else if (action === 'story-close') self.closeStoryDetail();
+        else if (action === 'tutorial-story-next') self.tutorialStoryNext();
+        else if (action === 'tutorial-action') self.tutorialAction();
+        else if (action === 'tutorial-skip') self.skipTutorial();
         else if (action === 'arcade-story' && self.arcade && self.arcade.type) self.openStoryDetail('mission', self.arcade.type);
         else if (action === 'story-start-mission') {
           var storyMission = actionEl.getAttribute('data-mission');
