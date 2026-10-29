@@ -684,6 +684,15 @@ Lv.2 需要 4,000 币 / 20 废铁 / 20 纤维 / 4 件收藏 / 10 次出航；Lv.
 
 ![打捞结算](docs/preview-summary.webp)
 
+## 收藏图片加载
+
+- 每件收藏使用两张图：
+  - 卡片：`assets/collectibles/thumbs/<id>.webp`，128×128；
+  - 详情：`assets/collectibles/unique-v2/<id>.webp`，480×480。
+- 102 张缩略图总计约 330KB，约为原图体积的 1/6。
+- 卡片、套装、市场和追踪图使用缩略图并懒加载；详情打开时才加载大图。
+- 海水过滤器直接使用 `assets/seawater-filter-icon.webp`。
+
 ## 画面质量
 
 ![画面质量设置](docs/preview-quality.webp)
