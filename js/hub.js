@@ -112,7 +112,7 @@
     {
       id: 'eel', name: '电鳗发电机', icon: '鳗', tone: '#9feeff',
       desc: '抓钩 +2 秒 · 声呐 +1 次',
-      max: 3, iconImg: 'assets/collectibles/unique/eel-generator.webp',
+      max: 3, iconImg: 'assets/collectibles/unique-v2/eel-generator.webp',
       shelter: [3, 4, 5],
       requires: { collectible: 'eel-generator' },
       costs: [
@@ -124,7 +124,7 @@
     {
       id: 'cannon', name: '黄金大炮', icon: '炮', tone: '#ffd166',
       desc: '所有打捞币收益 +5%',
-      max: 3, iconImg: 'assets/collectibles/unique/golden-cannon.webp',
+      max: 3, iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp',
       shelter: [4, 4, 5],
       requires: { collectible: 'golden-cannon' },
       costs: [
@@ -2019,7 +2019,7 @@
       for (var mi = 0; mi < MISSIONS.length; mi++) if (MISSIONS[mi].id === sources[i]) m = MISSIONS[mi];
       if (m) buttons += '<button data-action="track-source" data-mission="' + m.id + '">' + m.name + '</button>';
     }
-    return '<div class="track-card" style="--rarity:' + CW.COLLECTIBLE_RARITY_MAP[def.rarity].color + '"><img src="' + def.icon + '" alt=""><div class="track-copy"><span>ARCHIVE TRACK · 正在追踪</span><b>' + def.name + ' · ' + (count ? '已发现 ×' + count : '未发现') + '</b><p>从这些打捞点更容易带回它</p><div class="track-sources">' + buttons + '</div></div><button class="track-off" data-action="collectible-track" data-id="' + id + '">取消</button></div>';
+    return '<div class="track-card" style="--rarity:' + CW.COLLECTIBLE_RARITY_MAP[def.rarity].color + '"><img src="' + (def.thumb || def.icon) + '" alt="" loading="lazy" decoding="async"><div class="track-copy"><span>ARCHIVE TRACK · 正在追踪</span><b>' + def.name + ' · ' + (count ? '已发现 ×' + count : '未发现') + '</b><p>从这些打捞点更容易带回它</p><div class="track-sources">' + buttons + '</div></div><button class="track-off" data-action="collectible-track" data-id="' + id + '">取消</button></div>';
   };
 
   Hub.prototype.renderTasks = function () {
@@ -2476,7 +2476,7 @@
         name: def.name,
         rarity: def.rarity,
         color: CW.COLLECTIBLE_RARITY_MAP[def.rarity].color,
-        icon: def.icon
+        icon: def.thumb || def.icon
       });
     }
     return out;
@@ -2921,7 +2921,7 @@
         var trend = quote.buy - Math.round((quote.prev || quote.price) * (1 + MARKET_FEE_BUY));
         var trendPct = Math.round((quote.buy / Math.max(1, Math.round((quote.prev || quote.price) * (1 + MARKET_FEE_BUY))) - 1) * 100);
         html += '<article class="market-item" style="--rarity:' + CW.COLLECTIBLE_RARITY_MAP[item.rarity].color + '">' +
-          '<div class="market-item-head"><img src="' + item.icon + '" alt=""><div><b>' + item.name + '</b><span>' + CW.COLLECTIBLE_RARITY_MAP[item.rarity].name + ' · 持有 ' + owned + '</span></div></div>' +
+          '<div class="market-item-head"><img src="' + (item.thumb || item.icon) + '" alt="" loading="lazy" decoding="async"><div><b>' + item.name + '</b><span>' + CW.COLLECTIBLE_RARITY_MAP[item.rarity].name + ' · 持有 ' + owned + '</span></div></div>' +
           '<div class="market-quote"><span>买入 <b>' + fmt(quote.buy) + '</b></span><span>卖出 <b>' + fmt(quote.sell) + '</b></span><em class="' + (trendPct >= 0 ? 'up' : 'down') + '">' + (trendPct >= 0 ? '↑' : '↓') + Math.abs(trendPct) + '%</em></div>' +
           '<div class="market-actions"><button class="market-buy" data-action="market-buy-collectible" data-id="' + item.id + '"' + (this.data.credits < quote.buy ? ' disabled' : '') + '>买入</button>' +
             (owned > 0 ? '<button class="market-list" data-action="market-list" data-id="' + item.id + '">挂单</button><button class="market-auction" data-action="market-auction" data-id="' + item.id + '">拍卖</button>' : '') +
@@ -3181,7 +3181,7 @@
       var icons = '';
       for (var ii = 0; ii < set.items.length; ii++) {
         var setItem = CW.COLLECTIBLE_MAP[set.items[ii]];
-        icons += '<img class="' + ((map[setItem.id] || 0) > 0 ? '' : 'missing') + '" src="' + setItem.icon + '" alt="" title="' + setItem.name + '">';
+        icons += '<img class="' + ((map[setItem.id] || 0) > 0 ? '' : 'missing') + '" src="' + (setItem.thumb || setItem.icon) + '" alt="" title="' + setItem.name + '" loading="lazy" decoding="async">';
       }
       var setClaimed = this.setRewardClaimed(set.id);
       var setRewardText = fmt(set.reward.credits) + ' 币';
@@ -3238,7 +3238,7 @@
         shownTotal++;
         html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + (this.data.trackedCollection === item.id ? ' tracked' : '') + '" style="--rarity:' + rarity.color + '">' +
           '<button class="collectible-open" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情"></button>' +
-          '<span class="collectible-art"><img src="' + item.icon + '" alt=""><button class="img-detail collectible-detail-btn" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情">i</button></span>' +
+          '<span class="collectible-art"><img src="' + (item.thumb || item.icon) + '" alt="" loading="lazy" decoding="async"><button class="img-detail collectible-detail-btn" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情">i</button></span>' +
           '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em>' +
             (n && relicInfo ? '<span class="collectible-power">' + relicInfo.label + '</span>' : '') +
             (n && isSpecial ? '<span class="collectible-power">' + (item.special === 'filter' ? '净水核心 · 净水舱材料' : '稀有升级件 · 避难所材料') + '</span>' : '') + '</span>' +
