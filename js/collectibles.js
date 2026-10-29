@@ -115,11 +115,17 @@
     { id: 'first-light', name: '初光罗盘', rarity: 'legendary', icon: 'assets/collectibles/unique-v2/first-light.webp', desc: '罗盘玻璃里封着日出前第一缕光。' },
     { id: 'eel-generator', name: '电鳗发电机', rarity: 'legendary', icon: 'assets/collectibles/unique-v2/eel-generator.webp', desc: '把电鳗的放电封进铜壳，给避难所留一盏不灭的灯。' },
     { id: 'golden-cannon', name: '黄金大炮', rarity: 'legendary', icon: 'assets/collectibles/unique-v2/golden-cannon.webp', desc: '用沉船金条铸成的礼炮，只在找到新海域时鸣响。' },
-    { id: 'seawater-filter', name: '海水过滤器', rarity: 'legendary', icon: 'assets/collectibles/unique-v2/seawater-filter.webp', desc: '沉船医疗舱里的净水核心，也是净水舱的升级材料。', special: 'filter' },
+    { id: 'seawater-filter', name: '海水过滤器', rarity: 'legendary', icon: 'assets/seawater-filter-icon.webp', desc: '沉船医疗舱里的净水核心，也是净水舱的升级材料。', special: 'filter' },
     { id: 'sonar-core', name: '声呐核心', rarity: 'epic', icon: 'assets/collectibles/unique-v2/sonar-core.webp', desc: '旧声呐阵列的主控核心，避难所升级的关键部件。', special: 'material' },
     { id: 'pressure-valve', name: '耐压阀', rarity: 'epic', icon: 'assets/collectibles/unique-v2/pressure-valve.webp', desc: '能承受深海压力的黄铜阀门，用于扩建船体。', special: 'material' },
     { id: 'tide-cell', name: '潮汐电池', rarity: 'legendary', icon: 'assets/collectibles/unique-v2/tide-cell.webp', desc: '仍在缓慢放电的旧时代电池，避难所终极扩建的核心。', special: 'material' }  ]);
 
+  for (var ti = 0; ti < COLLECTIBLES.length; ti++) {
+    var titem = COLLECTIBLES[ti];
+    titem.thumb = titem.id === 'seawater-filter'
+      ? 'assets/collectibles/thumbs/seawater-filter.webp'
+      : 'assets/collectibles/thumbs/' + titem.id + '.webp';
+  }
   var MAP = (CW.COLLECTIBLE_MAP = {});
   for (var i = 0; i < COLLECTIBLES.length; i++) MAP[COLLECTIBLES[i].id] = COLLECTIBLES[i];
   var RARITY_MAP = (CW.COLLECTIBLE_RARITY_MAP = {});
