@@ -845,6 +845,9 @@
       started: false,
       tutorialStep: 'intro',
       storyClaimed: {},
+      recommendDay: '',
+      recommendId: '',
+      recommendClaimed: false,
       credits: 0,
       materials: { metal: 0, fuel: 0, fiber: 0, chip: 0, glass: 0, copper: 0 },
       filters: 0,
@@ -919,6 +922,9 @@
         if (Object.prototype.hasOwnProperty.call(raw.storyClaimed, sk) && raw.storyClaimed[sk]) data.storyClaimed[sk] = true;
       }
     }
+    data.recommendDay = raw.recommendDay === dayKey() ? raw.recommendDay : '';
+    data.recommendId = data.recommendDay && typeof raw.recommendId === 'string' ? raw.recommendId : '';
+    data.recommendClaimed = !!data.recommendDay && !!raw.recommendClaimed;
     data.credits = Math.max(0, Number(raw.credits) || 0);
     data.filters = Math.max(0, Math.floor(Number(raw.filters) || 0));
     data.filterPity = clamp(Math.floor(Number(raw.filterPity) || 0), 0, 7);
@@ -2139,8 +2145,27 @@
     return '<div class="track-card" style="--rarity:' + CW.COLLECTIBLE_RARITY_MAP[def.rarity].color + '"><img src="' + (def.thumb || def.icon) + '" alt="" loading="lazy" decoding="async"><div class="track-copy"><span>ARCHIVE TRACK · 正在追踪</span><b>' + def.name + ' · ' + (count ? '已发现 ×' + count : '未发现') + '</b><p>从这些打捞点更容易带回它</p><div class="track-sources">' + buttons + '</div></div><button class="track-off" data-action="collectible-track" data-id="' + id + '">取消</button></div>';
   };
 
+  Hub.prototype.ensureRecommendation = function () {
+    var today = dayKey();
+    if (this.data.recommendDay !== today) {
+      this.data.recommendDay = today;
+      this.data.recommendId = '';
+      this.data.recommendClaimed = false;
+    }
+    var active = Array.isArray(this.data.activeMissions) && this.data.activeMissions.length ? this.data.activeMissions : MISSIONS.map(function (m) { return m.id; });
+    if (this.data.recommendId && active.indexOf(this.data.recommendId) >= 0 && this.missionById(this.data.recommendId)) return;
+    this.data.recommendId = active[mod(dayNumber(), active.length)];
+  };
+
+  Hub.prototype.recommendedMission = function () {
+    this.ensureRecommendation();
+    return this.missionById(this.data.recommendId);
+  };
+
   Hub.prototype.renderTasks = function () {
-    var html = '<section class="mission-deck"><div class="mission-deck-head"><span>CORE SALVAGE · 核心打捞</span><b>选一个打捞点，直接出海</b><em>3 个打捞点</em></div><div class="mission-list">';
+    var recommended = this.recommendedMission();
+    var recBanner = recommended ? '<div class="mission-recommend' + (this.data.recommendClaimed ? ' claimed' : '') + '"><span>DAILY PICK · 今日推荐</span><b>' + recommended.name + '</b><em>' + (this.data.recommendClaimed ? '首胜收藏已领取 · 打捞币 +20% 仍生效' : '打捞币 +20% · 今日首次完成 +1 收藏') + '</em></div>' : '';
+    var html = '<section class="mission-deck"><div class="mission-deck-head"><span>CORE SALVAGE · 核心打捞</span><b>选一个打捞点，直接出海</b><em>3 个打捞点</em></div>' + recBanner + '<div class="mission-list">';
     var activeIds = Array.isArray(this.data.activeMissions) ? this.data.activeMissions : [];
     for (var i = 0; i < activeIds.length; i++) {
       var m = this.missionById(activeIds[i]);
@@ -2152,7 +2177,8 @@
       else if (m.id === 'hook' || m.stat === 'time') tags[0] = this.hookTime() + ' 秒';
       if (m.id === 'match') tags[0] = this.matchMoves() + ' 步';
       if (m.id === 'sonar') tags[0] = this.sonarProbes() + ' 次声呐';
-      html += '<article class="mission-card">' +
+      var isRecommended = recommended && recommended.id === m.id;
+      html += '<article class="mission-card' + (isRecommended ? ' recommended' : '') + '">' +
         '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt=""><button class="img-detail" data-action="mission-detail" data-id="' + m.id + '" aria-label="查看 ' + m.name + ' 详情">i</button></div>' +
         '<div class="mission-copy">' +
           '<span class="mission-kicker">' + m.kicker + '</span>' +
@@ -2163,7 +2189,7 @@
           '<div class="mission-tags">' + tags.map(function (t) {
             if (t === '稀有过滤器') return '<span class="mission-tag rare"><img src="assets/seawater-filter-icon.webp" alt="">稀有过滤器</span>';
             return '<span class="mission-tag">' + t + '</span>';
-          }).join('') + '</div>' +
+          }).join('') + (isRecommended ? '<span class="mission-tag recommend">今日推荐 +20%</span>' : '') + '</div>' +
         '</div>' +
         '<button class="mission-btn" data-action="mission" data-mission="' + m.id + '">开始打捞</button>' +
       '</article>';
@@ -4307,7 +4333,11 @@
     var cap = this.capacity();
     var used = this.used();
     var storeSpace = Math.max(0, cap - used);
-    var taskCreditScale = TASK_CREDIT_SCALE[taskType] || 1;
+    var recommended = this.recommendedMission();
+    var isRecommended = !!(recommended && recommended.id === taskType);
+    var recommendBonus = isRecommended && !this.data.recommendClaimed;
+    if (recommendBonus) this.data.recommendClaimed = true;
+    var taskCreditScale = (TASK_CREDIT_SCALE[taskType] || 1) * (isRecommended ? 1.2 : 1);
     var creditGain = Math.round((result.credits || 0) * taskCreditScale * this.creditMult());
     var chainBonus = Math.round(creditGain * (chainMult - 1));
     var stored = {};
@@ -4361,6 +4391,7 @@
     for (var bd = 0; bd < bonusDrops; bd++) {
       result.collectibles.push(CW.rollCollectibleDef().id);
     }
+    if (recommendBonus) result.collectibles.push(CW.rollCollectibleDef().id);
     var collectibles = this.registerCollectibles(result);
     if (result.collectionOverflowCredits > 0) {
       this.showToast('ARCHIVE FULL', '藏品室已满', '溢出收藏折算 +' + fmt(result.collectionOverflowCredits) + ' 打捞币 · 去扩建藏品室');
@@ -4406,7 +4437,9 @@
       capacity: cap,
       used: cap - storeSpace,
       collectibles: collectibles,
-      specials: gainedSpecials
+      specials: gainedSpecials,
+      recommended: isRecommended,
+      recommendBonus: recommendBonus
     };
   };
 
