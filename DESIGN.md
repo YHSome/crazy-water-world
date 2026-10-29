@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.14 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.14.1 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -409,7 +409,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 - 套装加成为被动，直接叠加到工坊 / 声呐 / 净水舱倍率，不需要点击领取。
 - 契约新增「沉船收藏家」，进度按单局实际带回的收藏件数累计。
 - 每件收藏使用独立 480×480 WebP：`assets/collectibles/unique-v2/<id>.webp`；每张都有独立裁切、配色、版式、编号与名称铭牌，102 张全部唯一。
-- 卡片另用 128×128 `assets/collectibles/thumbs/<id>.webp`，`loading=lazy` + `decoding=async`；详情才加载 480 原图。海水过滤器使用用户提供的 `assets/seawater-filter-icon.webp`。
+- 卡片另用 128×128 `assets/collectibles/thumbs/<id>.webp`，`loading=lazy` + `decoding=async`；详情才加载 480 原图。海水过滤器使用用户提供的 `assets/seawater-filter.webp`。
 - 收集与合成都只由玩家主动打捞触发，不产生离线收益。
 
 ### 8.8 每日潮汐契约
@@ -625,6 +625,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
