@@ -1610,9 +1610,9 @@
     var warehouseTab = document.querySelector('.panel-tab[data-tab="warehouse"]');
     if (warehouseTab) warehouseTab.classList.toggle('has-ready', this.collectionCanCraftAny() || this.collectionRewardReady());
     var tasksTab = document.querySelector('.panel-tab[data-tab="tasks"]');
-    if (tasksTab) tasksTab.classList.toggle('has-ready', this.dailyReady() || this.contractsReadyCount() > 0 || this.storyReadyCount() > 0);
+    if (tasksTab) tasksTab.classList.toggle('has-ready', this.dailyReady() || this.contractsReadyCount() > 0);
     var shelterTab = document.querySelector('.panel-tab[data-tab="shelter"]');
-    if (shelterTab) shelterTab.classList.toggle('has-ready', this.achievementsReadyCount() > 0);
+    if (shelterTab) shelterTab.classList.toggle('has-ready', this.achievementsReadyCount() > 0 || this.storyReadyCount() > 0);
     var crewTab = document.querySelector('.panel-tab[data-tab="crew"]');
     if (crewTab) crewTab.classList.toggle('has-ready', this.crewReadyCount() > 0);
     if (this.tab === 'tasks') {
@@ -1643,9 +1643,13 @@
     } else {
       var achievementsReady = this.achievementsReadyCount();
       if (this.shelterView === 'log') {
+        var storyReady = this.storyReadyCount();
         this.dom.panelTitle.textContent = '航海日志';
         this.dom.panelTag.textContent = this.achievementUnlocked() + ' / ' + ACHIEVEMENTS.length;
-        this.dom.panelNote.textContent = achievementsReady ? achievementsReady + ' 项成就可领取' : '长期记录与一次性里程碑';
+        this.dom.panelNote.textContent = (storyReady ? storyReady + ' 段主线可领取' : '') +
+          (storyReady && achievementsReady ? ' · ' : '') +
+          (achievementsReady ? achievementsReady + ' 项成就可领取' : '') ||
+          '主线剧情 · 长期记录与一次性里程碑';
       } else {
         this.dom.panelTitle.textContent = '扩建疯狂号';
         this.dom.panelTag.textContent = '避难所 Lv.' + this.shelterLevel();
@@ -2164,8 +2168,8 @@
         '<button class="mission-btn" data-action="mission" data-mission="' + m.id + '">开始打捞</button>' +
       '</article>';
     }
-    html += '</div></section><div class="task-support-divider"><span>DAILY & STORY</span><b>今日事务</b><em>任务、剧情与连携</em></div>' +
-      this.renderDailyCard() + this.renderStoryLog() + this.renderTaskChain() + this.renderTrackCard();
+    html += '</div></section><div class="task-support-divider"><span>DAILY & ROUTE</span><b>今日事务</b><em>任务、轮换与连携</em></div>' +
+      this.renderDailyCard() + this.renderTaskChain() + this.renderTrackCard();
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -3078,7 +3082,7 @@
   Hub.prototype.renderStoryLog = function () {
     var claimedCount = 0;
     for (var i = 0; i < CW.STORY_CHAPTERS.length; i++) if (this.data.storyClaimed[CW.STORY_CHAPTERS[i].id]) claimedCount++;
-    var html = '<div class="story-log-board"><div class="story-log-head"><span>MAIN LOG · 航海日志</span><em>' + claimedCount + ' / ' + CW.STORY_CHAPTERS.length + ' 章</em></div>';
+    var html = '<div class="story-log-board"><div class="story-log-head"><span>MAIN STORY · 主线剧情</span><em>' + claimedCount + ' / ' + CW.STORY_CHAPTERS.length + ' 章</em></div>';
     for (var c = 0; c < CW.STORY_CHAPTERS.length; c++) {
       var chapter = CW.STORY_CHAPTERS[c];
       var claimed = !!this.data.storyClaimed[chapter.id];
@@ -3977,7 +3981,8 @@
       var bc = self.data.achievements[b.id] ? 1 : 0;
       return ac - bc;
     }.bind(this));
-    var html = this.shelterSwitch() +
+    var html = this.shelterSwitch() + this.renderStoryLog() +
+      '<div class="achievement-section-label"><span>LONG LOG · 长期成就</span><b>把每一次出航记下来</b></div>' +
       '<div class="achievement-summary">' +
         '<span class="collection-kicker">SHIP\'S LOG · 航海日志</span>' +
         '<div class="collection-headline"><b>' + unlocked + ' / ' + ACHIEVEMENTS.length + '</b><span>已解锁' + (ready ? ' · ' + ready + ' 项可领' : '') + '</span></div>' +
