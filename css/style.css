@@ -2939,3 +2939,13 @@ body.low-fx .logo { animation: none !important; }
 .title-promo-copy b { font-size: 12px; line-height: 1.3; }
 .title-promo > em { margin-left: auto; font-family: var(--mono); font-size: 7px; font-style: normal; color: #7b9192; text-align: right; }
 @media (max-width: 380px) { .title-promo > em { display: none; } }
+
+.mission-recommend { display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; margin-top: 8px; padding: 8px 10px; border: 1px solid rgba(224, 161, 60, 0.38); border-radius: 10px; background: linear-gradient(135deg, #fff6df, #fffaf0); }
+.mission-recommend > span { grid-column: 1 / -1; font-family: var(--mono); font-size: 7px; letter-spacing: 0.14em; color: #c26a3d; }
+.mission-recommend > b { color: #6f4818; font-size: 14px; line-height: 1.3; }
+.mission-recommend > em { align-self: center; font-family: var(--mono); font-size: 7px; font-style: normal; color: #9b7136; text-align: right; }
+.mission-recommend.claimed { border-color: rgba(19, 93, 96, 0.12); background: #f1f8f2; }
+.mission-recommend.claimed > span { color: #7c8f8f; }
+.mission-recommend.claimed > b { color: #31595c; }
+.mission-tag.recommend { border-color: rgba(224, 161, 60, 0.42); background: #fff0c7; color: #865a1d; }
+.mission-card.recommended { border-color: rgba(224, 161, 60, 0.55); box-shadow: 0 4px 0 -2px #e8cc95, 0 11px 18px rgba(153, 106, 30, 0.1), inset 0 1px 0 #fff; }
