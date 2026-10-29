@@ -108,6 +108,30 @@
         { credits: 7000, filters: 1, metal: 35, fiber: 25, chip: 20, glass: 20, copper: 12 },
         { credits: 16000, filters: 1, metal: 55, fiber: 40, chip: 35, glass: 35, copper: 25, rarities: { legendary: 1 } }
       ]
+    },
+    {
+      id: 'eel', name: '电鳗发电机', icon: '鳗', tone: '#9feeff',
+      desc: '抓钩 +2 秒 · 声呐 +1 次',
+      max: 3, iconImg: 'assets/collectibles/unique/eel-generator.webp',
+      shelter: [3, 4, 5],
+      requires: { collectible: 'eel-generator' },
+      costs: [
+        { credits: 12000, metal: 45, fuel: 40, chip: 25, glass: 20, copper: 20, rarities: { rare: 1 } },
+        { credits: 26000, metal: 70, fuel: 60, chip: 40, glass: 30, copper: 30, rarities: { epic: 1 } },
+        { credits: 50000, metal: 100, fuel: 90, chip: 60, glass: 45, copper: 45, rarities: { epic: 2 } }
+      ]
+    },
+    {
+      id: 'cannon', name: '黄金大炮', icon: '炮', tone: '#ffd166',
+      desc: '所有打捞币收益 +5%',
+      max: 3, iconImg: 'assets/collectibles/unique/golden-cannon.webp',
+      shelter: [4, 4, 5],
+      requires: { collectible: 'golden-cannon' },
+      costs: [
+        { credits: 18000, metal: 60, fuel: 50, chip: 35, glass: 25, copper: 35, rarities: { epic: 1 } },
+        { credits: 36000, metal: 85, fuel: 70, chip: 50, glass: 35, copper: 50, rarities: { epic: 1, legendary: 1 } },
+        { credits: 70000, metal: 120, fuel: 100, chip: 70, glass: 50, copper: 70, rarities: { legendary: 2 } }
+      ]
     }
   ]);
 
@@ -253,7 +277,9 @@
     workshop: '打捞工坊由旧船机舱改造。扳手、焊枪和一台不肯报废的台钳，负责把所有捞回来的东西变成能用的东西。',
     sonar: '声呐阵列最初只是监听站的一根天线。后来它长成了整座避难所的耳朵，替所有人听海底的回声。',
     core: '聚变核心是避难所的心脏。它不发光的时候像一块废铁，亮起来的时候整条船都会安静。',
-    purifier: '净水舱是避难所最干净的房间。海水从一侧进来，盐和铁锈留在滤芯里，清水从另一侧流进每个人的杯子。'
+    purifier: '净水舱是避难所最干净的房间。海水从一侧进来，盐和铁锈留在滤芯里，清水从另一侧流进每个人的杯子。',
+  eel: '电鳗发电机被安置在船尾的铜壳里。电鳗游动时，整条船的灯会跟着明灭，像一颗缓慢呼吸的心脏。',
+  cannon: '黄金大炮架在船首，炮口朝向没有海图的海域。它从不开火，只在发现新的打捞点时鸣响，提醒所有人：又往前走了一点。'
   };
 
   var MISSION_GRADES = (CW.MISSION_GRADES = {
@@ -1230,16 +1256,16 @@
   Hub.prototype.creditMult = function () {
     var setBonus = this.collectionSetBonuses();
     var relic = this.collectionRelicBonuses();
-    return 1 + (this.data.upgrades.workshop || 0) * 0.1 + (this.data.upgrades.purifier || 0) * 0.1 + setBonus.credit + relic.credit;
+    return 1 + (this.data.upgrades.workshop || 0) * 0.1 + (this.data.upgrades.purifier || 0) * 0.1 + (this.data.upgrades.cannon || 0) * 0.05 + setBonus.credit + relic.credit;
   };
   Hub.prototype.materialMult = function () {
     var setBonus = this.collectionSetBonuses();
     var relic = this.collectionRelicBonuses();
     return 1 + (this.data.upgrades.sonar || 0) * 0.12 + (this.data.upgrades.purifier || 0) * 0.05 + setBonus.mat + relic.mat;
   };
-  Hub.prototype.hookTime = function () { return 60 + (this.data.upgrades.core || 0) * 5 + this.collectionRelicBonuses().time; };
+  Hub.prototype.hookTime = function () { return 60 + (this.data.upgrades.core || 0) * 5 + (this.data.upgrades.eel || 0) * 2 + this.collectionRelicBonuses().time; };
   Hub.prototype.matchMoves = function () { return 30 + (this.data.upgrades.core || 0) * 2 + this.collectionRelicBonuses().moves; };
-  Hub.prototype.sonarProbes = function () { return 10 + Math.floor((this.data.upgrades.core || 0) / 2) + this.collectionRelicBonuses().probes; };
+  Hub.prototype.sonarProbes = function () { return 10 + Math.floor((this.data.upgrades.core || 0) / 2) + (this.data.upgrades.eel || 0) + this.collectionRelicBonuses().probes; };
   Hub.prototype.dayNumber = function () { return 1281 + this.data.runs * 2; };
 
   /* ── quality / resize / layout ───────────────────────────── */
@@ -3459,7 +3485,9 @@
       var maxed = level >= up.max;
       var cost = maxed ? null : up.costs[level];
       var needShelter = up.shelter ? (up.shelter[level] || 1) : 1;
-      var locked = !maxed && needShelter > lvl;
+      var reqCollectible = up.requires && up.requires.collectible;
+      var hasRequiredCollectible = !reqCollectible || (this.data.collectibles[reqCollectible] || 0) > 0;
+      var locked = !maxed && (needShelter > lvl || !hasRequiredCollectible);
       var afford = !maxed && !locked && this.canAfford(cost);
       var missingFilter = !!(cost && cost.filters && (this.data.filters || 0) < cost.filters);
       var missingMats = false;
@@ -3504,12 +3532,12 @@
         '<span class="upgrade-icon" style="--tone:' + up.tone + '">' + iconHtml + '<button class="img-detail" data-action="upgrade-detail" data-id="' + up.id + '" aria-label="查看 ' + up.name + ' 档案">i</button></span>' +
         '<div class="upgrade-info">' +
           '<div class="upgrade-name">' + up.name + ' <span class="pips">' + pips + '</span> <span class="upgrade-level">Lv.' + level + '/' + up.max + '</span></div>' +
-          '<div class="upgrade-effect">' + up.desc + '</div>' +
+          '<div class="upgrade-effect">' + up.desc + (reqCollectible ? ' · 核心藏品：' + ((CW.COLLECTIBLE_MAP[reqCollectible] || {}).name || reqCollectible) + (hasRequiredCollectible ? '（已拥有）' : '（未拥有）') : '') + '</div>' +
           '<div class="upgrade-costs">' + (maxed ? '<span class="cost-chip" style="--tone:var(--aqua)">已满级</span>' : chips) + '</div>' +
         '</div>' +
         '<div class="upgrade-actions">' +
           '<button class="buy-btn' + (maxed ? ' max' : '') + '" data-action="upgrade" data-upgrade="' + up.id + '"' +
-            (maxed || locked || !afford ? ' disabled' : '') + '>' + (maxed ? 'MAX' : (locked ? '需避难所 Lv.' + needShelter : (afford ? '强化' : (missingFilter ? '缺过滤器' : '材料不足')))) + '</button>' +
+            (maxed || locked || !afford ? ' disabled' : '') + '>' + (maxed ? 'MAX' : (locked ? (!hasRequiredCollectible ? '需核心藏品' : '需避难所 Lv.' + needShelter) : (afford ? '强化' : (missingFilter ? '缺过滤器' : '材料不足')))) + '</button>' +
           (canSalvage ? '<button class="upgrade-salvage" data-action="upgrade-salvage" data-upgrade="' + up.id + '">藏品补料</button>' : '') +
         '</div>' +
       '</div>';
@@ -3589,6 +3617,12 @@
     if (up.shelter && (up.shelter[level] || 1) > this.shelterLevel()) {
       this.audio.warn();
       this.showToast('LOCKED', '需要更高避难所等级', '先提升避难所等级');
+      return;
+    }
+    if (up.requires && up.requires.collectible && (this.data.collectibles[up.requires.collectible] || 0) < 1) {
+      this.audio.warn();
+      var need = CW.COLLECTIBLE_MAP[up.requires.collectible];
+      this.showToast('ARCHIVE REQUIRED', '缺少设施核心', '需要收藏「' + (need ? need.name : up.requires.collectible) + '」');
       return;
     }
     var cost = up.costs[level];
