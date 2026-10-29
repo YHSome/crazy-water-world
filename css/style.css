@@ -2832,4 +2832,78 @@ body.low-fx .logo { animation: none !important; }
 .story-task-copy > i { display: block; height: 4px; margin-top: 5px; overflow: hidden; border-radius: 99px; background: #e1ebe5; }
 .story-task-copy > i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0f8f8a, #79d8ff); }
 .story-task.ready .story-task-copy > i b { background: linear-gradient(90deg, #ffd166, #ff9b78); }
-.story-task-claim { align-self: flex-start; margin-top: 5px; min-height: 26px; padding: 0 9px; border: 1px solid #e8bd67; border-radius: 7px; background: linear-gradient(135deg, #fff2bd, #ffd166); color: #704415; font-family: var(--mono); font-size: 8px; font-weight: 800; }
+.story-task-claim { align-self: flex-start; margin-top: 5px; min-height: 30px; padding: 0 13px; border: 1px solid #e8bd67; border-radius: 8px; background: linear-gradient(135deg, #fff2bd, #ffd166); color: #704415; font-family: var(--mono); font-size: 9px; font-weight: 800; }
+
+/* ── 可领取奖励高亮 ─────────────────────────────────────── */
+@keyframes claimReadyPulse {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 0 rgba(255, 188, 76, 0.36), 0 0 16px rgba(255, 188, 76, 0.2); }
+  50% { transform: translateY(-1px) scale(1.025); box-shadow: 0 0 0 5px rgba(255, 188, 76, 0.1), 0 0 26px rgba(255, 188, 76, 0.42); }
+}
+@keyframes claimReadyShine {
+  0% { transform: translateX(-130%) skewX(-18deg); }
+  55%, 100% { transform: translateX(160%) skewX(-18deg); }
+}
+.daily-claim.ready,
+.contract-claim.ready,
+.achievement-claim.ready,
+.collection-milestone.ready,
+.crew-btn.claim,
+.claim-ready {
+  position: relative;
+  overflow: visible;
+  animation: claimReadyPulse 1.7s ease-in-out infinite;
+}
+.daily-claim.ready::after,
+.contract-claim.ready::after,
+.achievement-claim.ready::after,
+.collection-milestone.ready::after,
+.crew-btn.claim::after,
+.claim-ready::after {
+  content: '!';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fffdf8;
+  border-radius: 50%;
+  background: #ff6b4a;
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 3px 8px rgba(190, 65, 35, 0.3);
+}
+.daily-claim.ready::before,
+.contract-claim.ready::before,
+.achievement-claim.ready::before,
+.collection-milestone.ready::before,
+.crew-btn.claim::before,
+.claim-ready::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 38%;
+  border-radius: inherit;
+  clip-path: inset(0 round 8px);
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: claimReadyShine 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.daily-claim.ready > *,
+.contract-claim.ready > *,
+.achievement-claim.ready > *,
+.collection-milestone.ready > *,
+.crew-btn.claim > *,
+.claim-ready > * { position: relative; z-index: 2; }
+@media (prefers-reduced-motion: reduce) {
+  .daily-claim.ready, .contract-claim.ready, .achievement-claim.ready,
+  .collection-milestone.ready, .crew-btn.claim, .claim-ready { animation: none; }
+  .daily-claim.ready::before, .contract-claim.ready::before, .achievement-claim.ready::before,
+  .collection-milestone.ready::before, .crew-btn.claim::before, .claim-ready::before { display: none; }
+}
