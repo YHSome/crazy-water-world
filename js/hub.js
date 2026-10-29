@@ -936,15 +936,32 @@
     data.contractRerollUsed = !!raw.contractRerollUsed;
     data.dailyStreak = clamp(Math.floor(Number(raw.dailyStreak) || 0), 0, 999);
     data.lastDailyClaim = typeof raw.lastDailyClaim === 'string' ? raw.lastDailyClaim : '';
-    if (raw.daily && typeof raw.daily === 'object') {
-      var ddef = dailyDef(String(raw.daily.id || ''));
-      if (ddef && raw.daily.date === dayKey()) {
-        data.daily = {
-          date: raw.daily.date,
-          id: ddef.id,
-          progress: clamp(Math.floor(Number(raw.daily.progress) || 0), 0, ddef.target),
-          claimed: !!raw.daily.claimed
-        };
+    if (raw.daily && typeof raw.daily === 'object' && raw.daily.date === dayKey()) {
+      var dailyItems = [];
+      if (Array.isArray(raw.daily.items)) {
+        for (var di = 0; di < raw.daily.items.length && dailyItems.length < 3; di++) {
+          var dit = raw.daily.items[di];
+          var didef = dit && dailyDef(String(dit.id || ''));
+          if (!didef) continue;
+          if (dailyItems.some(function (x) { return x.id === didef.id; })) continue;
+          dailyItems.push({
+            id: didef.id,
+            progress: clamp(Math.floor(Number(dit.progress) || 0), 0, didef.target),
+            claimed: !!dit.claimed
+          });
+        }
+      } else {
+        var oldDailyDef = dailyDef(String(raw.daily.id || ''));
+        if (oldDailyDef) {
+          dailyItems.push({
+            id: oldDailyDef.id,
+            progress: clamp(Math.floor(Number(raw.daily.progress) || 0), 0, oldDailyDef.target),
+            claimed: !!raw.daily.claimed
+          });
+        }
+      }
+      if (dailyItems.length) {
+        data.daily = { date: raw.daily.date, items: dailyItems, bonusClaimed: !!raw.daily.bonusClaimed };
       }
     }
     data.runs = Math.max(0, Math.floor(Number(raw.runs) || 0));
@@ -1551,35 +1568,30 @@
 
   Hub.prototype.renderDailyCard = function () {
     var daily = this.ensureDaily();
-    var def = dailyDef(daily.id);
-    if (!def) return '';
-    var progress = Math.min(def.target, daily.progress || 0);
-    var ready = !daily.claimed && progress >= def.target;
-    var pct = clamp(progress / def.target, 0, 1);
     var streak = this.data.dailyStreak || 0;
-    var reward = def.reward;
-    var mats = [];
-    for (var i = 0; i < MATERIALS.length; i++) {
-      var m = MATERIALS[i];
-      var amount = reward.mats && reward.mats[m.id];
-      if (amount) mats.push('<span><img src="' + m.iconImg + '" alt="">' + m.name + ' +' + amount + '</span>');
+    var html = '<article class="daily-card multi' + (this.dailyReady() ? ' ready' : '') + '">' +
+      '<div class="daily-top"><span>DAILY TIDE · 今日潮汐 · 3 项</span><em>连续 ' + streak + ' 天</em></div><div class="daily-list">';
+    for (var i = 0; i < daily.items.length; i++) {
+      var item = daily.items[i];
+      var def = dailyDef(item.id);
+      if (!def) continue;
+      var progress = Math.min(def.target, item.progress || 0);
+      var ready = !item.claimed && progress >= def.target;
+      var pct = clamp(progress / def.target, 0, 1);
+      html += '<div class="daily-item' + (ready ? ' ready' : '') + (item.claimed ? ' claimed' : '') + '">' +
+        '<div class="daily-main"><div class="daily-icon"><img src="' + def.iconImg + '" alt="" loading="lazy" decoding="async"></div>' +
+        '<div class="daily-copy"><b>' + def.name + '</b><p>' + def.desc + '</p></div></div>' +
+        '<div class="daily-progress"><i style="width:' + (pct * 100).toFixed(1) + '%"></i></div>' +
+        '<div class="daily-foot"><span class="daily-count">' + progress + ' / ' + def.target + '</span>' +
+        '<span class="daily-credit">+' + def.reward.credits + ' 币</span>' +
+        '<button class="daily-claim' + (ready ? ' ready' : '') + '" data-action="claim-daily" data-daily="' + item.id + '"' + (ready ? '' : ' disabled') + '>' +
+        (item.claimed ? '已领取' : ready ? '领取' : '进行中') + '</button></div></div>';
     }
-    var stateText = daily.claimed ? '今日已领取' : ready ? '可领取' : '进行中';
-    return '<article class="daily-card' + (ready ? ' ready' : '') + (daily.claimed ? ' claimed' : '') + '">' +
-      '<div class="daily-top"><span>DAILY TIDE · 今日潮汐</span><em>连续 ' + streak + ' 天</em></div>' +
-      '<div class="daily-main">' +
-        '<div class="daily-icon"><img src="' + def.iconImg + '" alt=""></div>' +
-        '<div class="daily-copy"><b>' + def.name + '</b><p>' + def.desc + '</p></div>' +
-      '</div>' +
-      '<div class="daily-progress"><i style="width:' + (pct * 100).toFixed(1) + '%"></i></div>' +
-      '<div class="daily-foot">' +
-        '<span class="daily-count">' + progress + ' / ' + def.target + ' · ' + stateText + '</span>' +
-        '<div class="daily-rewards"><span class="daily-credit">打捞币 +' + reward.credits + '</span>' + mats.join('') + '</div>' +
-      '</div>' +
-      '<button class="daily-claim' + (ready ? ' ready' : '') + '" data-action="claim-daily"' + (ready ? '' : ' disabled') + '>' +
-        (daily.claimed ? '今日已完成' : ready ? '领取今日奖励' : '继续打捞') +
-      '</button>' +
-    '</article>';
+    var allClaimed = daily.items.every(function (x) { return x.claimed; });
+    html += '</div><div class="daily-clear' + (daily.bonusClaimed ? ' done' : '') + '">' +
+      (daily.bonusClaimed ? '三单全清 · 今日额外补给已领取' : allClaimed ? '三单全清 · +240 打捞币（已随最后一单发放）' : '三项全部领取后额外 +240 打捞币 · 废铁 4 · 纤维 4 · 芯片 2') +
+      '</div></article>';
+    return html;
   };
 
   Hub.prototype.crewJob = function (id) {
@@ -2109,20 +2121,60 @@
     return n;
   };
 
+  Hub.prototype.dailySetIds = function () {
+    var pool = DAILY_CHALLENGES.length;
+    var ids = [];
+    var start = mod(dayNumber() * 3, pool);
+    var step = 3;
+    while (gcd(step, pool) !== 1) step += 1;
+    for (var i = 0; i < 3; i++) {
+      var idx = mod(start + i * step, pool);
+      var guard = 0;
+      while (ids.indexOf(DAILY_CHALLENGES[idx].id) >= 0 && guard < pool) { idx = mod(idx + 1, pool); guard++; }
+      ids.push(DAILY_CHALLENGES[idx].id);
+    }
+    return ids;
+  };
+
   Hub.prototype.ensureDaily = function () {
     var today = dayKey();
-    if (!this.data.daily || this.data.daily.date !== today) {
-      var def = DAILY_CHALLENGES[mod(dayNumber(), DAILY_CHALLENGES.length)];
-      this.data.daily = { date: today, id: def.id, progress: 0, claimed: false };
+    if (!this.data.daily || this.data.daily.date !== today || !Array.isArray(this.data.daily.items)) {
+      var ids = this.dailySetIds();
+      this.data.daily = {
+        date: today,
+        items: ids.map(function (id) { return { id: id, progress: 0, claimed: false }; }),
+        bonusClaimed: false
+      };
+    } else {
+      var present = {};
+      for (var i = 0; i < this.data.daily.items.length; i++) present[this.data.daily.items[i].id] = true;
+      var wanted = this.dailySetIds();
+      for (var w = 0; w < wanted.length; w++) {
+        if (present[wanted[w]]) continue;
+        this.data.daily.items.push({ id: wanted[w], progress: 0, claimed: false });
+      }
+      if (this.data.daily.items.length > 3) this.data.daily.items = this.data.daily.items.slice(0, 3);
+      if (this.data.daily.items.every(function (x) { return x.claimed; })) this.data.daily.bonusClaimed = true;
     }
     return this.data.daily;
   };
 
   Hub.prototype.dailyReady = function () {
     var daily = this.ensureDaily();
-    var def = dailyDef(daily.id);
-    return !!(def && !daily.claimed && daily.progress >= def.target);
+    for (var i = 0; i < daily.items.length; i++) {
+      var item = daily.items[i];
+      var def = dailyDef(item.id);
+      if (def && !item.claimed && item.progress >= def.target) return true;
+    }
+    if (!daily.bonusClaimed && daily.items.every(function (x) { return x.claimed; })) return true;
+    return false;
   };
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b) { var t = b; b = a % b; a = t; }
+    return a || 1;
+  }
 
   Hub.prototype.dailyValue = function (def, result) {
     switch (def.metric) {
@@ -2141,39 +2193,60 @@
 
   Hub.prototype.applyDailyProgress = function (result) {
     var daily = this.ensureDaily();
-    if (daily.claimed) return;
-    var def = dailyDef(daily.id);
-    if (!def) return;
-    var value = this.dailyValue(def, result);
-    if (def.mode === 'max') daily.progress = Math.max(daily.progress || 0, value);
-    else daily.progress = Math.min(def.target, (daily.progress || 0) + value);
+    for (var i = 0; i < daily.items.length; i++) {
+      var item = daily.items[i];
+      if (item.claimed) continue;
+      var def = dailyDef(item.id);
+      if (!def) continue;
+      var value = this.dailyValue(def, result);
+      if (def.mode === 'max') item.progress = Math.max(item.progress || 0, value);
+      else item.progress = Math.min(def.target, (item.progress || 0) + value);
+    }
   };
 
-  Hub.prototype.claimDaily = function () {
+  Hub.prototype.claimDaily = function (dailyId) {
     var daily = this.ensureDaily();
-    var def = dailyDef(daily.id);
-    if (!def || daily.claimed || daily.progress < def.target) return;
-    daily.claimed = true;
+    var item = null;
+    for (var i = 0; i < daily.items.length; i++) {
+      if (!dailyId || daily.items[i].id === dailyId) {
+        if (!item) item = daily.items[i];
+      }
+    }
+    if (!item) return;
+    var def = dailyDef(item.id);
+    if (!def || item.claimed || item.progress < def.target) return;
+    item.claimed = true;
     var today = dayKey();
     var last = this.data.lastDailyClaim;
+    var firstToday = last !== today;
     var streak = this.data.dailyStreak || 0;
-    if (last) {
-      var diff = dayNumber() - dayNumber(parseDayKey(last));
-      if (diff === 1) streak += 1;
-      else if (diff <= 0) streak = Math.max(1, streak);
-      else streak = 1;
-    } else {
-      streak = 1;
+    var bonus = 0;
+    if (firstToday) {
+      if (last) {
+        var diff = dayNumber() - dayNumber(parseDayKey(last));
+        if (diff === 1) streak += 1;
+        else if (diff <= 0) streak = Math.max(1, streak);
+        else streak = 1;
+      } else {
+        streak = 1;
+      }
+      bonus = Math.min(3, Math.max(0, streak - 1)) * 40;
+      this.data.dailyStreak = streak;
+      this.data.lastDailyClaim = today;
     }
-    var bonus = Math.min(3, Math.max(0, streak - 1)) * 40;
-    this.data.dailyStreak = streak;
-    this.data.lastDailyClaim = today;
     var reward = this.grantContractReward({
       credits: (def.reward.credits || 0) + bonus,
       mats: def.reward.mats || {}
     });
+    var allClaimed = daily.items.every(function (x) { return x.claimed; });
+    var clearBonus = null;
+    if (allClaimed && !daily.bonusClaimed) {
+      daily.bonusClaimed = true;
+      clearBonus = this.grantContractReward({ credits: 240, mats: { metal: 4, fiber: 4, chip: 2 } });
+    }
     this.audio.claim();
-    this.showToast('DAILY TIDE', '连续 ' + streak + ' 天 · ' + def.name, '+' + fmt(reward.credits) + ' 打捞币' + (reward.overflow ? ' · 仓库溢出已折算' : ''));
+    this.showToast('DAILY TIDE', (firstToday ? '连续 ' + streak + ' 天 · ' : '') + def.name,
+      '+' + fmt(reward.credits) + ' 打捞币' + (clearBonus ? ' · 三单全清 +' + fmt(clearBonus.credits) : '') + (reward.overflow ? ' · 仓库溢出已折算' : ''));
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -3971,7 +4044,7 @@
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
         else if (action === 'reroll-contracts') self.rerollContracts();
-        else if (action === 'claim-daily') self.claimDaily();
+        else if (action === 'claim-daily') self.claimDaily(actionEl.getAttribute('data-daily'));
         else if (action === 'craft') self.craft(actionEl.getAttribute('data-rarity'));
         else if (action === 'claim-achievement') self.claimAchievement(actionEl.getAttribute('data-id'));
         else if (action === 'shelter-view') {
