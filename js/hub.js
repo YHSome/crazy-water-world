@@ -2499,6 +2499,41 @@
     this.showToast('COLLECTION DISMANTLED', def.name, '分解为材料' + (gained.overflow ? ' · 仓库溢出已折算' : ''));
   };
 
+  Hub.prototype.dismantleDuplicates = function () {
+    var map = this.data.collectibles || {};
+    var mats = {};
+    var total = 0;
+    for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
+      var item = CW.COLLECTIBLES[i];
+      if (item.special) continue;
+      var count = map[item.id] || 0;
+      if (count <= 1) continue;
+      var take = count - 1;
+      var yieldMats = CW.DISMANTLE_YIELDS[item.rarity] || {};
+      for (var k in yieldMats) {
+        if (Object.prototype.hasOwnProperty.call(yieldMats, k)) mats[k] = (mats[k] || 0) + yieldMats[k] * take;
+      }
+      map[item.id] = 1;
+      total += take;
+    }
+    if (!total) {
+      this.audio.warn();
+      this.showToast('NO DUPLICATES', '没有可分解的重复件', '每件普通收藏至少保留 1 份');
+      return;
+    }
+    var gained = this.grantContractReward({ credits: 0, mats: mats });
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    this.audio.dismantle();
+    var parts = [];
+    for (var mi = 0; mi < MATERIALS.length; mi++) {
+      var m = MATERIALS[mi];
+      if (mats[m.id]) parts.push(m.name + ' +' + mats[m.id]);
+    }
+    this.showToast('DUPLICATES DISMANTLED', '批量分解 ' + total + ' 件', parts.join(' · ') + (gained.overflow ? ' · 仓库溢出已折算' : ''));
+  };
+
   Hub.prototype.sellMaterials = function (qty) {
     qty = Math.max(1, Math.floor(Number(qty) || 10));
     var left = qty;
@@ -3130,10 +3165,12 @@
     relicHtml += '</div><div class="relic-bonus">' +
       (bonusParts.length ? '本局加成 · ' + bonusParts.join(' · ') : '尚未装备藏品 · 在下方收藏卡点击「装备」') +
       '</div></div>';
-    var auctionHtml = '<div class="auction-bar"><div class="auction-copy"><b>拍卖重复件</b><span>每件保留 1 份，余量换成打捞币；已装备的藏品也会保留。</span></div>' +
+    var auctionHtml = '<div class="auction-bar"><div class="auction-copy"><b>处理重复件</b><span>每件保留 1 份；拍卖换打捞币，分解换材料。已装备的藏品也会保留。</span></div><div class="auction-actions">' +
       '<button class="auction-btn" data-action="auction-duplicates"' + (dup.count ? '' : ' disabled') + '>' +
       (dup.count ? '拍卖 ' + dup.count + ' 件 · +' + fmt(dup.value) : '暂无重复件') +
-      '</button></div>';
+      '</button>' +
+      '<button class="dismantle-dup-btn" data-action="dismantle-duplicates"' + (dup.count ? '' : ' disabled') + '>分解 ' + (dup.count || 0) + ' 件</button>' +
+      '</div></div>';
     var milestoneHtml = '<div class="collection-milestones"><div class="collection-milestone-head"><span>图鉴里程碑</span><small>已发现 ' + unique + ' / ' + CW.COLLECTIBLES.length + '</small></div><div class="collection-milestone-list">';
     for (var cm = 0; cm < COLLECTION_MILESTONES.length; cm++) {
       var ms = COLLECTION_MILESTONES[cm];
@@ -3959,6 +3996,7 @@
         else if (action === 'claim-collection-milestone') self.claimCollectionMilestone(Number(actionEl.getAttribute('data-count')));
         else if (action === 'claim-set-reward') self.claimSetReward(actionEl.getAttribute('data-set'));
         else if (action === 'auction-duplicates') self.auctionDuplicates();
+        else if (action === 'dismantle-duplicates') self.dismantleDuplicates();
         else if (action === 'sell-materials') self.sellMaterials(10);
         else if (action === 'upgrade-salvage') self.salvageForUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'dismantle') self.dismantle(actionEl.getAttribute('data-id'));
