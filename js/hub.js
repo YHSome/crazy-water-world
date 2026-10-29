@@ -112,7 +112,7 @@
     {
       id: 'eel', name: '电鳗发电机', icon: '鳗', tone: '#9feeff',
       desc: '抓钩 +2 秒 · 声呐 +1 次',
-      max: 3, iconImg: 'assets/collectibles/unique-v2/eel-generator.webp',
+      max: 3, iconImg: 'assets/collectibles/unique-v2/eel-generator.webp?v=102',
       shelter: [3, 4, 5],
       requires: { collectible: 'eel-generator' },
       costs: [
@@ -124,7 +124,7 @@
     {
       id: 'cannon', name: '黄金大炮', icon: '炮', tone: '#ffd166',
       desc: '所有打捞币收益 +5%',
-      max: 3, iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp',
+      max: 3, iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp?v=102',
       shelter: [4, 4, 5],
       requires: { collectible: 'golden-cannon' },
       costs: [
@@ -182,7 +182,7 @@
       tags: ['6 箱', '吊装', '保险箱'], stat: 'time', goal: '码好 6 只货箱'
     },
     {
-      id: 'gunnery', name: '黄金炮击', icon: '炮', iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp', kicker: 'MISSION 10',
+      id: 'gunnery', name: '黄金炮击', icon: '炮', iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp?v=102', kicker: 'MISSION 10',
       desc: '把黄金大炮架上船首，瞄准海面漂来的货箱；水雷会炸掉时间，金条箱能带来额外收获。',
       tags: ['45 秒', '炮击', '金条'], stat: 'time', goal: '击中来袭物资'
     }
