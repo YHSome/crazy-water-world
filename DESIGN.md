@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.11.1 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.12 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -368,7 +368,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 
 ### 8.7 沉船收藏与合成
 
-- 38 件收藏档案，5 个稀有度：普通 11 / 精良 9 / 稀有 7 / 史诗 6 / 传说 5；普通收藏保存为 `collectibles`，过滤器使用 `filters`，声呐核心 / 耐压阀 / 潮汐电池使用 `specials`。
+- 100 件收藏档案，5 个稀有度：普通 35 / 精良 27 / 稀有 19 / 史诗 12 / 传说 7；普通收藏保存为 `collectibles`，过滤器使用 `filters`，声呐核心 / 耐压阀 / 潮汐电池使用 `specials`。每件收藏使用独立 `assets/collectibles/unique/<id>.webp` 图片。
 - 收藏品与消耗品**同级**，直接混在原有掉落表中，而不是额外的特殊物件：
   - 抓钩：普通海床物品槽约 5% 直接生成为收藏品；抓回即获得，不额外占一个物品位。
   - 三消：每盘固定混入 2 个收藏品方块，与废料方块同级；消除时获得 1 件收藏。
@@ -395,7 +395,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 - 收藏筛选：`collectionFilter` 为 all / owned / set / special；未拥有项恒不渲染，筛选后空稀有度分组隐藏，旧 `missing` 状态自动回 all。
 - 收藏追踪：`trackedCollection` 保存目标 id；详情内切换；任务页 `renderTrackCard()` 显示来源任务按钮，点击走 `startMission`。
 - 来源映射：普通收藏 `hook/match/sonar/trawl`，升级件 `hook/match`，过滤器 `hook/sonar`。
-- 图鉴里程碑：5/10/20/30/38 件，手动领取；记录 `collectionMilestones`。奖励走 `grantContractReward`，38 件额外发放过滤器。
+- 图鉴里程碑：5/10/25/50/75/100 件，手动领取；记录 `collectionMilestones`。奖励走 `grantContractReward`，75 件发 1 台过滤器，100 件发 2 台。
 - 套装完成奖励：航海官 / 深潜者 / 船长遗物各一份一次性奖励，记录 `setRewards`；未集齐不可领取，已领取不可重复。
 - 合成台：3 件同稀有度 + 打捞币 → 1 件下一稀有度；费用 150 / 400 / 1,000 / 2,500。
 - 合成随机产出下一稀有度的任意收藏；重复件优先消耗数量最多的藏品。
@@ -420,7 +420,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 ### 8.9 航海日志与长期成就
 
 - 避难所标签内部切换「扩建 / 航海日志」，沿用仓库的子视图模式，保持在现有五项导航内。
-- 25 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔 / 拖网 / 潜航 / 吊装首次完成 + 「九面手」+「第一枚 S」+「九项全能 S」+「独当一面」+「传奇船队」+ 避难所 Lv.5 / 工具 Lv.3 / 远征 1・10 次 / 急单 10 笔 / 五套奖励 / 完整 38 件档案。
+- 25 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔 / 拖网 / 潜航 / 吊装首次完成 + 「九面手」+「第一枚 S」+「九项全能 S」+「独当一面」+「传奇船队」+ 避难所 Lv.5 / 工具 Lv.3 / 远征 1・10 次 / 急单 10 笔 / 五套奖励 / 完整 100 件档案。
 - 新增统计：`stats.expeditionRuns`、`stats.urgentOrders`；`shelterLevel`、`crewGearMax`、`setRewardsCount`、`collectionUnique` 作为成就指标。
 - `stats` 记录 `bestCombo / sonarPerfect / filtersFound / collectiblesFound / creditsEarned / safeTotal / goldTotal / cutRuns / sortRuns / beaconRuns`，并用 `grades / sGrades` 保存最佳评级与首次 S。
 - 成就奖励打捞币与材料；每个成就 `achievements[id]=true` 后不可重复领取。
@@ -572,7 +572,7 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 
 ```text
 audio.js      本地 BGM / 程序化音景 / 音效
-collectibles.js 38 件收藏、稀有度、权重与合成配方
+collectibles.js 100 件收藏、稀有度、权重与合成配方
 hub.js        localStorage、经济、仓库、过滤器、扩建、Hub 界面
 hub-scene.js  照片背景合成、雨、光照与暗角
 arcade.js     小游戏外壳 + 沉城抓钩 + 稀有过滤器
@@ -620,6 +620,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
