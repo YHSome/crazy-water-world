@@ -307,6 +307,39 @@
   cannon: '黄金大炮架在船首，炮口朝向没有海图的海域。它从不开火，只在发现新的打捞点时鸣响，提醒所有人：又往前走了一点。'
   };
 
+  CW.STORY_CHAPTERS = [
+    {
+      id: 'rusted-badge', no: '第一章', title: '锈船牌', metric: 'runs', target: 1,
+      img: 'assets/bg-hook.webp', kicker: '潮水留下的名字',
+      reward: { credits: 300, mats: { metal: 4, fiber: 3 } },
+      paras: [
+        '第一船物资卸下后，阿盐把那枚锈船牌放进淡水里泡了一夜。第二天，牌面上的盐壳裂开，露出两个模糊的字：疯狂。',
+        '“这不是你的名字。”阿盐说，“但船认下了你。从今天起，你可以在第三层甲板留一盏灯。”',
+        '她没有再解释这艘船以前属于谁。你只知道，下一次潮水来之前，疯狂号需要更多东西。'
+      ]
+    },
+    {
+      id: 'ten-finds', no: '第二章', title: '十件旧物', metric: 'unique', target: 10,
+      img: 'assets/collectibles/unique-v2/captain-log.webp?v=102', kicker: '每一件都有人用过',
+      reward: { credits: 800, mats: { metal: 8, glass: 5, chip: 3 } },
+      paras: [
+        '十件旧物摆上藏品室的长桌：怀表停在三点十七分，罗盘的北针弯了，航海日志缺了中间几页。',
+        '阿盐逐件翻看，最后把日志合上：“它们不是宝藏，是别人没来得及带走的生活。”',
+        '“继续捞。”她说，“等这张桌子摆满，我们也许能拼出疯狂号以前去过哪里。”'
+      ]
+    },
+    {
+      id: 'new-deck', no: '第三章', title: '第三层甲板', metric: 'shelter', target: 3,
+      img: 'assets/bg-hub.webp', kicker: '船开始像家了',
+      reward: { credits: 1500, mats: { metal: 15, fiber: 12, chip: 6 } },
+      paras: [
+        '避难所升到第三层时，甲板终于不再一到夜里就吱呀作响。有人用旧船板钉了一张长桌，孩子们把捡来的贝壳排在桌角。',
+        '阿盐站在栏杆边，望着没有尽头的海面：“疯狂号以前是一艘找人的船。现在它还是一艘找人的船。”',
+        '她把一盏灯递给你。灯罩上刻着一行小字，被海风磨得只剩最后几个笔画。你决定明天再下一次海。'
+      ]
+    }
+  ];
+
   var TASK_CREDIT_SCALE = (CW.TASK_CREDIT_SCALE = {
     hook: 0.8, match: 0.8, sonar: 0.8, cut: 0.8, sort: 0.8, beacon: 0.8,
     trawl: 0.5, dive: 0.5, stack: 0.7, gunnery: 0.65
@@ -811,6 +844,7 @@
       v: 1,
       started: false,
       tutorialStep: 'intro',
+      storyClaimed: {},
       credits: 0,
       materials: { metal: 0, fuel: 0, fiber: 0, chip: 0, glass: 0, copper: 0 },
       filters: 0,
@@ -879,6 +913,12 @@
     data.tutorialStep = tutorialSteps.indexOf(raw.tutorialStep) >= 0
       ? raw.tutorialStep
       : (raw.started ? 'done' : 'intro');
+    data.storyClaimed = {};
+    if (raw.storyClaimed && typeof raw.storyClaimed === 'object') {
+      for (var sk in raw.storyClaimed) {
+        if (Object.prototype.hasOwnProperty.call(raw.storyClaimed, sk) && raw.storyClaimed[sk]) data.storyClaimed[sk] = true;
+      }
+    }
     data.credits = Math.max(0, Number(raw.credits) || 0);
     data.filters = Math.max(0, Math.floor(Number(raw.filters) || 0));
     data.filterPity = clamp(Math.floor(Number(raw.filterPity) || 0), 0, 7);
@@ -2096,7 +2136,7 @@
   };
 
   Hub.prototype.renderTasks = function () {
-    var html = this.renderDailyCard() + this.renderTaskChain() + this.renderTrackCard() + '<div class="mission-list">';
+    var html = this.renderDailyCard() + this.renderStoryLog() + this.renderTaskChain() + this.renderTrackCard() + '<div class="mission-list">';
     var activeIds = Array.isArray(this.data.activeMissions) ? this.data.activeMissions : [];
     for (var i = 0; i < activeIds.length; i++) {
       var m = this.missionById(activeIds[i]);
@@ -3002,6 +3042,83 @@
     this.tutorialStoryOpen = false;
     this.data.tutorialStep = 'done';
     this.hideTutorialCoach();
+    this.closeStoryDetail();
+    this.saveGame();
+    this.renderPanel();
+  };
+
+  Hub.prototype.storyChapterMetric = function (chapter) {
+    if (chapter.metric === 'runs') return this.data.runs || 0;
+    if (chapter.metric === 'unique') return this.collectionUnique();
+    if (chapter.metric === 'shelter') return this.shelterLevel();
+    return 0;
+  };
+
+  Hub.prototype.storyChapterReady = function (chapter) {
+    if (this.data.storyClaimed[chapter.id]) return true;
+    var reached = this.storyChapterMetric(chapter) >= chapter.target;
+    var idx = CW.STORY_CHAPTERS.indexOf(chapter);
+    var previous = idx > 0 ? this.data.storyClaimed[CW.STORY_CHAPTERS[idx - 1].id] : true;
+    return reached && previous;
+  };
+
+  Hub.prototype.renderStoryLog = function () {
+    var active = null;
+    for (var i = 0; i < CW.STORY_CHAPTERS.length; i++) {
+      if (!this.data.storyClaimed[CW.STORY_CHAPTERS[i].id]) { active = CW.STORY_CHAPTERS[i]; break; }
+    }
+    if (!active) {
+      return '<div class="story-log done"><span>MAIN LOG · 航海日志</span><b>主线已读完</b><p>疯狂号的故事还在继续，下一段等潮水送来。</p></div>';
+    }
+    var have = this.storyChapterMetric(active);
+    var pct = clamp(have / active.target, 0, 1);
+    var ready = this.storyChapterReady(active);
+    var prevIdx = CW.STORY_CHAPTERS.indexOf(active) - 1;
+    var unlocked = ready || (prevIdx < 0 || this.data.storyClaimed[CW.STORY_CHAPTERS[prevIdx].id]);
+    return '<article class="story-log' + (ready ? ' ready' : '') + '">' +
+      '<span>MAIN LOG · 航海日志 · ' + active.no + '</span>' +
+      '<b>' + active.title + '</b>' +
+      '<p>' + (unlocked ? '故事已可阅读。' : '先完成上一章，再回到这里。') + ' · ' + Math.min(have, active.target) + ' / ' + active.target + '</p>' +
+      '<i><b style="width:' + (pct * 100).toFixed(1) + '%"></b></i>' +
+      '<button data-action="story-chapter" data-id="' + active.id + '"' + (unlocked ? '' : ' disabled') + '>' + (ready ? '继续故事' : unlocked ? '阅读故事' : '尚未解锁') + '</button>' +
+      '</article>';
+  };
+
+  Hub.prototype.openStoryChapter = function (id) {
+    var chapter = null;
+    for (var i = 0; i < CW.STORY_CHAPTERS.length; i++) if (CW.STORY_CHAPTERS[i].id === id) chapter = CW.STORY_CHAPTERS[i];
+    if (!chapter || !this.dom.storyBody) return;
+    this.tutorialStoryOpen = false;
+    var claimed = !!this.data.storyClaimed[id];
+    var ready = this.storyChapterReady(chapter);
+    var paras = '';
+    for (var p = 0; p < chapter.paras.length; p++) paras += '<p>' + chapter.paras[p] + '</p>';
+    var mats = '';
+    for (var m = 0; m < MATERIALS.length; m++) {
+      var amount = chapter.reward.mats && chapter.reward.mats[MATERIALS[m].id];
+      if (amount) mats += '<span><img src="' + MATERIALS[m].iconImg + '" alt="">' + MATERIALS[m].name + ' +' + amount + '</span>';
+    }
+    this.dom.storyBody.innerHTML = '<div class="tutorial-story story-chapter">' +
+      '<div class="tutorial-story-art"><img src="' + chapter.img + '" alt=""><span>' + chapter.kicker + '</span></div>' +
+      '<div class="tutorial-story-copy"><span class="tutorial-story-kicker">MAIN LOG · ' + chapter.no + '</span>' +
+      '<h3>' + chapter.title + '</h3>' + paras +
+      '<div class="story-reward"><b>+ ' + fmt(chapter.reward.credits) + ' 打捞币</b>' + mats + '</div>' +
+      '<div class="story-actions"><button class="story-action" data-action="story-close">' + (claimed ? '已记录' : '稍后再看') + '</button>' +
+      (claimed ? '' : '<button class="story-action primary" data-action="claim-story" data-id="' + chapter.id + '"' + (ready ? '' : ' disabled') + '>' + (ready ? '记录并领取' : '尚未解锁') + '</button>') +
+      '</div></div></div>';
+    this.dom.storyModal.classList.remove('hidden');
+    this.dom.storyModal.setAttribute('aria-hidden', 'false');
+    this.audio.tab();
+  };
+
+  Hub.prototype.claimStoryChapter = function (id) {
+    var chapter = null;
+    for (var i = 0; i < CW.STORY_CHAPTERS.length; i++) if (CW.STORY_CHAPTERS[i].id === id) chapter = CW.STORY_CHAPTERS[i];
+    if (!chapter || this.data.storyClaimed[id] || !this.storyChapterReady(chapter)) return;
+    this.data.storyClaimed[id] = true;
+    var reward = this.grantContractReward(chapter.reward);
+    this.audio.claim();
+    this.showToast('MAIN LOG', chapter.no + ' · ' + chapter.title, '+' + fmt(reward.credits) + ' 打捞币 · 已记入航海日志');
     this.closeStoryDetail();
     this.saveGame();
     this.renderPanel();
@@ -4390,6 +4507,8 @@
         else if (action === 'tutorial-story-next') self.tutorialStoryNext();
         else if (action === 'tutorial-action') self.tutorialAction();
         else if (action === 'tutorial-skip') self.skipTutorial();
+        else if (action === 'story-chapter') self.openStoryChapter(actionEl.getAttribute('data-id'));
+        else if (action === 'claim-story') self.claimStoryChapter(actionEl.getAttribute('data-id'));
         else if (action === 'arcade-story' && self.arcade && self.arcade.type) self.openStoryDetail('mission', self.arcade.type);
         else if (action === 'story-start-mission') {
           var storyMission = actionEl.getAttribute('data-mission');
