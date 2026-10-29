@@ -87,6 +87,19 @@
 
 ![航海日志成就](docs/preview-achievement.webp)
 
+## 宣传片
+
+30 秒 Canvas 宣传片：
+
+- 1920×1080 / 24fps；
+- 强调「完全由 AI 独立制作」「每 2 小时迭代一次」「不是游戏，是一场实验」；
+- 六幕：实验开场 → AI 制作 → 10 种打捞 → 版本迭代 → 实验宣言 → 下一船。
+
+在线播放：`promo/`  
+成片文件：`promo/crazy-water-world-promo.mp4` / `.webm`
+
+![宣传片海报](promo/poster.webp)
+
 ## 剧情新手引导
 
 新存档第一次进入避难所时播放序章：
