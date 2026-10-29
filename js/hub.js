@@ -2136,7 +2136,7 @@
   };
 
   Hub.prototype.renderTasks = function () {
-    var html = this.renderDailyCard() + this.renderStoryLog() + this.renderTaskChain() + this.renderTrackCard() + '<div class="mission-list">';
+    var html = '<section class="mission-deck"><div class="mission-deck-head"><span>CORE SALVAGE · 核心打捞</span><b>选一个打捞点，直接出海</b><em>3 个打捞点</em></div><div class="mission-list">';
     var activeIds = Array.isArray(this.data.activeMissions) ? this.data.activeMissions : [];
     for (var i = 0; i < activeIds.length; i++) {
       var m = this.missionById(activeIds[i]);
@@ -2164,7 +2164,8 @@
         '<button class="mission-btn" data-action="mission" data-mission="' + m.id + '">开始打捞</button>' +
       '</article>';
     }
-    html += '</div>';
+    html += '</div></section><div class="task-support-divider"><span>DAILY & STORY</span><b>今日事务</b><em>任务、剧情与连携</em></div>' +
+      this.renderDailyCard() + this.renderStoryLog() + this.renderTaskChain() + this.renderTrackCard();
     this.dom.panelContent.innerHTML = html;
   };
 
