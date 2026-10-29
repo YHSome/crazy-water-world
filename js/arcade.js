@@ -594,6 +594,9 @@
     if (this.permit) {
       chips += '<span class="summary-chip permit" style="--tone:' + this.permit.color + '">许可 · ' + this.permit.name + '</span>';
     }
+    if (this.applied.recommended) {
+      chips += '<span class="summary-chip recommend" style="--tone:#e0a13c">今日推荐 · +20%' + (this.applied.recommendBonus ? ' · 首胜 +1 收藏' : '') + '</span>';
+    }
     if (this.hub.data.equipped && this.hub.data.equipped.length) {
       chips += '<span class="summary-chip relic" style="--tone:#18b8b0">藏品 · ' + this.hub.data.equipped.length + ' 件</span>';
     }
