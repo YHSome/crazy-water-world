@@ -122,9 +122,10 @@
 
   for (var ti = 0; ti < COLLECTIBLES.length; ti++) {
     var titem = COLLECTIBLES[ti];
-    titem.thumb = titem.id === 'seawater-filter'
+    titem.thumb = (titem.id === 'seawater-filter'
       ? 'assets/collectibles/thumbs/seawater-filter.webp'
-      : 'assets/collectibles/thumbs/' + titem.id + '.webp';
+      : 'assets/collectibles/thumbs/' + titem.id + '.webp') + '?v=102';
+    if (titem.icon.indexOf('?') < 0) titem.icon += '?v=102';
   }
   var MAP = (CW.COLLECTIBLE_MAP = {});
   for (var i = 0; i < COLLECTIBLES.length; i++) MAP[COLLECTIBLES[i].id] = COLLECTIBLES[i];
