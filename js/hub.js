@@ -2795,6 +2795,29 @@
     };
   };
 
+  Hub.prototype.marketCollectibleFeatured = function (tick) {
+    var t = tick === undefined ? marketTick() : tick;
+    var pool = [];
+    for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
+      if (!CW.COLLECTIBLES[i].special) pool.push(CW.COLLECTIBLES[i]);
+    }
+    if (!pool.length) return [];
+    var start = marketHash('featured:' + t) % pool.length;
+    var picks = [];
+    var step = 17;
+    while (gcd(step, pool.length) !== 1) step += 1;
+    for (var k = 0; k < 6 && k < pool.length; k++) {
+      var idx = (start + k * step) % pool.length;
+      var guard = 0;
+      while (picks.indexOf(pool[idx]) >= 0 && guard < pool.length) {
+        idx = (idx + 1) % pool.length;
+        guard++;
+      }
+      picks.push(pool[idx]);
+    }
+    return picks;
+  };
+
   Hub.prototype.marketCollectibleQuote = function (def, tick) {
     var base = MARKET_COLLECTIBLE_BASE[def.rarity] || 200;
     var t = tick === undefined ? marketTick() : tick;
@@ -3089,10 +3112,10 @@
     html += '<div class="market-urgent' + (urgent.done ? ' done' : '') + '"><img src="' + urgent.icon + '" alt=""><div class="market-urgent-copy"><span>DOCK ORDER · 码头急单</span><b>' + (urgent.done ? '本单已交付' : '收购 ' + urgent.qty + ' × ' + urgent.name) + '</b><p>' + (urgent.done ? '下一单即将刷新 · ' : urgentStreakText + '净价 ' + fmt(urgent.unit) + '/件 · ') + '剩余 <em id="market-urgent-val">' + urgentSecs + '</em>s · 持有 ' + urgentHave + '</p></div>' +
       '<button data-action="market-urgent"' + (urgent.done || urgentHave < urgent.qty ? ' disabled' : '') + '>' + (urgent.done ? '已交付' : urgentHave < urgent.qty ? '数量不足' : '交付 · +' + fmt(urgent.total)) + '</button></div>';
     if (this.marketTab === 'collectibles') {
-      html += '<div class="market-note">买下藏品会直接进入档案；挂单按你定的价格撮合，拍卖则可能捡漏也可能砸价。</div><div class="market-items">';
-      for (var i = 0; i < CW.COLLECTIBLES.length; i++) {
-        var item = CW.COLLECTIBLES[i];
-        if (item.special) continue;
+      var featured = this.marketCollectibleFeatured(tick);
+      html += '<div class="market-note">本期货架只摆 6 种藏品，每 20 秒换一批；买入受藏品格限制。卖出不受货架限制，下方可卖任意已拥有藏品。</div><div class="market-items">';
+      for (var i = 0; i < featured.length; i++) {
+        var item = featured[i];
         var quote = this.marketCollectibleQuote(item, tick);
         var owned = (this.data.collectibles[item.id] || 0);
         var trend = quote.buy - Math.round((quote.prev || quote.price) * (1 + MARKET_FEE_BUY));
@@ -3104,7 +3127,20 @@
             (owned > 0 ? '<button class="market-list" data-action="market-list" data-id="' + item.id + '">挂单</button><button class="market-auction" data-action="market-auction" data-id="' + item.id + '">拍卖</button>' : '') +
           '</div></article>';
       }
-      html += '</div>';
+      html += '</div><div class="market-owned"><div class="market-owned-head"><b>我的收藏 · 不限货架卖出</b><span>可直接卖 1 件；挂单与拍卖仍按原价</span></div><div class="market-owned-grid">';
+      var ownedRows = 0;
+      for (var oi = 0; oi < CW.COLLECTIBLES.length; oi++) {
+        var oitem = CW.COLLECTIBLES[oi];
+        if (oitem.special) continue;
+        var ocount = (this.data.collectibles[oitem.id] || 0);
+        if (ocount < 1) continue;
+        var oquote = this.marketCollectibleQuote(oitem, tick);
+        ownedRows++;
+        html += '<div class="market-owned-row"><img src="' + (oitem.thumb || oitem.icon) + '" alt="" loading="lazy" decoding="async"><div><b>' + oitem.name + '</b><span>×' + ocount + ' · 卖 ' + fmt(oquote.sell) + '</span></div>' +
+          '<button data-action="market-sell-collectible" data-id="' + oitem.id + '">卖1</button></div>';
+      }
+      if (!ownedRows) html += '<div class="market-owned-empty">还没有可出售的收藏。</div>';
+      html += '</div></div>';
     } else {
       html += '<div class="market-note">局内不再直接产出物资，只能分解藏品或在此购入。每买 1 件，本窗口内同种物资再贵 25%，称为「物资匮乏」。</div><div class="market-materials">';
       for (var k = 0; k < MATERIALS.length; k++) {
@@ -3184,6 +3220,21 @@
     this.addCollectibleToRoom(id);
     this.audio.claim();
     this.showToast('MARKET BUY', def.name, '-' + fmt(quote.buy) + ' 打捞币 · 含买入手续费');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
+  Hub.prototype.marketSellCollectible = function (id) {
+    var def = CW.COLLECTIBLE_MAP[id];
+    if (!def || def.special || (this.data.collectibles[id] || 0) < 1) return;
+    var quote = this.marketCollectibleQuote(def);
+    this.data.collectibles[id] -= 1;
+    if (this.data.collectibles[id] <= 0) delete this.data.collectibles[id];
+    this.collectionCleanupEquipped();
+    this.data.credits += quote.sell;
+    this.audio.claim();
+    this.showToast('MARKET SELL', def.name + ' ×1', '+' + fmt(quote.sell) + ' 打捞币 · 已扣卖出手续费');
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -4172,6 +4223,7 @@
           self.renderPanel();
         } else if (action === 'market-buy-material') self.marketBuyMaterial(actionEl.getAttribute('data-id'));
         else if (action === 'market-sell-material') self.marketSellMaterial(actionEl.getAttribute('data-id'));
+        else if (action === 'market-sell-collectible') self.marketSellCollectible(actionEl.getAttribute('data-id'));
         else if (action === 'market-buy-collectible') self.marketBuyCollectible(actionEl.getAttribute('data-id'));
         else if (action === 'market-list') self.openMarketListing(actionEl.getAttribute('data-id'));
         else if (action === 'market-list-confirm') self.confirmMarketListing(actionEl.getAttribute('data-id'), actionEl.getAttribute('data-mult'));
