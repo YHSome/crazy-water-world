@@ -199,6 +199,11 @@
       id: 'gunnery', name: '黄金炮击', icon: '炮', iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp?v=102', kicker: 'MISSION 10',
       desc: '把黄金大炮架上船首，瞄准海面漂来的货箱；水雷会炸掉时间，金条箱能带来额外收获。',
       tags: ['45 秒', '炮击', '金条'], stat: 'time', goal: '击中来袭物资'
+    },
+    {
+      id: 'trench', name: '海沟回声', icon: '潜', iconImg: 'assets/collectibles/unique-v2/diving-helmet.webp?v=102', kicker: 'MISSION 11',
+      desc: '潜航器钻进回声海沟，拖动方向穿过岩层缺口；收集声呐浮标和氧气，别让船体撞碎。',
+      tags: ['50 秒', '闪避', '回声'], stat: 'time', goal: '穿过海沟'
     }
   ]);
 
@@ -265,6 +270,11 @@
       '码头吊装是避难所最像旧世界的工作。吊臂从沉船里拆来，钢缆换过三次，操作员只有老周一个。',
       '货箱在钩下会来回摆动。放得太早，箱子会砸在栈桥边缘；放得太晚，吊臂会把它甩进海里。六只箱子码稳，才算一趟完整的卸货。',
       '老周说，码货和带人一样：位置差一点没关系，重心不能偏。'
+    ],
+    trench: [
+      '海沟回声是声呐员最不愿意接的航线：太深、太窄，回声会把所有距离都算错。',
+      '潜航器只能靠一盏灯和两排声呐浮标前进。岩层会突然合拢，氧气表也会在深处变得不可信。',
+      '老陈说，能穿过海沟的人，最后都会在声呐里听见自己的呼吸。'
     ],
     gunnery: [
       '黄金炮击原本只是船首的礼炮，后来海面漂来的货箱越来越密，老周把它改成了一门真正的打捞炮。',
@@ -361,7 +371,8 @@
     trawl: { S: 1700, A: 1100, B: 600 },
     dive: { S: 1500, A: 950, B: 500 },
     stack: { S: 1200, A: 800, B: 420 },
-    gunnery: { S: 1800, A: 1150, B: 600 }
+    gunnery: { S: 1800, A: 1150, B: 600 },
+    trench: { S: 1600, A: 1000, B: 520 }
   });
   var GRADE_RANK = { C: 0, B: 1, A: 2, S: 3 };
   var AUCTION_PRICES = { common: 180, uncommon: 450, rare: 1100, epic: 2600, legendary: 6000 };
@@ -708,8 +719,8 @@
       reward: { credits: 200, mats: { copper: 1, chip: 1 } }
     },
     {
-      id: 'all-six', name: '十面手', iconImg: 'assets/real/sonar.webp',
-      metric: 'missionsPlayed', target: 10, desc: '十种打捞任务都至少完成一次。',
+      id: 'all-six', name: '十一面手', iconImg: 'assets/real/sonar.webp',
+      metric: 'missionsPlayed', target: 11, desc: '十一种打捞任务都至少完成一次。',
       reward: { credits: 900, mats: { metal: 6, fuel: 4, fiber: 4, chip: 4, glass: 4, copper: 4 } }
     },
     {
@@ -718,8 +729,8 @@
       reward: { credits: 500, mats: { glass: 3, copper: 2 } }
     },
     {
-      id: 'all-s', name: '十项全能 S', iconImg: 'assets/collectibles/tide-crown.webp',
-      metric: 'sGradesCount', target: 10, desc: '十个打捞任务都拿到 S 评级。',
+      id: 'all-s', name: '十一项全能 S', iconImg: 'assets/collectibles/tide-crown.webp',
+      metric: 'sGradesCount', target: 11, desc: '十一个打捞任务都拿到 S 评级。',
       reward: { credits: 1500, mats: { metal: 8, fuel: 6, fiber: 6, chip: 6, glass: 6, copper: 6 } }
     },
     {
@@ -904,18 +915,19 @@
         diveRuns: 0,
         stackRuns: 0,
         gunneryRuns: 0,
+        trenchRuns: 0,
         expeditionRuns: 0,
         urgentOrders: 0
       },
       upgrades: { storage: 0, workshop: 0, sonar: 0, core: 0, purifier: 0 },
-      best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0, trawl: 0, dive: 0, stack: 0, gunnery: 0 },
+      best: { hook: 0, match: 0, sonar: 0, cut: 0, sort: 0, beacon: 0, trawl: 0, dive: 0, stack: 0, gunnery: 0, trench: 0 },
       grades: {},
       sGrades: {},
       taskChain: 0,
       taskChainTypes: [],
       lastTask: '',
       activeMissions: ['hook', 'match', 'sonar'],
-      candidateMissions: ['cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery'],
+      candidateMissions: ['cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery', 'trench'],
       runs: 0
     };
   }
@@ -1071,6 +1083,7 @@
     data.stats.diveRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.diveRuns) || 0));
     data.stats.stackRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.stackRuns) || 0));
     data.stats.gunneryRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.gunneryRuns) || 0));
+    data.stats.trenchRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.trenchRuns) || 0));
     data.stats.expeditionRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.expeditionRuns) || 0));
     data.stats.urgentOrders = Math.max(0, Math.floor(Number(raw.stats && raw.stats.urgentOrders) || 0));
     data.contracts = normalizeContractSet(raw.contracts);
@@ -1126,6 +1139,7 @@
     data.best.dive = Math.max(0, Number(raw.best.dive) || 0);
     data.best.stack = Math.max(0, Number(raw.best.stack) || 0);
     data.best.gunnery = Math.max(0, Number(raw.best.gunnery) || 0);
+    data.best.trench = Math.max(0, Number(raw.best.trench) || 0);
     var rotation = normalizeMissionRotation(raw.activeMissions, raw.candidateMissions);
     data.activeMissions = rotation.active;
     data.candidateMissions = rotation.candidates;
@@ -2272,7 +2286,8 @@
       if (!m) continue;
       var best = this.data.best[m.id] || 0;
       var tags = m.tags.slice();
-      if (m.id === 'trawl' || m.id === 'dive' || m.id === 'gunnery') tags[0] = '45 秒';
+      if (m.id === 'trench') tags[0] = '50 秒';
+      else if (m.id === 'trawl' || m.id === 'dive' || m.id === 'gunnery') tags[0] = '45 秒';
       else if (m.id === 'stack') tags[0] = '6 箱';
       else if (m.id === 'hook' || m.stat === 'time') tags[0] = this.hookTime() + ' 秒';
       if (m.id === 'match') tags[0] = this.matchMoves() + ' 步';
@@ -3046,7 +3061,7 @@
     if (!def) return [];
     if (id === 'seawater-filter') return ['hook', 'sonar'];
     if (def.special) return ['hook', 'match'];
-    return ['hook', 'match', 'sonar', 'trawl', 'gunnery'];
+    return ['hook', 'match', 'sonar', 'trawl', 'gunnery', 'trench'];
   };
 
   Hub.prototype.trackCollectible = function (id) {
@@ -4266,6 +4281,7 @@
         if ((this.data.stats.diveRuns || 0) > 0) n++;
         if ((this.data.stats.stackRuns || 0) > 0) n++;
         if ((this.data.stats.gunneryRuns || 0) > 0) n++;
+        if ((this.data.stats.trenchRuns || 0) > 0) n++;
         return n;
       }
       case 'level': return this.level();
@@ -4693,7 +4709,8 @@
     else if (result.type === 'dive') this.data.stats.diveRuns = (this.data.stats.diveRuns || 0) + 1;
     else if (result.type === 'stack') this.data.stats.stackRuns = (this.data.stats.stackRuns || 0) + 1;
     else if (result.type === 'gunnery') this.data.stats.gunneryRuns = (this.data.stats.gunneryRuns || 0) + 1;
-    var key = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery'].indexOf(result.type) >= 0 ? result.type : 'hook';
+    else if (result.type === 'trench') this.data.stats.trenchRuns = (this.data.stats.trenchRuns || 0) + 1;
+    var key = ['hook', 'match', 'sonar', 'cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery', 'trench'].indexOf(result.type) >= 0 ? result.type : 'hook';
     this.data.best[key] = Math.max(this.data.best[key] || 0, Math.round(result.score || 0));
     var grade = gradeFor(key, result.score);
     if (gradeRank(grade) > gradeRank(this.data.grades[key])) this.data.grades[key] = grade;
