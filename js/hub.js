@@ -845,6 +845,7 @@
       started: false,
       tutorialStep: 'intro',
       storyClaimed: {},
+      mastery: {},
       recommendDay: '',
       recommendId: '',
       recommendClaimed: false,
@@ -920,6 +921,16 @@
     if (raw.storyClaimed && typeof raw.storyClaimed === 'object') {
       for (var sk in raw.storyClaimed) {
         if (Object.prototype.hasOwnProperty.call(raw.storyClaimed, sk) && raw.storyClaimed[sk]) data.storyClaimed[sk] = true;
+      }
+    }
+    data.mastery = {};
+    if (raw.mastery && typeof raw.mastery === 'object') {
+      for (var mk in raw.mastery) {
+        if (!Object.prototype.hasOwnProperty.call(raw.mastery, mk)) continue;
+        var masteryMission = null;
+        for (var mmi = 0; mmi < MISSIONS.length; mmi++) if (MISSIONS[mmi].id === mk) masteryMission = MISSIONS[mmi];
+        if (!masteryMission) continue;
+        data.mastery[mk] = clamp(Math.floor(Number(raw.mastery[mk]) || 0), 0, 9999);
       }
     }
     data.recommendDay = raw.recommendDay === dayKey() ? raw.recommendDay : '';
@@ -2115,6 +2126,18 @@
     return null;
   };
 
+  Hub.prototype.missionMasteryCount = function (id) {
+    return Math.max(0, Math.floor(Number(this.data.mastery && this.data.mastery[id]) || 0));
+  };
+
+  Hub.prototype.missionMasteryLevel = function (id) {
+    return Math.min(5, Math.floor(this.missionMasteryCount(id) / 5));
+  };
+
+  Hub.prototype.missionMasteryBonus = function (id) {
+    return this.missionMasteryLevel(id) * 0.03;
+  };
+
   Hub.prototype.rotateMission = function (finishedId) {
     if (!Array.isArray(this.data.activeMissions) || !Array.isArray(this.data.candidateMissions)) return;
     var at = this.data.activeMissions.indexOf(finishedId);
@@ -2193,6 +2216,7 @@
             if (t === '稀有过滤器') return '<span class="mission-tag rare"><img src="assets/seawater-filter-icon.webp" alt="">稀有过滤器</span>';
             return '<span class="mission-tag">' + t + '</span>';
           }).join('') + (isRecommended ? '<span class="mission-tag recommend">今日推荐 +20%</span>' : '') + '</div>' +
+          '<div class="mission-mastery"><span>熟练 Lv.' + this.missionMasteryLevel(m.id) + '</span><i><b style="width:' + (this.missionMasteryLevel(m.id) >= 5 ? 100 : (this.missionMasteryCount(m.id) % 5) * 20) + '%"></b></i><em>' + (this.missionMasteryLevel(m.id) >= 5 ? 'MAX · +15%' : this.missionMasteryCount(m.id) + ' / ' + (this.missionMasteryLevel(m.id) * 5 + 5) + ' · +' + (this.missionMasteryLevel(m.id) * 3) + '%') + '</em></div>' +
         '</div>' +
         '<button class="mission-btn" data-action="mission" data-mission="' + m.id + '">开始打捞</button>' +
       '</article>';
@@ -4387,7 +4411,12 @@
     var isRecommended = !!(recommended && recommended.id === taskType);
     var recommendBonus = isRecommended && !this.data.recommendClaimed;
     if (recommendBonus) this.data.recommendClaimed = true;
-    var taskCreditScale = (TASK_CREDIT_SCALE[taskType] || 1) * (isRecommended ? 1.2 : 1);
+    if (!this.data.mastery) this.data.mastery = {};
+    var oldMasteryLevel = this.missionMasteryLevel(taskType);
+    this.data.mastery[taskType] = Math.min(9999, this.missionMasteryCount(taskType) + 1);
+    var masteryLevel = this.missionMasteryLevel(taskType);
+    var masteryUp = masteryLevel > oldMasteryLevel;
+    var taskCreditScale = (TASK_CREDIT_SCALE[taskType] || 1) * (isRecommended ? 1.2 : 1) * (1 + masteryLevel * 0.03);
     var creditGain = Math.round((result.credits || 0) * taskCreditScale * this.creditMult());
     var chainBonus = Math.round(creditGain * (chainMult - 1));
     var stored = {};
@@ -4489,7 +4518,10 @@
       collectibles: collectibles,
       specials: gainedSpecials,
       recommended: isRecommended,
-      recommendBonus: recommendBonus
+      recommendBonus: recommendBonus,
+      masteryLevel: masteryLevel,
+      masteryCount: this.missionMasteryCount(taskType),
+      masteryUp: masteryUp
     };
   };
 
