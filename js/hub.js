@@ -846,6 +846,7 @@
       tutorialStep: 'intro',
       storyClaimed: {},
       mastery: {},
+      seaLog: {},
       recommendDay: '',
       recommendId: '',
       recommendClaimed: false,
@@ -931,6 +932,14 @@
         for (var mmi = 0; mmi < MISSIONS.length; mmi++) if (MISSIONS[mmi].id === mk) masteryMission = MISSIONS[mmi];
         if (!masteryMission) continue;
         data.mastery[mk] = clamp(Math.floor(Number(raw.mastery[mk]) || 0), 0, 9999);
+      }
+    }
+    data.seaLog = {};
+    if (raw.seaLog && typeof raw.seaLog === 'object') {
+      var seaIds = {};
+      for (var sci = 0; sci < CW.CONDITIONS.length; sci++) seaIds[CW.CONDITIONS[sci].id] = true;
+      for (var skey in raw.seaLog) {
+        if (Object.prototype.hasOwnProperty.call(raw.seaLog, skey) && raw.seaLog[skey] && seaIds[skey]) data.seaLog[skey] = true;
       }
     }
     data.recommendDay = raw.recommendDay === dayKey() ? raw.recommendDay : '';
@@ -2138,6 +2147,33 @@
     return this.missionMasteryLevel(id) * 0.03;
   };
 
+  Hub.prototype.seaLogCount = function () {
+    var n = 0;
+    for (var i = 0; i < CW.CONDITIONS.length; i++) if (this.data.seaLog && this.data.seaLog[CW.CONDITIONS[i].id]) n++;
+    return n;
+  };
+
+  Hub.prototype.seaLogBonus = function () {
+    return this.seaLogCount() * 0.01;
+  };
+
+  Hub.prototype.discoverSeaConditions = function (conditionId) {
+    if (!conditionId) return [];
+    if (!this.data.seaLog) this.data.seaLog = {};
+    var found = [];
+    var parts = String(conditionId).split('+');
+    for (var i = 0; i < parts.length; i++) {
+      var cid = parts[i];
+      var def = null;
+      for (var j = 0; j < CW.CONDITIONS.length; j++) if (CW.CONDITIONS[j].id === cid) def = CW.CONDITIONS[j];
+      if (!def || this.data.seaLog[def.id]) continue;
+      this.data.seaLog[def.id] = true;
+      this.data.credits += 120;
+      found.push(def);
+    }
+    return found;
+  };
+
   Hub.prototype.rotateMission = function (finishedId) {
     if (!Array.isArray(this.data.activeMissions) || !Array.isArray(this.data.candidateMissions)) return;
     var at = this.data.activeMissions.indexOf(finishedId);
@@ -2222,7 +2258,7 @@
       '</article>';
     }
     html += '</div></section><div class="task-support-divider"><span>DAILY & ROUTE</span><b>今日事务</b><em>任务、轮换与连携</em></div>' +
-      this.renderDailyCard() + this.renderTaskChain() + this.renderTrackCard();
+      this.renderDailyCard() + this.renderSeaCodex() + this.renderTaskChain() + this.renderTrackCard();
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -3130,6 +3166,38 @@
     var idx = CW.STORY_CHAPTERS.indexOf(chapter);
     var previous = idx > 0 ? this.data.storyClaimed[CW.STORY_CHAPTERS[idx - 1].id] : true;
     return reached && previous;
+  };
+
+  Hub.prototype.renderSeaCodex = function () {
+    var count = this.seaLogCount();
+    var dots = '';
+    for (var i = 0; i < CW.CONDITIONS.length; i++) {
+      var c = CW.CONDITIONS[i];
+      var seen = !!(this.data.seaLog && this.data.seaLog[c.id]);
+      dots += '<span class="' + (seen ? 'seen' : '') + '" style="--sea:' + c.color + '">' + (seen ? c.name : '???') + '</span>';
+    }
+    return '<div class="sea-codex"><div class="sea-codex-copy"><span>SEA CODEX · 海况图鉴</span><b>' + count + ' / ' + CW.CONDITIONS.length + '</b><p>每种已记录海况 · 打捞币 +1%</p></div>' +
+      '<div class="sea-codex-dots">' + dots + '</div><button data-action="sea-codex">查看</button></div>';
+  };
+
+  Hub.prototype.openSeaCodex = function () {
+    if (!this.dom.storyBody) return;
+    var count = this.seaLogCount();
+    var html = '<div class="sea-codex-modal"><p class="story-kicker">SEA CODEX · 海况图鉴</p><h3>每一片海，都有自己的脾气。</h3><p class="sea-codex-intro">每次出航随机出现 1–2 种海况。首次记录 +120 打捞币，并永久获得该海况 +1% 打捞币加成。双重海况会同时记录两种。</p><div class="sea-codex-list">';
+    for (var i = 0; i < CW.CONDITIONS.length; i++) {
+      var c = CW.CONDITIONS[i];
+      var seen = !!(this.data.seaLog && this.data.seaLog[c.id]);
+      html += '<div class="sea-entry' + (seen ? ' seen' : '') + '" style="--sea:' + c.color + '">' +
+        '<span class="sea-entry-icon">' + (seen ? '✓' : '?') + '</span>' +
+        '<div><b>' + (seen ? c.name : '未记录海况') + '</b><p>' + (seen ? c.desc : '在打捞中遇到这种海况后自动记录。') + '</p></div>' +
+        '<em>' + (seen ? '+1%' : '—') + '</em></div>';
+    }
+    html += '</div><div class="sea-codex-foot"><span>已记录 ' + count + ' / ' + CW.CONDITIONS.length + '</span><b>当前加成 +' + (count * 1) + '% 打捞币</b></div><div class="story-actions"><button class="story-action primary" data-action="story-close">收起图鉴</button></div></div>';
+    this.tutorialStoryOpen = false;
+    this.dom.storyBody.innerHTML = html;
+    this.dom.storyModal.classList.remove('hidden');
+    this.dom.storyModal.setAttribute('aria-hidden', 'false');
+    this.audio.tab();
   };
 
   Hub.prototype.renderStoryLog = function () {
@@ -4407,6 +4475,8 @@
     var cap = this.capacity();
     var used = this.used();
     var storeSpace = Math.max(0, cap - used);
+    var seaDiscoveries = this.discoverSeaConditions(result.condition);
+    var seaBonus = this.seaLogBonus();
     var recommended = this.recommendedMission();
     var isRecommended = !!(recommended && recommended.id === taskType);
     var recommendBonus = isRecommended && !this.data.recommendClaimed;
@@ -4416,7 +4486,7 @@
     this.data.mastery[taskType] = Math.min(9999, this.missionMasteryCount(taskType) + 1);
     var masteryLevel = this.missionMasteryLevel(taskType);
     var masteryUp = masteryLevel > oldMasteryLevel;
-    var taskCreditScale = (TASK_CREDIT_SCALE[taskType] || 1) * (isRecommended ? 1.2 : 1) * (1 + masteryLevel * 0.03);
+    var taskCreditScale = (TASK_CREDIT_SCALE[taskType] || 1) * (isRecommended ? 1.2 : 1) * (1 + masteryLevel * 0.03) * (1 + seaBonus);
     var creditGain = Math.round((result.credits || 0) * taskCreditScale * this.creditMult());
     var chainBonus = Math.round(creditGain * (chainMult - 1));
     var stored = {};
@@ -4521,7 +4591,9 @@
       recommendBonus: recommendBonus,
       masteryLevel: masteryLevel,
       masteryCount: this.missionMasteryCount(taskType),
-      masteryUp: masteryUp
+      masteryUp: masteryUp,
+      seaBonus: seaBonus,
+      seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
   };
 
@@ -4655,6 +4727,7 @@
         else if (action === 'tutorial-story-next') self.tutorialStoryNext();
         else if (action === 'tutorial-action') self.tutorialAction();
         else if (action === 'tutorial-skip') self.skipTutorial();
+        else if (action === 'sea-codex') self.openSeaCodex();
         else if (action === 'story-chapter') self.openStoryChapter(actionEl.getAttribute('data-id'));
         else if (action === 'claim-story') self.claimStoryChapter(actionEl.getAttribute('data-id'));
         else if (action === 'story-claim') self.claimStoryChapter(actionEl.getAttribute('data-id'));
