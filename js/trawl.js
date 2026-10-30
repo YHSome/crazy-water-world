@@ -48,6 +48,10 @@
     this.flash = 0;
     this.shake = 0;
     this.caught = 0;
+    this.perfectCatches = 0;
+    this.netCharge = 0;
+    this.frenzy = 0;
+    this.frenzyActivations = 0;
     this.netW = 0;
     this.effects = { magnet: 0, slow: 0, shield: 0 };
     this.sprites = {};
@@ -60,6 +64,7 @@
   }
 
   TrawlGame.prototype.netY = function () { return this.h - Math.max(96, this.h * 0.14); };
+  TrawlGame.prototype.netWidth = function () { return this.netW * (this.frenzy > 0 ? 1.3 : 1); };
   TrawlGame.prototype.begin = function () {
     this.state = 'play';
     this.remaining = this.duration;
@@ -72,6 +77,10 @@
     this.popups = [];
     this.collectibles = [];
     this.caught = 0;
+    this.perfectCatches = 0;
+    this.netCharge = 0;
+    this.frenzy = 0;
+    this.frenzyActivations = 0;
     for (var i = 0; i < CW.MATERIALS.length; i++) this.counts[CW.MATERIALS[i].id] = 0;
     this.netW = clamp(this.w * 0.24, 92, 150);
     this.netX = this.w * 0.5;
@@ -106,7 +115,7 @@
       loot: this.counts,
       filters: 0,
       hasAction: false,
-      hint: '点击/拖动水面移动渔网 · 接住鱼获与货箱 · 磁力/缓流/护盾会随机掉落 · 锈雷扣 4 秒'
+      hint: '拖动渔网接住海货 · 网心接取触发完美 +25% · 3 次完美进入满网 5 秒 · 锈雷扣 4 秒'
     };
   };
 
@@ -166,7 +175,20 @@
     this.caught += 1;
     this.combo = Math.min(9, this.combo + 1);
     this.bestCombo = Math.max(this.bestCombo, this.combo);
-    var gained = Math.round(data.value * (1 + (this.combo - 1) * 0.06));
+    var perfect = Math.abs(item.x - this.netX) <= this.netWidth() * 0.18;
+    if (perfect) {
+      this.perfectCatches += 1;
+      this.netCharge += 1;
+      if (this.netCharge >= 3) {
+        this.netCharge = 0;
+        this.frenzy = 5;
+        this.frenzyActivations += 1;
+        this.flash = 0.35;
+        this.popups.push({ x: this.netX, y: this.netY() - 34, text: '满网 5 秒 · 网面扩大', color: '#ffe08a', life: 1.7, maxLife: 1.7 });
+        this.audio.claim();
+      }
+    }
+    var gained = Math.round(data.value * (1 + (this.combo - 1) * 0.06) * (perfect ? 1.25 : 1) * (this.frenzy > 0 ? 1.2 : 1));
     this.credits += gained;
     for (var key in data.mats) {
       if (Object.prototype.hasOwnProperty.call(data.mats, key)) this.counts[key] = (this.counts[key] || 0) + data.mats[key];
@@ -177,7 +199,7 @@
       this.popups.push({ x: item.x, y: item.y - 22, text: '收藏！' + cdef.name, color: cdef.color || '#d9b8ff', life: 1.7, maxLife: 1.7 });
       this.audio.relic();
     }
-    this.popups.push({ x: item.x, y: item.y, text: '+' + gained, color: data.color, life: 1.0, maxLife: 1.0 });
+    this.popups.push({ x: item.x, y: item.y, text: '+' + gained + (perfect ? ' 完美' : '') + (this.frenzy > 0 ? ' 满网' : ''), color: perfect || this.frenzy > 0 ? '#ffe08a' : data.color, life: 1.1, maxLife: 1.1 });
     if (this.combo > 1) this.popups.push({ x: item.x, y: item.y - 38, text: '连收 ×' + this.combo, color: '#ffe18a', life: 1.1, maxLife: 1.1 });
     for (var p = 0; p < 12; p++) {
       var a = Math.random() * Math.PI * 2;
@@ -191,6 +213,7 @@
     this.time += dt;
     this.remaining -= dt;
     this.flash = Math.max(0, this.flash - dt * 2);
+    this.frenzy = Math.max(0, this.frenzy - dt);
     this.shake = Math.max(0, this.shake - dt * 10);
     this.effects.magnet = Math.max(0, this.effects.magnet - dt);
     this.effects.slow = Math.max(0, this.effects.slow - dt);
@@ -208,7 +231,7 @@
       it.y += it.vy * (this.effects.slow > 0 ? 0.48 : 1) * dt;
       it.x += Math.sin(this.time * 1.4 + it.phase) * it.drift * dt;
       if (this.effects.magnet > 0 && it.y > this.netY() * 0.35) it.x += clamp(this.netX - it.x, -135 * dt, 135 * dt);
-      if (it.y >= netY - 6 && it.y <= netY + 18 && Math.abs(it.x - this.netX) <= this.netW / 2) {
+      if (it.y >= netY - 6 && it.y <= netY + 18 && Math.abs(it.x - this.netX) <= this.netWidth() / 2) {
         this.catchItem(it);
         this.items.splice(i, 1);
         continue;
@@ -240,7 +263,9 @@
       credits: this.credits,
       collectibles: this.collectibles.slice(),
       filters: 0,
-      materials: this.counts
+      materials: this.counts,
+      perfectCatches: this.perfectCatches,
+      frenzyActivations: this.frenzyActivations
     };
   };
 
@@ -270,7 +295,7 @@
     }
     ctx.globalAlpha = 1;
     var netY = this.netY();
-    var nw = this.netW;
+    var nw = this.netWidth();
     var boatY = netY - 48;
     ctx.strokeStyle = 'rgba(255, 248, 214, 0.55)';
     ctx.lineWidth = 1.5;
@@ -311,12 +336,24 @@
     ctx.arc(0, -32, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-    ctx.strokeStyle = 'rgba(255, 248, 214, 0.85)';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = this.frenzy > 0 ? '#ffe08a' : 'rgba(255, 248, 214, 0.85)';
+    ctx.lineWidth = this.frenzy > 0 ? 5 : 3;
     ctx.beginPath();
     ctx.moveTo(this.netX - nw / 2, netY);
     ctx.quadraticCurveTo(this.netX, netY + 26, this.netX + nw / 2, netY);
     ctx.stroke();
+    for (var pc = 0; pc < 3; pc++) {
+      ctx.fillStyle = pc < this.netCharge ? '#ffe08a' : 'rgba(255,255,255,.24)';
+      ctx.beginPath();
+      ctx.arc(this.netX - 12 + pc * 12, netY + 34, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (this.frenzy > 0) {
+      ctx.fillStyle = '#ffe08a';
+      ctx.font = '800 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('满网 ' + Math.ceil(this.frenzy) + 's', this.netX, netY + 50);
+    }
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
     ctx.lineWidth = 1;
     for (var n = 1; n < 7; n++) {
