@@ -44,6 +44,8 @@
     this.player = { x: this.w * 0.24, y: this.h * 0.55, targetY: this.h * 0.55, r: 24 };
     this.combo = 0;
     this.caught = 0;
+    this.lowOxygen = false;
+    this.lowCaught = 0;
     this.effects = { magnet: 0, shield: 0 };
     this.sprites = {};
     for (var key in LOOT) {
@@ -63,6 +65,8 @@
     this.credits = 0;
     this.combo = 0;
     this.caught = 0;
+    this.lowOxygen = false;
+    this.lowCaught = 0;
     this.effects = { magnet: 0, shield: 0 };
     this.items = [];
     this.particles = [];
@@ -94,12 +98,12 @@
   DiveGame.prototype.getScore = function () { return this.credits; };
   DiveGame.prototype.getHud = function () {
     return {
-      statLabel: '剩余时间',
-      stat: Math.max(0, Math.ceil(this.remaining)) + 's',
+      statLabel: '剩余 · 状态',
+      stat: Math.max(0, Math.ceil(this.remaining)) + 's · ' + (this.lowOxygen ? '低氧' : '稳定'),
       loot: this.counts,
       filters: 0,
       hasAction: false,
-      hint: '点击 / 拖动深海断面移动潜水员 · 氧气 +10 秒 · 护盾 / 磁力钩随机出现 · 水雷扣 4 秒'
+      hint: '拖动潜水员收集物资 · 氧气 +10 秒 · 最后 10 秒低氧冲刺收益 +30% · 水雷扣 4 秒'
     };
   };
 
@@ -159,7 +163,9 @@
     }
     this.caught += 1;
     this.combo = Math.min(9, this.combo + 1);
-    var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.06));
+    var lowMult = this.lowOxygen ? 1.3 : 1;
+    var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.06) * lowMult);
+    if (this.lowOxygen) this.lowCaught += 1;
     this.credits += gained;
     for (var k in data.mats) {
       if (Object.prototype.hasOwnProperty.call(data.mats, k)) this.counts[k] = (this.counts[k] || 0) + data.mats[k];
@@ -170,7 +176,7 @@
       this.popups.push({ x: item.x, y: item.y - 22, text: '收藏！' + cdef.name, color: '#d9b8ff', life: 1.7, maxLife: 1.7 });
       this.audio.relic();
     }
-    this.popups.push({ x: item.x, y: item.y, text: '+' + gained, color: data.color, life: 1.0, maxLife: 1.0 });
+    this.popups.push({ x: item.x, y: item.y, text: '+' + gained + (this.lowOxygen ? ' 低氧×1.3' : ''), color: this.lowOxygen ? '#ffce8a' : data.color, life: this.lowOxygen ? 1.3 : 1.0, maxLife: this.lowOxygen ? 1.3 : 1.0 });
     if (this.combo > 1) this.popups.push({ x: item.x, y: item.y - 38, text: '连收 ×' + this.combo, color: '#ffe18a', life: 1.0, maxLife: 1.0 });
     for (var p = 0; p < 10; p++) {
       var a = Math.random() * Math.PI * 2;
@@ -183,6 +189,12 @@
     if (this.state !== 'play') return;
     this.time += dt;
     this.remaining -= dt;
+    var low = this.remaining > 0 && this.remaining <= 10;
+    if (low && !this.lowOxygen) {
+      this.popups.push({ x: this.w / 2, y: this.h * 0.3, text: '低氧冲刺 · 收益 ×1.3', color: '#ffce8a', life: 1.8, maxLife: 1.8 });
+      this.audio.claim();
+    }
+    this.lowOxygen = low;
     this.effects.magnet = Math.max(0, this.effects.magnet - dt);
     this.spawnTimer -= dt;
     this.spawnGap = Math.max(0.34, 0.62 - this.time * 0.004);
@@ -233,7 +245,8 @@
       credits: this.credits,
       collectibles: this.collectibles.slice(),
       filters: 0,
-      materials: this.counts
+      materials: this.counts,
+      lowCaught: this.lowCaught
     };
   };
 
@@ -344,6 +357,23 @@
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+    if (this.lowOxygen) {
+      var lp = 0.5 + Math.sin(this.time * 7) * 0.5;
+      ctx.save();
+      var lg = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.24, w / 2, h / 2, Math.max(w, h) * 0.72);
+      lg.addColorStop(0, 'rgba(255,90,60,0)');
+      lg.addColorStop(1, 'rgba(190,42,38,' + (0.3 + lp * 0.14).toFixed(3) + ')');
+      ctx.fillStyle = lg;
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(255,120,84,' + (0.35 + lp * 0.25).toFixed(3) + ')';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(2.5, 2.5, w - 5, h - 5);
+      ctx.fillStyle = 'rgba(255,206,138,0.95)';
+      ctx.font = '800 11px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('LOW OXYGEN · 收益 ×1.3', w / 2, 126);
+      ctx.restore();
+    }
     for (var q = 0; q < this.popups.length; q++) {
       var pp = this.popups[q];
       ctx.globalAlpha = Math.max(0, pp.life / pp.maxLife);
