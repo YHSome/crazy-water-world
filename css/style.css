@@ -2967,3 +2967,9 @@ body.low-fx .logo { animation: none !important; }
 .collection-pager button.active { background: #0b7774; color: #fff; border-color: #0b7774; }
 .collection-pager button:disabled { opacity: 0.38; }
 @media (max-width: 420px) { .collection-pager { align-items: flex-start; flex-direction: column; } .collection-pager > div { justify-content: flex-start; } }
+
+.mission-mastery { display: flex; align-items: center; gap: 6px; margin-top: 7px; font-family: var(--mono); font-size: 7px; color: #7c8f8f; }
+.mission-mastery > span { flex: 0 0 auto; color: #0b7774; font-weight: 800; }
+.mission-mastery > i { flex: 1; height: 4px; overflow: hidden; border-radius: 99px; background: #e1ebe5; }
+.mission-mastery > i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0f8f8a, #79d8ff); }
+.mission-mastery > em { flex: 0 0 auto; font-style: normal; font-size: 7px; color: #8aa1a0; }
