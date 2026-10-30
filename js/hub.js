@@ -207,9 +207,21 @@
     }
   ]);
 
-  function normalizeMissionRotation(active, candidates) {
+  var MISSION_UNLOCK = (CW.MISSION_UNLOCK = {
+    hook: 1, match: 2, sonar: 2, cut: 3, sort: 3,
+    beacon: 4, trawl: 4, dive: 4, stack: 5, gunnery: 5, trench: 5
+  });
+
+  function missionUnlockLevel(id) {
+    return MISSION_UNLOCK[id] || 1;
+  }
+
+  function normalizeMissionRotation(active, candidates, level) {
+    level = clamp(Math.floor(Number(level) || 1), 1, 5);
     var valid = {};
-    for (var i = 0; i < MISSIONS.length; i++) valid[MISSIONS[i].id] = true;
+    for (var i = 0; i < MISSIONS.length; i++) {
+      if (missionUnlockLevel(MISSIONS[i].id) <= level) valid[MISSIONS[i].id] = true;
+    }
     var a = [], c = [];
     function place(list, id) {
       if (!valid[id] || a.indexOf(id) >= 0 || c.indexOf(id) >= 0) return;
@@ -222,6 +234,8 @@
     for (var ci = 0; ci < rc.length; ci++) place(c, rc[ci]);
     for (var mi = 0; mi < MISSIONS.length && a.length < 3; mi++) place(a, MISSIONS[mi].id);
     for (var mj = 0; mj < MISSIONS.length; mj++) place(c, MISSIONS[mj].id);
+    while (a.length < 3 && c.length) a.push(c.shift());
+    if (!a.length) a.push('hook');
     return { active: a, candidates: c };
   }
 
@@ -926,8 +940,8 @@
       taskChain: 0,
       taskChainTypes: [],
       lastTask: '',
-      activeMissions: ['hook', 'match', 'sonar'],
-      candidateMissions: ['cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery', 'trench'],
+      activeMissions: ['hook'],
+      candidateMissions: ['match', 'sonar', 'cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery', 'trench'],
       runs: 0
     };
   }
@@ -1140,10 +1154,10 @@
     data.best.stack = Math.max(0, Number(raw.best.stack) || 0);
     data.best.gunnery = Math.max(0, Number(raw.best.gunnery) || 0);
     data.best.trench = Math.max(0, Number(raw.best.trench) || 0);
-    var rotation = normalizeMissionRotation(raw.activeMissions, raw.candidateMissions);
+    data.shelterLevel = clamp(Math.floor(Number(raw.shelterLevel) || 1), 1, 5);
+    var rotation = normalizeMissionRotation(raw.activeMissions, raw.candidateMissions, data.shelterLevel);
     data.activeMissions = rotation.active;
     data.candidateMissions = rotation.candidates;
-      data.shelterLevel = clamp(Math.floor(Number(raw.shelterLevel) || 1), 1, 5);
       data.quality = ['auto', 'high', 'low'].indexOf(raw.quality) >= 0 ? raw.quality : 'auto';
       data.crewXp = {};
       if (raw.crewXp && typeof raw.crewXp === 'object') {
@@ -1663,8 +1677,20 @@
     if (this.dom.titleNote) this.dom.titleNote.textContent = '没有离线收益 · 每一份物资都要亲自捞';
   };
 
+  Hub.prototype.tabUnlocked = function (tab) {
+    var level = this.shelterLevel();
+    if (tab === 'contracts') return level >= 2;
+    if (tab === 'crew') return level >= 3;
+    return true;
+  };
+
   Hub.prototype.updateUI = function () {
     if (!this.dom) return;
+    var tabs = document.querySelectorAll('.panel-tab[data-tab]');
+    for (var ti = 0; ti < tabs.length; ti++) {
+      tabs[ti].classList.toggle('hidden', !this.tabUnlocked(tabs[ti].getAttribute('data-tab')));
+    }
+    if (!this.tabUnlocked(this.tab)) this.tab = 'tasks';
     var used = this.used();
     var cap = this.capacity();
     var lvl = this.shelterLevel();
@@ -2226,6 +2252,15 @@
     return found;
   };
 
+  Hub.prototype.resyncMissionRotation = function () {
+    var level = this.shelterLevel();
+    var active = Array.isArray(this.data.activeMissions) ? this.data.activeMissions.slice() : [];
+    var candidates = Array.isArray(this.data.candidateMissions) ? this.data.candidateMissions.slice() : [];
+    var rotation = normalizeMissionRotation(active, candidates, level);
+    this.data.activeMissions = rotation.active;
+    this.data.candidateMissions = rotation.candidates;
+  };
+
   Hub.prototype.rotateMission = function (finishedId) {
     if (!Array.isArray(this.data.activeMissions) || !Array.isArray(this.data.candidateMissions)) return;
     var at = this.data.activeMissions.indexOf(finishedId);
@@ -2236,6 +2271,7 @@
   };
 
   Hub.prototype.promoteMission = function (id) {
+    if (missionUnlockLevel(id) > this.shelterLevel()) return;
     if (!Array.isArray(this.data.candidateMissions) || this.data.candidateMissions.indexOf(id) < 0) return;
     if (!Array.isArray(this.data.activeMissions)) this.data.activeMissions = [];
     var outgoing = this.data.activeMissions.pop();
@@ -2277,10 +2313,11 @@
   };
 
   Hub.prototype.renderTasks = function () {
-    var recommended = this.recommendedMission();
+    var level = this.shelterLevel();
+    var recommended = level >= 2 ? this.recommendedMission() : null;
     var recBanner = recommended ? '<div class="mission-recommend' + (this.data.recommendClaimed ? ' claimed' : '') + '"><span>DAILY PICK · 今日推荐</span><b>' + recommended.name + '</b><em>' + (this.data.recommendClaimed ? '首胜收藏已领取 · 打捞币 +20% 仍生效' : '打捞币 +20% · 今日首次完成 +1 收藏') + '</em></div>' : '';
-    var html = '<section class="mission-deck"><div class="mission-deck-head"><span>CORE SALVAGE · 核心打捞</span><b>选一个打捞点，直接出海</b><em>3 个打捞点</em></div>' + recBanner + '<div class="mission-list">';
     var activeIds = Array.isArray(this.data.activeMissions) ? this.data.activeMissions : [];
+    var html = '<section class="mission-deck"><div class="mission-deck-head"><span>CORE SALVAGE · 核心打捞</span><b>选一个打捞点，直接出海</b><em>' + activeIds.length + ' 个打捞点</em></div>' + recBanner + '<div class="mission-list">';
     for (var i = 0; i < activeIds.length; i++) {
       var m = this.missionById(activeIds[i]);
       if (!m) continue;
@@ -2292,7 +2329,7 @@
       else if (m.id === 'hook' || m.stat === 'time') tags[0] = this.hookTime() + ' 秒';
       if (m.id === 'match') tags[0] = this.matchMoves() + ' 步';
       if (m.id === 'sonar') tags[0] = this.sonarProbes() + ' 次声呐';
-      var isRecommended = recommended && recommended.id === m.id;
+      var isRecommended = level >= 2 && recommended && recommended.id === m.id;
       html += '<article class="mission-card' + (isRecommended ? ' recommended' : '') + '">' +
         '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt=""><button class="img-detail" data-action="mission-detail" data-id="' + m.id + '" aria-label="查看 ' + m.name + ' 详情">i</button></div>' +
         '<div class="mission-copy">' +
@@ -2305,13 +2342,25 @@
             if (t === '稀有过滤器') return '<span class="mission-tag rare"><img src="assets/seawater-filter-icon.webp" alt="">稀有过滤器</span>';
             return '<span class="mission-tag">' + t + '</span>';
           }).join('') + (isRecommended ? '<span class="mission-tag recommend">今日推荐 +20%</span>' : '') + '</div>' +
-          '<div class="mission-mastery"><span>熟练 Lv.' + this.missionMasteryLevel(m.id) + '</span><i><b style="width:' + (this.missionMasteryLevel(m.id) >= 5 ? 100 : (this.missionMasteryCount(m.id) % 5) * 20) + '%"></b></i><em>' + (this.missionMasteryLevel(m.id) >= 5 ? 'MAX · +15%' : this.missionMasteryCount(m.id) + ' / ' + (this.missionMasteryLevel(m.id) * 5 + 5) + ' · +' + (this.missionMasteryLevel(m.id) * 3) + '%') + '</em></div>' +
+          (level >= 2 ? '<div class="mission-mastery"><span>熟练 Lv.' + this.missionMasteryLevel(m.id) + '</span><i><b style="width:' + (this.missionMasteryLevel(m.id) >= 5 ? 100 : (this.missionMasteryCount(m.id) % 5) * 20) + '%"></b></i><em>' + (this.missionMasteryLevel(m.id) >= 5 ? 'MAX · +15%' : this.missionMasteryCount(m.id) + ' / ' + (this.missionMasteryLevel(m.id) * 5 + 5) + ' · +' + (this.missionMasteryLevel(m.id) * 3) + '%') + '</em></div>' : '') +
         '</div>' +
         '<button class="mission-btn" data-action="mission" data-mission="' + m.id + '">开始打捞</button>' +
       '</article>';
     }
-    html += '</div></section><div class="task-support-divider"><span>DAILY & ROUTE</span><b>今日事务</b><em>任务、轮换与连携</em></div>' +
-      this.renderDailyCard() + this.renderSeaCodex() + this.renderTideMail() + this.renderTaskChain() + this.renderTrackCard();
+    html += '</div></section>';
+    if (level === 1) {
+      html += '<div class="novice-path"><span>FIRST TIDE · 新手航线</span><b>先完成这一网，再升级避难所。</b><p>避难所 Lv.2 会解锁「废料拼图」「声呐扫掠」和每日潮汐；Lv.3 再开放更多海况与漂流瓶。</p><button data-action="go-shelter">去避难所升级</button></div>';
+    } else {
+      html += '<div class="task-support-divider"><span>DAILY & ROUTE</span><b>今日事务</b><em>任务、轮换与连携</em></div>' + this.renderDailyCard();
+      if (level >= 3) html += this.renderSeaCodex() + this.renderTideMail();
+      html += this.renderTaskChain();
+      if (level >= 4) html += this.renderTrackCard();
+      if (level < 5) {
+        var nextNames = [];
+        for (var nu = 0; nu < MISSIONS.length; nu++) if (missionUnlockLevel(MISSIONS[nu].id) === level + 1) nextNames.push(MISSIONS[nu].name);
+        if (nextNames.length) html += '<div class="unlock-strip"><span>NEXT · Lv.' + (level + 1) + ' 解锁</span><b>' + nextNames.join(' / ') + '</b><p>升级避难所，继续扩大可打捞的航线。</p></div>';
+      }
+    }
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -3093,6 +3142,12 @@
       kicker: 'FIRST TIDE · 第一网',
       title: '先学会把东西带回来',
       text: '沉城抓钩是最稳的第一课。看准钩子摆动的方向，抓回海床上的物资；等船舱里有了第一件藏品，我们再谈怎么活过下一个潮汐。'
+    },
+    {
+      img: 'assets/bg-hub.webp',
+      kicker: 'FIRST TIDE · 慢慢来',
+      title: '前期只开一扇门',
+      text: '新手期只开放沉城抓钩。升级避难所到 Lv.2，会解锁废料拼图、声呐扫掠和每日潮汐；Lv.3 之后再开放海况图鉴、漂流瓶和打捞队。先把这一网捞稳，别急着看懂整片海。'
     }
   ];
 
@@ -3877,6 +3932,7 @@
   };
 
   Hub.prototype.weeklyReadyCount = function () {
+    if (this.shelterLevel() < 4) return 0;
     var n = 0;
     var w = this.ensureWeekly();
     for (var i = 0; i < CW.WEEKLY_GOALS.length; i++) {
@@ -3932,7 +3988,7 @@
     var ready = this.contractsReadyCount();
     var rerollUsed = !!this.data.contractRerollUsed;
     var canReroll = !rerollUsed && (this.data.credits || 0) >= 80;
-    var html = this.renderWeeklyCard() + '<div class="contract-intro">' +
+    var html = (this.shelterLevel() >= 4 ? this.renderWeeklyCard() : '') + '<div class="contract-intro">' +
       '<span class="contract-kicker">CONTRACT BOARD · 第 ' + round + ' 轮</span>' +
       '<p>完成打捞目标领取额外补给。三项全部领取后自动刷新下一轮，不需要等待时间。</p>' +
       '<div class="contract-intro-foot"><span class="contract-count">' + (ready ? ready + ' 项可领取' : '进行中') + '</span>' +
@@ -4232,7 +4288,7 @@
   Hub.prototype.shelterSwitch = function () {
     return '<div class="warehouse-switch shelter-switch">' +
       '<button class="' + (this.shelterView === 'upgrades' ? 'active' : '') + '" data-action="shelter-view" data-view="upgrades">扩建</button>' +
-      '<button class="' + (this.shelterView === 'log' ? 'active' : '') + '" data-action="shelter-view" data-view="log">航海日志</button>' +
+      (this.shelterLevel() >= 3 ? '<button class="' + (this.shelterView === 'log' ? 'active' : '') + '" data-action="shelter-view" data-view="log">航海日志</button>' : '') +
     '</div>';
   };
 
@@ -4382,7 +4438,8 @@
   };
 
   Hub.prototype.renderShelter = function () {
-    if (this.shelterView === 'log') { this.renderAchievements(); return; }
+    if (this.shelterView === 'log' && this.shelterLevel() >= 3) { this.renderAchievements(); return; }
+    if (this.shelterView === 'log') this.shelterView = 'upgrades';
     var lvl = this.shelterLevel();
     var next = this.shelterNext();
     var canLevel = this.shelterRequirementsMet();
@@ -4524,9 +4581,16 @@
       }
     }
     if (next.filters) this.data.filters = Math.max(0, (this.data.filters || 0) - next.filters);
-    this.data.shelterLevel = Math.min(5, this.shelterLevel() + 1);
+    var oldLevel = this.shelterLevel();
+    this.data.shelterLevel = Math.min(5, oldLevel + 1);
+    this.resyncMissionRotation();
+    var newMissions = [];
+    for (var nmi = 0; nmi < MISSIONS.length; nmi++) {
+      var nmDef = MISSIONS[nmi];
+      if (missionUnlockLevel(nmDef.id) === this.data.shelterLevel && missionUnlockLevel(nmDef.id) > oldLevel) newMissions.push(nmDef.name);
+    }
     this.audio.claim();
-    this.showToast('SHELTER UPGRADED', '避难所 Lv.' + this.data.shelterLevel, next.unlock + ' · 收藏几率与仓库容量提升');
+    this.showToast('SHELTER UPGRADED', '避难所 Lv.' + this.data.shelterLevel, next.unlock + ' · 收藏几率与仓库容量提升' + (newMissions.length ? ' · 解锁 ' + newMissions.join(' / ') : ''));
     this.saveGame();
     this.updateUI();
     this.renderPanel();
@@ -4596,6 +4660,11 @@
     var def = null;
     for (var i = 0; i < MISSIONS.length; i++) if (MISSIONS[i].id === type) def = MISSIONS[i];
     if (!def) return;
+    if (missionUnlockLevel(type) > this.shelterLevel()) {
+      this.audio.warn();
+      this.showToast('LOCKED', '打捞点尚未解锁', '升级避难所到 Lv.' + missionUnlockLevel(type) + ' 后开放');
+      return;
+    }
     if (this.data.activeMissions.indexOf(type) < 0 && this.data.candidateMissions.indexOf(type) >= 0) {
       this.promoteMission(type);
       this.saveGame();
@@ -4942,7 +5011,7 @@
           self.audio.tab();
           self.renderPanel();
         }
-        else if (action === 'collection-room-upgrade') {
+        else if (action === 'collection-room-upgrade' || action === 'go-shelter') {
           self.tab = 'shelter';
           self.shelterView = 'upgrades';
           self.audio.tab();
