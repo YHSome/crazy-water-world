@@ -604,6 +604,9 @@
     if (this.applied.perfectCount > 0) {
       chips += '<span class="summary-chip precision" style="--tone:#ffcf6e">精准投放 ×' + this.applied.perfectCount + ' · 已计入分数</span>';
     }
+    if (this.applied.trenchDepth > 0) {
+      chips += '<span class="summary-chip depth" style="--tone:#79d8ff">海沟深度 · ' + this.applied.trenchDepth + ' / 5 层</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
