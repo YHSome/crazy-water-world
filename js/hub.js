@@ -4855,6 +4855,7 @@
       perfectCount: Math.max(0, Math.floor(Number(result.perfectCount) || 0)),
       trenchDepth: result.type === 'trench' ? Math.max(0, Number(result.maxDepth) || 0) : 0,
       diveLowCaught: result.type === 'dive' ? Math.max(0, Number(result.lowCaught) || 0) : 0,
+      spreadShots: result.type === 'gunnery' ? Math.max(0, Number(result.spreadShots) || 0) : 0,
       seaBonus: seaBonus,
       seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
