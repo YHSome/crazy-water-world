@@ -3056,3 +3056,19 @@ body.low-fx .logo { animation: none !important; }
 .unlock-strip > span { font-family: var(--mono); font-size: 7px; letter-spacing: 0.12em; color: #c26a3d; }
 .unlock-strip > b { color: #31595c; font-size: 12px; }
 .unlock-strip > p { margin: 0; color: #8aa1a0; font-size: 8px; }
+
+.mission-deck-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; padding: 0 3px; }
+.mission-deck-tools > span { font-family: var(--mono); font-size: 8px; color: #7c8f8f; }
+.mission-deck-tools > button { min-height: 28px; padding: 0 9px; border: 1px solid rgba(19, 93, 96, 0.16); border-radius: 7px; background: #fffdf8; color: #0b7774; font-family: var(--mono); font-size: 8px; font-weight: 800; }
+.novice-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.novice-actions button:last-child { background: #fffdf8; color: #0b7774; border: 1px solid rgba(11, 119, 116, 0.24); }
+.mission-selector h3 { margin: 5px 0 6px; color: #143f47; font-size: 25px; }
+.mission-selector-copy { margin: 0 0 10px; color: #5f7f80; font-size: 11px; line-height: 1.6; }
+.mission-selector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.mission-selector-grid button { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 6px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 9px; background: #fffdf8; text-align: left; }
+.mission-selector-grid button:hover { border-color: #0b7774; background: #f2fbf6; }
+.mission-selector-grid img { width: 39px; height: 39px; flex: 0 0 auto; border-radius: 7px; object-fit: cover; }
+.mission-selector-grid span { min-width: 0; }
+.mission-selector-grid b { display: block; overflow: hidden; color: #173f47; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.mission-selector-grid em { display: block; overflow: hidden; margin-top: 1px; color: #8aa1a0; font-family: var(--mono); font-size: 6px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 420px) { .mission-deck-tools > span { max-width: 58%; line-height: 1.3; } }
