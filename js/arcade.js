@@ -619,6 +619,9 @@
     if (this.applied.trawlFrenzy > 0) {
       chips += '<span class="summary-chip net-frenzy" style="--tone:#ffcf72">满网 · ' + this.applied.trawlFrenzy + ' 次</span>';
     }
+    if (this.applied.cutPerfect > 0) {
+      chips += '<span class="summary-chip cut-perfect" style="--tone:#ffe08a">完美切口 · ' + this.applied.cutPerfect + ' 次</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
