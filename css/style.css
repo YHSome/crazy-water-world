@@ -2999,3 +2999,26 @@ body.low-fx .logo { animation: none !important; }
 .sea-codex-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; font-family: var(--mono); font-size: 9px; color: #7c8f8f; }
 .sea-codex-foot b { color: #0b7774; }
 @media (max-width: 420px) { .sea-codex { align-items: flex-start; flex-wrap: wrap; } .sea-codex-dots { order: 3; flex-basis: 100%; } .sea-codex > button { margin-left: auto; } }
+
+/* ── 本周航线 ───────────────────────────────────────────── */
+.weekly-card { margin-bottom: 12px; padding: 12px; border: 1px solid rgba(224, 161, 60, 0.34); border-radius: 16px; background: linear-gradient(150deg, #fff5d9, #fffaf0 58%, #eef9f1); box-shadow: 0 8px 20px rgba(153, 106, 30, 0.08); }
+.weekly-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.weekly-head span { font-family: var(--mono); font-size: 8px; letter-spacing: 0.15em; color: #b96a3c; }
+.weekly-head em { padding: 3px 6px; border-radius: 99px; background: #fff1c2; color: #8a5b20; font-family: var(--mono); font-size: 7px; font-style: normal; }
+.weekly-title b { display: block; margin-top: 4px; color: #173f47; font-size: 18px; line-height: 1.25; }
+.weekly-title p { margin: 2px 0 0; color: #7c8f8f; font-size: 9px; line-height: 1.45; }
+.weekly-list { display: flex; flex-direction: column; gap: 6px; margin-top: 9px; }
+.weekly-goal { padding: 7px 8px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 9px; background: rgba(255, 253, 248, 0.72); }
+.weekly-goal.ready { border-color: rgba(224, 161, 60, 0.52); background: #fff9e7; }
+.weekly-goal.claimed { opacity: 0.65; }
+.weekly-goal-top { display: flex; justify-content: space-between; gap: 8px; }
+.weekly-goal-top b { color: #31595c; font-size: 12px; }
+.weekly-goal-top span { font-family: var(--mono); font-size: 8px; color: #8a9d9a; }
+.weekly-goal p { margin: 1px 0 4px; color: #7c8f8f; font-size: 8px; }
+.weekly-goal i { display: block; height: 4px; overflow: hidden; border-radius: 99px; background: #e8e4d2; }
+.weekly-goal i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f0b54a, #ff8b55); }
+.weekly-goal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 5px; }
+.weekly-goal-foot span { font-family: var(--mono); font-size: 7px; color: #8a5b20; }
+.weekly-goal-foot em { font-family: var(--mono); font-size: 7px; font-style: normal; color: #7c8f8f; }
+.weekly-goal-foot button { min-height: 27px; padding: 0 9px; border: 1px solid rgba(224, 161, 60, 0.4); border-radius: 6px; background: #fffdf8; color: #865a1d; font-family: var(--mono); font-size: 8px; font-weight: 800; }
+.weekly-goal-foot button:disabled { opacity: 0.45; }
