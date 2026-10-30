@@ -4852,6 +4852,7 @@
       masteryLevel: masteryLevel,
       masteryCount: this.missionMasteryCount(taskType),
       masteryUp: masteryUp,
+      perfectCount: Math.max(0, Math.floor(Number(result.perfectCount) || 0)),
       seaBonus: seaBonus,
       seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
