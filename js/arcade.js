@@ -597,6 +597,9 @@
     if (this.applied.recommended) {
       chips += '<span class="summary-chip recommend" style="--tone:#e0a13c">今日推荐 · +20%' + (this.applied.recommendBonus ? ' · 首胜 +1 收藏' : '') + '</span>';
     }
+    if (this.applied.masteryLevel > 0) {
+      chips += '<span class="summary-chip mastery" style="--tone:#0f8f8a">熟练 Lv.' + this.applied.masteryLevel + ' · +' + (this.applied.masteryLevel * 3) + '%</span>';
+    }
     if (this.hub.data.equipped && this.hub.data.equipped.length) {
       chips += '<span class="summary-chip relic" style="--tone:#18b8b0">藏品 · ' + this.hub.data.equipped.length + ' 件</span>';
     }
