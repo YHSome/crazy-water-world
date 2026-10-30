@@ -625,6 +625,9 @@
     if (this.applied.sortCombo > 0) {
       chips += '<span class="summary-chip sort-combo" style="--tone:#9be2a9">分拣连击 · ×' + this.applied.sortCombo + '</span>';
     }
+    if (this.applied.stackGolden > 0) {
+      chips += '<span class="summary-chip golden-crate" style="--tone:#ffe08a">黄金货箱 · ' + this.applied.stackGolden + ' 箱</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
