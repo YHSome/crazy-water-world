@@ -58,6 +58,7 @@
     this.arcade = b.arcade; this.audio = b.audio; this.w = b.w; this.h = b.h;
     this.duration = b.duration; this.remaining = b.remaining; this.time = 0; this.done = false;
     this.cuts = 0; this.targetCuts = 6; this.misses = 0; this.score = 0;
+    this.perfectCuts = 0; this.perfectNotice = 0;
     this.needle = 0.5; this.dir = 1; this.target = 0.5; this.zone = 0.18;
     this.flash = 0; this.shake = 0; this.state = 'play'; this.spark = 0;
     this.bg = CUT_BG;
@@ -72,7 +73,19 @@
     if (this.state !== 'play') return;
     var d = Math.abs(this.needle - this.target);
     if (d <= this.zone / 2) {
-      this.cuts += 1; this.score += 100; this.flash = 0.22; this.spark = 0.3;
+      var perfect = d <= this.zone * 0.22;
+      this.cuts += 1;
+      this.score += perfect ? 160 : 100;
+      if (perfect) {
+        this.perfectCuts += 1;
+        this.perfectNotice = 1.1;
+        this.remaining = Math.min(this.duration, this.remaining + 1);
+        this.flash = 0.3;
+        this.audio.claim();
+      } else {
+        this.flash = 0.22;
+      }
+      this.spark = 0.3;
       this.audio.matchLine(this.cuts);
       if (this.cuts >= this.targetCuts) { this.finish(); return; }
       this.newTarget();
@@ -86,9 +99,9 @@
   CutGame.prototype.getScore = function () { return this.score; };
   CutGame.prototype.getHud = function () {
     return {
-      statLabel: '切口', stat: this.cuts + ' / ' + this.targetCuts,
+      statLabel: '切口', stat: this.cuts + ' / ' + this.targetCuts + (this.perfectCuts ? ' · 完美' + this.perfectCuts : ''),
       loot: counts(), hasAction: false,
-      hint: '等橙色切割线进入绿色安全区时点击 · 失误 -3 秒'
+      hint: '等切割线进入绿色安全区时点击 · 命中中心金色窄带触发完美 +1 秒 · 失误 -3 秒'
     };
   };
   CutGame.prototype.update = function (dt) {
@@ -102,6 +115,7 @@
     this.flash = Math.max(0, this.flash - dt * 2.4);
     this.shake = Math.max(0, this.shake - dt * 3);
     this.spark = Math.max(0, this.spark - dt * 3);
+    this.perfectNotice = Math.max(0, this.perfectNotice - dt);
     if (this.remaining <= 0) this.finish();
   };
   CutGame.prototype.finish = function () {
@@ -112,7 +126,7 @@
     m.copper = 1 + Math.floor(this.cuts / 2);
     m.glass = 1;
     this.result = {
-      type: 'cut', score: this.score + this.cuts * 60, cuts: this.cuts,
+      type: 'cut', score: this.score + this.cuts * 60, cuts: this.cuts, perfectCuts: this.perfectCuts,
       credits: 90 + this.cuts * 65, filters: 0,
       materials: m, collectibles: [], bestCombo: this.cuts
     };
@@ -145,6 +159,9 @@
     ctx.fillStyle = 'rgba(77, 225, 174, 0.62)';
     rr(ctx, tx, railY + 8, tw, 30, 12); ctx.fill();
     ctx.strokeStyle = '#d9fff0'; ctx.lineWidth = 2; ctx.stroke();
+    var pw = Math.max(4, tw * 0.22);
+    ctx.fillStyle = 'rgba(255, 224, 138, 0.8)';
+    rr(ctx, railX + this.target * railW - pw / 2, railY + 9, pw, 28, 7); ctx.fill();
     // needle
     var nx = railX + this.needle * railW;
     ctx.strokeStyle = this.flash > 0 ? '#ffffff' : '#ff9a5c';
@@ -152,6 +169,14 @@
     ctx.beginPath(); ctx.moveTo(nx, railY + 1); ctx.lineTo(nx, railY + 45); ctx.stroke();
     ctx.fillStyle = '#ffd166';
     ctx.beginPath(); ctx.arc(nx, railY + 4, 5, 0, TAU); ctx.fill();
+    if (this.perfectNotice > 0) {
+      ctx.globalAlpha = Math.min(1, this.perfectNotice * 2);
+      ctx.fillStyle = '#ffe08a';
+      ctx.font = '800 14px "Noto Sans SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('PERFECT · +1 秒', railX + railW / 2, railY - 66);
+      ctx.globalAlpha = 1;
+    }
     // cut marks
     for (var i = 0; i < this.targetCuts; i++) {
       var mx = railX + i * (railW / this.targetCuts) + 12;
