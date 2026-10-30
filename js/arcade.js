@@ -600,6 +600,12 @@
     if (this.applied.masteryLevel > 0) {
       chips += '<span class="summary-chip mastery" style="--tone:#0f8f8a">熟练 Lv.' + this.applied.masteryLevel + ' · +' + (this.applied.masteryLevel * 3) + '%</span>';
     }
+    if (this.applied.seaBonus > 0) {
+      chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
+    }
+    if (this.applied.seaDiscoveries && this.applied.seaDiscoveries.length) {
+      chips += '<span class="summary-chip sea-new" style="--tone:#ffcf6e">新海况 · ' + this.applied.seaDiscoveries.join(' / ') + ' +' + (this.applied.seaDiscoveries.length * 120) + '</span>';
+    }
     if (this.hub.data.equipped && this.hub.data.equipped.length) {
       chips += '<span class="summary-chip relic" style="--tone:#18b8b0">藏品 · ' + this.hub.data.equipped.length + ' 件</span>';
     }
