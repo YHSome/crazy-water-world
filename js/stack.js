@@ -37,6 +37,8 @@
     this.missed = 0;
     this.combo = 0;
     this.bestCombo = 0;
+    this.goldenNext = false;
+    this.goldenCrates = 0;
     this.crateW = 62;
     this.crateH = 40;
     this.crate = null;
@@ -56,8 +58,10 @@
   StackGame.prototype.spawnCrate = function () {
     var idx = this.nextIndex % CARGO.length;
     var data = CARGO[idx];
+    var golden = this.goldenNext;
+    this.goldenNext = false;
     this.crate = {
-      idx: idx, data: data,
+      idx: idx, data: data, golden: golden,
       x: this.w * 0.5,
       y: 138,
       vy: 0,
@@ -80,6 +84,8 @@
     this.missed = 0;
     this.combo = 0;
     this.bestCombo = 0;
+    this.goldenNext = false;
+    this.goldenCrates = 0;
     this.nextIndex = 0;
     this.popups = [];
     this.particles = [];
@@ -109,7 +115,7 @@
       filters: 0,
       hasAction: true,
       actionLabel: '放下货箱',
-      hint: '点击水面放下货箱 · 对准已有货箱或栈桥 · 完美对齐可累计连击 · 偏太多会掉进海里'
+      hint: '点击放下货箱 · 完美对齐可累计连击 · 3 连完美让下一箱变成黄金货箱 · 偏太多掉海'
     };
   };
 
@@ -119,15 +125,24 @@
     var diff = top ? Math.abs(c.x - top.x) : 0;
     var ok = !top || diff <= this.crateW * 0.58;
     if (ok) {
-      this.stack.push({ x: c.x, idx: c.idx });
+      this.stack.push({ x: c.x, idx: c.idx, golden: c.golden });
       this.delivered += 1;
       var data = c.data;
       var perfect = !top || diff <= 10;
       this.combo = perfect ? this.combo + 1 : 0;
       this.bestCombo = Math.max(this.bestCombo, this.combo);
       var bonus = perfect ? 15 * this.combo : 0;
-      this.credits += data.credits + this.delivered * 15 + bonus;
+      var goldMult = c.golden ? 2 : 1;
+      this.credits += Math.round((data.credits + this.delivered * 15 + bonus) * goldMult);
+      if (c.golden) this.goldenCrates += 1;
       if (perfect) this.popups.push({ x: c.x, y: c.y - 24, text: '完美 ×' + this.combo + ' · +' + bonus, color: '#ffe18a', life: 1.4, maxLife: 1.4 });
+      if (c.golden) this.popups.push({ x: c.x, y: c.y - 48, text: '黄金货箱 ×2', color: '#ffdf72', life: 1.5, maxLife: 1.5 });
+      if (perfect && this.combo > 0 && this.combo % 3 === 0) {
+        this.goldenNext = true;
+        this.remaining = Math.min(this.duration, this.remaining + 1);
+        this.popups.push({ x: c.x, y: c.y - 62, text: '完美三连 · 下一箱黄金 +1 秒', color: '#ffe08a', life: 1.6, maxLife: 1.6 });
+        this.audio.claim();
+      }
       for (var k in data.mats) {
         if (Object.prototype.hasOwnProperty.call(data.mats, k)) this.counts[k] = (this.counts[k] || 0) + data.mats[k];
       }
@@ -200,11 +215,12 @@
       credits: this.credits,
       collectibles: [],
       filters: 0,
-      materials: this.counts
+      materials: this.counts,
+      goldenCrates: this.goldenCrates
     };
   };
 
-  StackGame.prototype.drawCrate = function (ctx, x, y, idx) {
+  StackGame.prototype.drawCrate = function (ctx, x, y, idx, golden) {
     var w = this.crateW;
     var h = this.crateH;
     var data = CARGO[idx];
@@ -227,6 +243,16 @@
       var scale = Math.max((w - 8) / img.naturalWidth, (h - 8) / img.naturalHeight);
       ctx.drawImage(img, -(img.naturalWidth * scale) / 2, -(img.naturalHeight * scale) / 2, img.naturalWidth * scale, img.naturalHeight * scale);
       ctx.restore();
+    }
+    if (golden) {
+      ctx.strokeStyle = '#ffe08a';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#ffcf72';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.roundRect(-w / 2 - 2, -h / 2 - 2, w + 4, h + 4, 7);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
     ctx.strokeStyle = '#fffdf8';
     ctx.lineWidth = 2;
@@ -296,14 +322,14 @@
       ctx.setLineDash([]);
     }
     for (var s = 0; s < this.stack.length; s++) {
-      this.drawCrate(ctx, this.stack[s].x, this.baseY() - this.crateH / 2 - s * this.crateH, this.stack[s].idx);
+      this.drawCrate(ctx, this.stack[s].x, this.baseY() - this.crateH / 2 - s * this.crateH, this.stack[s].idx, this.stack[s].golden);
     }
     if (this.crate) {
       ctx.save();
       ctx.translate(this.crate.x, this.crate.y);
       ctx.rotate(this.crate.dropping ? 0 : Math.sin(this.time * 2.2) * 0.08);
       ctx.translate(-this.crate.x, -this.crate.y);
-      this.drawCrate(ctx, this.crate.x, this.crate.y, this.crate.idx);
+      this.drawCrate(ctx, this.crate.x, this.crate.y, this.crate.idx, this.crate.golden);
       ctx.restore();
     }
     for (var pi = 0; pi < this.particles.length; pi++) {
