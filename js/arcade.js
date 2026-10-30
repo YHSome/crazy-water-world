@@ -391,6 +391,7 @@
     else if (this.type === 'dive' && CW.DiveGame) this.game = new CW.DiveGame(this, config);
     else if (this.type === 'stack' && CW.StackGame) this.game = new CW.StackGame(this, config);
     else if (this.type === 'gunnery' && CW.GunneryGame) this.game = new CW.GunneryGame(this, config);
+    else if (this.type === 'trench' && CW.TrenchGame) this.game = new CW.TrenchGame(this, config);
     else this.game = new CW.HookGame(this, config);
     if (this.condition && this.dom.kicker) {
       var mission = null;
