@@ -340,6 +340,12 @@
     }
   ];
 
+  CW.WEEKLY_GOALS = [
+    { id: 'runs', name: '本周出航', target: 6, desc: '完成 6 次打捞', credits: 600, mats: { fuel: 4 } },
+    { id: 'collectibles', name: '本周收藏', target: 8, desc: '带回 8 件收藏', credits: 800, mats: { chip: 4, glass: 4 } },
+    { id: 'types', name: '航线覆盖', target: 4, desc: '完成 4 种不同任务', credits: 1200, mats: { metal: 8, copper: 4 }, filters: 1 }
+  ];
+
   var TASK_CREDIT_SCALE = (CW.TASK_CREDIT_SCALE = {
     hook: 0.8, match: 0.8, sonar: 0.8, cut: 0.8, sort: 0.8, beacon: 0.8,
     trawl: 0.5, dive: 0.5, stack: 0.7, gunnery: 0.65
@@ -783,6 +789,10 @@
     return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
   }
 
+  function weekKey() {
+    return 'W' + Math.floor(dayNumber() / 7);
+  }
+
   function parseDayKey(key) {
     var parts = String(key || '').split('-');
     if (parts.length !== 3) return new Date();
@@ -847,6 +857,7 @@
       storyClaimed: {},
       mastery: {},
       seaLog: {},
+      weekly: { key: '', runs: 0, collectibles: 0, types: {}, claimed: [] },
       recommendDay: '',
       recommendId: '',
       recommendClaimed: false,
@@ -940,6 +951,25 @@
       for (var sci = 0; sci < CW.CONDITIONS.length; sci++) seaIds[CW.CONDITIONS[sci].id] = true;
       for (var skey in raw.seaLog) {
         if (Object.prototype.hasOwnProperty.call(raw.seaLog, skey) && raw.seaLog[skey] && seaIds[skey]) data.seaLog[skey] = true;
+      }
+    }
+    data.weekly = { key: weekKey(), runs: 0, collectibles: 0, types: {}, claimed: [] };
+    if (raw.weekly && typeof raw.weekly === 'object' && raw.weekly.key === weekKey()) {
+      data.weekly.runs = Math.max(0, Math.floor(Number(raw.weekly.runs) || 0));
+      data.weekly.collectibles = Math.max(0, Math.floor(Number(raw.weekly.collectibles) || 0));
+      if (raw.weekly.types && typeof raw.weekly.types === 'object') {
+        for (var wtid in raw.weekly.types) {
+          if (!Object.prototype.hasOwnProperty.call(raw.weekly.types, wtid) || !raw.weekly.types[wtid]) continue;
+          var weeklyValid = false;
+          for (var wmi = 0; wmi < MISSIONS.length; wmi++) if (MISSIONS[wmi].id === wtid) weeklyValid = true;
+          if (weeklyValid) data.weekly.types[wtid] = true;
+        }
+      }
+      if (Array.isArray(raw.weekly.claimed)) {
+        for (var wci = 0; wci < raw.weekly.claimed.length; wci++) {
+          var wcv = Math.floor(Number(raw.weekly.claimed[wci]));
+          if (wcv >= 0 && wcv <= 2) data.weekly.claimed.push(wcv);
+        }
       }
     }
     data.recommendDay = raw.recommendDay === dayKey() ? raw.recommendDay : '';
@@ -1632,7 +1662,7 @@
     var cap = this.capacity();
     var contractTab = document.querySelector('.panel-tab[data-tab="contracts"]');
     if (contractTab) {
-      var readyCount = this.contractsReadyCount();
+      var readyCount = this.contractsReadyCount() + this.weeklyReadyCount();
       contractTab.classList.toggle('has-ready', readyCount > 0);
       contractTab.setAttribute('data-ready', String(readyCount));
     }
@@ -3739,12 +3769,81 @@
     this.showToast('COLLECTION CRAFTED', result.name, '合成消耗 3 件 · ' + rarity.name + '级收藏');
   };
 
+  Hub.prototype.ensureWeekly = function () {
+    var key = weekKey();
+    if (!this.data.weekly || this.data.weekly.key !== key) {
+      this.data.weekly = { key: key, runs: 0, collectibles: 0, types: {}, claimed: [] };
+    }
+    if (!this.data.weekly.types) this.data.weekly.types = {};
+    if (!Array.isArray(this.data.weekly.claimed)) this.data.weekly.claimed = [];
+    return this.data.weekly;
+  };
+
+  Hub.prototype.weeklyValue = function (goal) {
+    var w = this.ensureWeekly();
+    if (goal.id === 'runs') return w.runs;
+    if (goal.id === 'collectibles') return w.collectibles;
+    if (goal.id === 'types') return Object.keys(w.types || {}).length;
+    return 0;
+  };
+
+  Hub.prototype.weeklyReadyCount = function () {
+    var n = 0;
+    var w = this.ensureWeekly();
+    for (var i = 0; i < CW.WEEKLY_GOALS.length; i++) {
+      if (w.claimed.indexOf(i) < 0 && this.weeklyValue(CW.WEEKLY_GOALS[i]) >= CW.WEEKLY_GOALS[i].target) n++;
+    }
+    return n;
+  };
+
+  Hub.prototype.applyWeeklyProgress = function (type, collectibleCount) {
+    var w = this.ensureWeekly();
+    w.runs = (w.runs || 0) + 1;
+    w.collectibles = (w.collectibles || 0) + Math.max(0, collectibleCount || 0);
+    if (type) w.types[type] = true;
+  };
+
+  Hub.prototype.renderWeeklyCard = function () {
+    var w = this.ensureWeekly();
+    var html = '<article class="weekly-card"><div class="weekly-head"><span>WEEKLY ROUTE · 本周航线</span><em>' + this.weeklyReadyCount() + ' 项可领</em></div>' +
+      '<div class="weekly-title"><b>这周的疯狂号，往哪里开？</b><p>每周重置一次，完成全部三类目标额外获得过滤器。</p></div><div class="weekly-list">';
+    for (var i = 0; i < CW.WEEKLY_GOALS.length; i++) {
+      var g = CW.WEEKLY_GOALS[i];
+      var have = this.weeklyValue(g);
+      var claimed = w.claimed.indexOf(i) >= 0;
+      var ready = !claimed && have >= g.target;
+      var pct = clamp(have / g.target, 0, 1);
+      html += '<div class="weekly-goal' + (ready ? ' ready' : '') + (claimed ? ' claimed' : '') + '">' +
+        '<div class="weekly-goal-top"><b>' + g.name + '</b><span>' + Math.min(have, g.target) + ' / ' + g.target + '</span></div>' +
+        '<p>' + g.desc + '</p><i><b style="width:' + (pct * 100).toFixed(1) + '%"></b></i>' +
+        '<div class="weekly-goal-foot"><span>+' + fmt(g.credits) + ' 币' + (g.filters ? ' · 过滤器 1' : '') + '</span>' +
+        (claimed ? '<em>已领取</em>' : '<button class="' + (ready ? 'claim-ready' : '') + '" data-action="claim-weekly" data-index="' + i + '"' + (ready ? '' : ' disabled') + '>' + (ready ? '领取' : '进行中') + '</button>') + '</div></div>';
+    }
+    html += '</div></article>';
+    return html;
+  };
+
+  Hub.prototype.claimWeekly = function (index) {
+    index = Math.floor(Number(index));
+    var g = CW.WEEKLY_GOALS[index];
+    var w = this.ensureWeekly();
+    if (!g || w.claimed.indexOf(index) >= 0 || this.weeklyValue(g) < g.target) return;
+    w.claimed.push(index);
+    var reward = this.grantContractReward({ credits: g.credits, mats: g.mats || {} });
+    if (g.filters) this.data.filters = (this.data.filters || 0) + g.filters;
+    this.audio.claim();
+    this.showToast('WEEKLY ROUTE', g.name + ' 完成', '+' + fmt(reward.credits) + ' 打捞币' + (g.filters ? ' · 过滤器 +1' : '') + (reward.overflow ? ' · 仓库溢出已折算' : ''));
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+  };
+
   Hub.prototype.renderContracts = function () {
     var round = Math.max(1, this.data.contractRound || 1);
     var ready = this.contractsReadyCount();
     var rerollUsed = !!this.data.contractRerollUsed;
     var canReroll = !rerollUsed && (this.data.credits || 0) >= 80;
-    var html = '<div class="contract-intro">' +
+    var html = this.renderWeeklyCard() + '<div class="contract-intro">' +
       '<span class="contract-kicker">CONTRACT BOARD · 第 ' + round + ' 轮</span>' +
       '<p>完成打捞目标领取额外补给。三项全部领取后自动刷新下一轮，不需要等待时间。</p>' +
       '<div class="contract-intro-foot"><span class="contract-count">' + (ready ? ready + ' 项可领取' : '进行中') + '</span>' +
@@ -4558,6 +4657,7 @@
     }
     this.applyContractProgress(result);
     this.applyDailyProgress(result);
+    this.applyWeeklyProgress(taskType, collectibles.length);
     var stats = this.data.stats;
     stats.bestCombo = Math.max(stats.bestCombo || 0, Math.floor(Number(result.bestCombo) || 0));
     stats.safeTotal = (stats.safeTotal || 0) + Math.max(0, Math.floor(Number(result.safeCount) || 0));
@@ -4739,6 +4839,7 @@
         }
         else if (action === 'upgrade') self.buyUpgrade(actionEl.getAttribute('data-upgrade'));
         else if (action === 'claim-contract') self.claimContract(parseInt(actionEl.getAttribute('data-contract'), 10));
+        else if (action === 'claim-weekly') self.claimWeekly(parseInt(actionEl.getAttribute('data-index'), 10));
         else if (action === 'reroll-contracts') self.rerollContracts();
         else if (action === 'claim-daily') self.claimDaily(actionEl.getAttribute('data-daily'));
         else if (action === 'craft') self.craft(actionEl.getAttribute('data-rarity'));
