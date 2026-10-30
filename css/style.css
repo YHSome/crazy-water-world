@@ -3022,3 +3022,25 @@ body.low-fx .logo { animation: none !important; }
 .weekly-goal-foot em { font-family: var(--mono); font-size: 7px; font-style: normal; color: #7c8f8f; }
 .weekly-goal-foot button { min-height: 27px; padding: 0 9px; border: 1px solid rgba(224, 161, 60, 0.4); border-radius: 6px; background: #fffdf8; color: #865a1d; font-family: var(--mono); font-size: 8px; font-weight: 800; }
 .weekly-goal-foot button:disabled { opacity: 0.45; }
+
+/* ── 漂流瓶 ─────────────────────────────────────────────── */
+.tide-mail { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 11px 12px; border: 1px solid rgba(121, 216, 255, 0.34); border-radius: 14px; background: linear-gradient(135deg, #edf9f7, #f3fbff); box-shadow: 0 7px 16px rgba(30, 123, 135, 0.07); }
+.tide-mail-copy { flex: 1; min-width: 0; }
+.tide-mail-copy > span { font-family: var(--mono); font-size: 7px; letter-spacing: 0.14em; color: #4b8a9a; }
+.tide-mail-copy > b { display: block; margin-top: 2px; color: #173f47; font-size: 14px; }
+.tide-mail-copy > p { margin: 2px 0 0; color: #7c8f8f; font-size: 9px; line-height: 1.5; }
+.tide-mail > button { flex: 0 0 auto; min-height: 34px; padding: 0 14px; border: 1px solid rgba(11, 119, 116, 0.2); border-radius: 8px; background: #0b7774; color: #fff; font-family: var(--mono); font-size: 9px; font-weight: 800; }
+.tide-mail.done { display: block; padding: 8px 11px; border-style: dashed; background: #f7fbf5; }
+.tide-mail.done > span { font-family: var(--mono); font-size: 7px; letter-spacing: .12em; color: #8aa1a0; }
+.tide-mail.done > b { display: block; margin-top: 2px; color: #31595c; font-size: 11px; }
+.tide-mail.done > p { margin: 2px 0 0; color: #9aabaa; font-size: 8px; }
+.tide-mail-modal h3 { margin: 5px 0 8px; padding-right: 52px; color: #143f47; font-size: 23px; line-height: 1.3; }
+.tide-copy { margin: 0 0 12px; padding: 10px; border-left: 3px solid #79d8ff; background: #f4fbf8; color: #4f7072; font-size: 12px; line-height: 1.75; }
+.tide-copy b { color: #173f47; }
+.tide-choices { display: grid; gap: 6px; }
+.tide-choices button { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 9px 10px; border: 1px solid rgba(19, 93, 96, 0.14); border-radius: 9px; background: #fffdf8; text-align: left; }
+.tide-choices button:hover { border-color: #0b7774; background: #f2fbf6; }
+.tide-choices b { color: #173f47; font-size: 13px; }
+.tide-choices span { color: #7c8f8f; font-size: 9px; }
+.tide-choices em { grid-row: 1 / 3; grid-column: 2; align-self: center; font-family: var(--mono); font-size: 8px; font-style: normal; color: #0b7774; }
+.tide-note { margin: 10px 0 0; font-size: 9px; color: #8aa1a0; }
