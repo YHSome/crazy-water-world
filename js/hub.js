@@ -858,6 +858,7 @@
       mastery: {},
       seaLog: {},
       weekly: { key: '', runs: 0, collectibles: 0, types: {}, claimed: [] },
+      tideMail: { date: '', opened: false, choice: '' },
       recommendDay: '',
       recommendId: '',
       recommendClaimed: false,
@@ -971,6 +972,13 @@
           if (wcv >= 0 && wcv <= 2) data.weekly.claimed.push(wcv);
         }
       }
+    }
+    if (raw.tideMail && typeof raw.tideMail === 'object' && raw.tideMail.date === dayKey()) {
+      data.tideMail = {
+        date: raw.tideMail.date,
+        opened: !!raw.tideMail.opened,
+        choice: typeof raw.tideMail.choice === 'string' ? raw.tideMail.choice : ''
+      };
     }
     data.recommendDay = raw.recommendDay === dayKey() ? raw.recommendDay : '';
     data.recommendId = data.recommendDay && typeof raw.recommendId === 'string' ? raw.recommendId : '';
@@ -2288,7 +2296,7 @@
       '</article>';
     }
     html += '</div></section><div class="task-support-divider"><span>DAILY & ROUTE</span><b>今日事务</b><em>任务、轮换与连携</em></div>' +
-      this.renderDailyCard() + this.renderSeaCodex() + this.renderTaskChain() + this.renderTrackCard();
+      this.renderDailyCard() + this.renderSeaCodex() + this.renderTideMail() + this.renderTaskChain() + this.renderTrackCard();
     this.dom.panelContent.innerHTML = html;
   };
 
@@ -3228,6 +3236,72 @@
     this.dom.storyModal.classList.remove('hidden');
     this.dom.storyModal.setAttribute('aria-hidden', 'false');
     this.audio.tab();
+  };
+
+  Hub.prototype.ensureTideMail = function () {
+    var today = dayKey();
+    if (!this.data.tideMail || this.data.tideMail.date !== today) {
+      this.data.tideMail = { date: today, opened: false, choice: '' };
+    }
+    return this.data.tideMail;
+  };
+
+  Hub.prototype.renderTideMail = function () {
+    var tm = this.ensureTideMail();
+    if (tm.opened) {
+      return '<div class="tide-mail done"><span>TIDE MAIL · 漂流瓶</span><b>今天的信已经读完了。</b><p>明天潮水会送来下一只。</p></div>';
+    }
+    return '<article class="tide-mail"><div class="tide-mail-copy"><span>TIDE MAIL · 漂流瓶</span><b>第三层甲板卡着一只瓶子。</b><p>瓶口封着蜡，里面好像有东西。阿盐说，今天由你决定。</p></div><button data-action="open-tide-mail">打开</button></article>';
+  };
+
+  Hub.prototype.openTideMail = function () {
+    var tm = this.ensureTideMail();
+    if (tm.opened || !this.dom.storyBody) return;
+    this.tutorialStoryOpen = false;
+    this.dom.storyBody.innerHTML = '<div class="tide-mail-modal"><p class="story-kicker">TIDE MAIL · 漂流瓶</p><h3>有人把一段旧日子，封进了玻璃里。</h3>' +
+      '<p class="tide-copy">瓶身裹着海藻，瓶塞用蜡封得很紧。信纸上只有一句话：<br><b>“如果你也还留在岸上，就把今天过完。”</b></p>' +
+      '<div class="tide-choices">' +
+        '<button data-action="tide-choice" data-choice="open"><b>打开瓶塞</b><span>随机收藏 ×1</span><em>+100 打捞币</em></button>' +
+        '<button data-action="tide-choice" data-choice="give"><b>交给阿盐</b><span>燃料 3 · 玻璃 3</span><em>+320 打捞币</em></button>' +
+        '<button data-action="tide-choice" data-choice="letter"><b>只读信纸</b><span>随机收藏 ×2</span><em>不取打捞币</em></button>' +
+      '</div><p class="tide-note">每天只有一只漂流瓶。选择后立即结算。</p><div class="story-actions"><button class="story-action" data-action="story-close">先放回去</button></div></div>';
+    this.dom.storyModal.classList.remove('hidden');
+    this.dom.storyModal.setAttribute('aria-hidden', 'false');
+    this.audio.tab();
+  };
+
+  Hub.prototype.chooseTideMail = function (choice) {
+    var tm = this.ensureTideMail();
+    if (tm.opened) return;
+    var gained = [];
+    var credits = 0;
+    if (choice === 'open') {
+      var c1 = CW.rollCollectibleDef();
+      var a1 = this.addCollectibleToRoom(c1.id);
+      credits = 100 + a1.credits;
+      this.data.credits += 100;
+      if (a1.added) gained.push(c1.name);
+    } else if (choice === 'letter') {
+      for (var i = 0; i < 2; i++) {
+        var c2 = CW.rollCollectibleDef();
+        var a2 = this.addCollectibleToRoom(c2.id);
+        credits += a2.credits;
+        if (a2.added) gained.push(c2.name);
+      }
+    } else if (choice === 'give') {
+      var reward = this.grantContractReward({ credits: 320, mats: { fuel: 3, glass: 3 } });
+      credits = reward.credits;
+    } else {
+      return;
+    }
+    tm.opened = true;
+    tm.choice = choice;
+    this.closeStoryDetail();
+    this.audio.claim();
+    this.showToast('TIDE MAIL', '漂流瓶已处理', (gained.length ? gained.join(' / ') + ' · ' : '') + '+' + fmt(credits) + ' 打捞币');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
   };
 
   Hub.prototype.renderStoryLog = function () {
@@ -4828,6 +4902,8 @@
         else if (action === 'tutorial-action') self.tutorialAction();
         else if (action === 'tutorial-skip') self.skipTutorial();
         else if (action === 'sea-codex') self.openSeaCodex();
+        else if (action === 'open-tide-mail') self.openTideMail();
+        else if (action === 'tide-choice') self.chooseTideMail(actionEl.getAttribute('data-choice'));
         else if (action === 'story-chapter') self.openStoryChapter(actionEl.getAttribute('data-id'));
         else if (action === 'claim-story') self.claimStoryChapter(actionEl.getAttribute('data-id'));
         else if (action === 'story-claim') self.claimStoryChapter(actionEl.getAttribute('data-id'));
