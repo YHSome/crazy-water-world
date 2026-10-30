@@ -208,8 +208,8 @@
   ]);
 
   var MISSION_UNLOCK = (CW.MISSION_UNLOCK = {
-    hook: 1, match: 2, sonar: 2, cut: 3, sort: 3,
-    beacon: 4, trawl: 4, dive: 4, stack: 5, gunnery: 5, trench: 5
+    hook: 1, match: 1, sonar: 1, cut: 1, sort: 1,
+    beacon: 1, trawl: 1, dive: 1, stack: 1, gunnery: 1, trench: 1
   });
 
   function missionUnlockLevel(id) {
@@ -940,8 +940,8 @@
       taskChain: 0,
       taskChainTypes: [],
       lastTask: '',
-      activeMissions: ['hook'],
-      candidateMissions: ['match', 'sonar', 'cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery', 'trench'],
+      activeMissions: ['hook', 'match', 'sonar'],
+      candidateMissions: ['cut', 'sort', 'beacon', 'trawl', 'dive', 'stack', 'gunnery', 'trench'],
       runs: 0
     };
   }
@@ -2312,12 +2312,29 @@
     return this.missionById(this.data.recommendId);
   };
 
+  Hub.prototype.openMissionSelector = function () {
+    if (!this.dom.storyBody) return;
+    this.tutorialStoryOpen = false;
+    var html = '<div class="mission-selector"><p class="story-kicker">ALL SALVAGE POINTS · 全部打捞点</p><h3>想先试哪一个？</h3><p class="mission-selector-copy">所有打捞点都已开放，不需要升级解锁。选中后直接进入简报。</p><div class="mission-selector-grid">';
+    for (var i = 0; i < MISSIONS.length; i++) {
+      var m = MISSIONS[i];
+      var best = this.data.best[m.id] || 0;
+      html += '<button data-action="mission-pick" data-mission="' + m.id + '"><img src="' + m.iconImg + '" alt="" loading="lazy" decoding="async"><span><b>' + m.name + '</b><em>' + m.kicker + ' · 最佳 ' + fmt(best) + '</em></span></button>';
+    }
+    html += '</div><div class="story-actions"><button class="story-action" data-action="story-close">收起</button></div></div>';
+    this.dom.storyBody.innerHTML = html;
+    this.dom.storyModal.classList.remove('hidden');
+    this.dom.storyModal.setAttribute('aria-hidden', 'false');
+    this.audio.tab();
+  };
+
   Hub.prototype.renderTasks = function () {
     var level = this.shelterLevel();
     var recommended = level >= 2 ? this.recommendedMission() : null;
     var recBanner = recommended ? '<div class="mission-recommend' + (this.data.recommendClaimed ? ' claimed' : '') + '"><span>DAILY PICK · 今日推荐</span><b>' + recommended.name + '</b><em>' + (this.data.recommendClaimed ? '首胜收藏已领取 · 打捞币 +20% 仍生效' : '打捞币 +20% · 今日首次完成 +1 收藏') + '</em></div>' : '';
     var activeIds = Array.isArray(this.data.activeMissions) ? this.data.activeMissions : [];
-    var html = '<section class="mission-deck"><div class="mission-deck-head"><span>CORE SALVAGE · 核心打捞</span><b>选一个打捞点，直接出海</b><em>' + activeIds.length + ' 个打捞点</em></div>' + recBanner + '<div class="mission-list">';
+    var html = '<section class="mission-deck"><div class="mission-deck-head"><span>CORE SALVAGE · 核心打捞</span><b>选一个打捞点，直接出海</b><em>' + activeIds.length + ' 个打捞点</em></div>' +
+      '<div class="mission-deck-tools"><span>全部 ' + MISSIONS.length + ' 个打捞点已开放</span><button data-action="mission-selector">快速选择 ↗</button></div>' + recBanner + '<div class="mission-list">';
     for (var i = 0; i < activeIds.length; i++) {
       var m = this.missionById(activeIds[i]);
       if (!m) continue;
@@ -2349,7 +2366,7 @@
     }
     html += '</div></section>';
     if (level === 1) {
-      html += '<div class="novice-path"><span>FIRST TIDE · 新手航线</span><b>先完成这一网，再升级避难所。</b><p>避难所 Lv.2 会解锁「废料拼图」「声呐扫掠」和每日潮汐；Lv.3 再开放更多海况与漂流瓶。</p><button data-action="go-shelter">去避难所升级</button></div>';
+      html += '<div class="novice-path"><span>FIRST TIDE · 新手航线</span><b>先挑一个喜欢的打捞点。</b><p>全部 11 个打捞点都已开放；建议先从沉城抓钩开始。升级避难所到 Lv.2 会开放每日、熟练度、推荐和契约。</p><div class="novice-actions"><button data-action="mission-selector">看全部打捞点</button><button data-action="go-shelter">去避难所升级</button></div></div>';
     } else {
       html += '<div class="task-support-divider"><span>DAILY & ROUTE</span><b>今日事务</b><em>任务、轮换与连携</em></div>' + this.renderDailyCard();
       if (level >= 3) html += this.renderSeaCodex() + this.renderTideMail();
@@ -3146,8 +3163,8 @@
     {
       img: 'assets/bg-hub.webp',
       kicker: 'FIRST TIDE · 慢慢来',
-      title: '前期只开一扇门',
-      text: '新手期只开放沉城抓钩。升级避难所到 Lv.2，会解锁废料拼图、声呐扫掠和每日潮汐；Lv.3 之后再开放海况图鉴、漂流瓶和打捞队。先把这一网捞稳，别急着看懂整片海。'
+      title: '先挑一个喜欢的',
+      text: '所有打捞点都已开放，点任务页的「快速选择」就能看到全部 11 种玩法。建议先从沉城抓钩开始；升级避难所到 Lv.2，会开放每日、熟练度和契约，让你越玩越有目标。'
     }
   ];
 
@@ -4980,6 +4997,8 @@
         else if (action === 'quality') self.cycleQuality();
         else if (action === 'reset-save') self.resetSave();
         else if (action === 'mission') self.startMission(actionEl.getAttribute('data-mission'));
+        else if (action === 'mission-selector') self.openMissionSelector();
+        else if (action === 'mission-pick') { self.closeStoryDetail(); self.startMission(actionEl.getAttribute('data-mission')); }
         else if (action === 'mission-detail') self.openStoryDetail('mission', actionEl.getAttribute('data-id'));
         else if (action === 'crew-detail') self.openStoryDetail('crew', actionEl.getAttribute('data-id'));
         else if (action === 'upgrade-detail') self.openStoryDetail('upgrade', actionEl.getAttribute('data-id'));
