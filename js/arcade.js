@@ -610,6 +610,9 @@
     if (this.applied.diveLowCaught > 0) {
       chips += '<span class="summary-chip low-oxygen" style="--tone:#ffb070">低氧冲刺 · ' + this.applied.diveLowCaught + ' 次收集</span>';
     }
+    if (this.applied.spreadShots > 0) {
+      chips += '<span class="summary-chip spread" style="--tone:#ffdf72">散射炮 · ' + this.applied.spreadShots + ' 轮</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
