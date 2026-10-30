@@ -607,6 +607,9 @@
     if (this.applied.trenchDepth > 0) {
       chips += '<span class="summary-chip depth" style="--tone:#79d8ff">海沟深度 · ' + this.applied.trenchDepth + ' / 5 层</span>';
     }
+    if (this.applied.diveLowCaught > 0) {
+      chips += '<span class="summary-chip low-oxygen" style="--tone:#ffb070">低氧冲刺 · ' + this.applied.diveLowCaught + ' 次收集</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
