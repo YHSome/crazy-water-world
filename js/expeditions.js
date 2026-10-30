@@ -202,6 +202,7 @@
     this.arcade = b.arcade; this.audio = b.audio; this.w = b.w; this.h = b.h;
     this.duration = b.duration; this.remaining = b.remaining; this.time = 0; this.done = false;
     this.score = 0; this.correct = 0; this.wrong = 0; this.total = 12; this.left = 12;
+    this.combo = 0; this.bestCombo = 0; this.comboNotice = 0;
     this.flash = 0; this.shake = 0; this.state = 'play';
     this.bins = this.pickBins();
     this.counts = counts();
@@ -230,13 +231,22 @@
     var bin = this.bins[idx];
     if (!bin) return;
     if (bin.id === this.current.id) {
-      this.correct += 1; this.left -= 1; this.score += 80;
+      this.correct += 1; this.left -= 1;
+      this.combo += 1;
+      this.bestCombo = Math.max(this.bestCombo, this.combo);
+      this.score += 80 + Math.min(100, (this.combo - 1) * 15);
+      if (this.combo > 0 && this.combo % 5 === 0) {
+        this.remaining = Math.min(this.duration, this.remaining + 2);
+        this.comboNotice = 1.2;
+        this.flash = 0.3;
+        this.audio.claim();
+      }
       this.counts[bin.id] = (this.counts[bin.id] || 0) + 1;
       this.flash = 0.2; this.audio.matchLine(this.correct);
       if (this.left <= 0) { this.finish(); return; }
       this.current = this.nextItem();
     } else {
-      this.wrong += 1; this.remaining = Math.max(0, this.remaining - 3);
+      this.wrong += 1; this.combo = 0; this.remaining = Math.max(0, this.remaining - 3);
       this.shake = 0.2; this.flash = -0.18; this.audio.error();
       if (this.remaining <= 0) this.finish();
     }
@@ -245,9 +255,9 @@
   SortGame.prototype.getScore = function () { return this.score; };
   SortGame.prototype.getHud = function () {
     return {
-      statLabel: '待分拣', stat: String(this.left),
+      statLabel: '待分拣', stat: String(this.left) + (this.combo ? ' · 连' + this.combo : ''),
       loot: this.counts, hasAction: false,
-      hint: '看清中间货物，点底部对应材料箱 · 点错 -3 秒'
+      hint: '看清货物点对应料箱 · 连续分拣提高得分，5 连 +2 秒 · 点错 -3 秒'
     };
   };
   SortGame.prototype.update = function (dt) {
@@ -256,6 +266,7 @@
     this.remaining = Math.max(0, this.remaining - dt);
     this.flash = Math.max(0, this.flash - dt * 2.4);
     this.shake = Math.max(0, this.shake - dt * 3);
+    this.comboNotice = Math.max(0, this.comboNotice - dt);
     if (this.remaining <= 0) this.finish();
   };
   SortGame.prototype.finish = function () {
@@ -265,7 +276,7 @@
     for (var i = 0; i < CW.MATERIALS.length; i++) m[CW.MATERIALS[i].id] = 0;
     for (var id in this.counts) if (this.counts[id]) m[id] = this.counts[id];
     this.result = {
-      type: 'sort', score: this.score + this.correct * 30, correct: this.correct,
+      type: 'sort', score: this.score + this.correct * 30, correct: this.correct, bestCombo: this.bestCombo,
       credits: 100 + this.correct * 45, filters: 0,
       materials: m, collectibles: []
     };
@@ -321,7 +332,14 @@
     }
     ctx.fillStyle = 'rgba(230, 255, 246, 0.58)';
     ctx.font = '600 10px "Cascadia Mono", monospace';
-    ctx.fillText('CORRECT ' + this.correct + ' · MISS ' + this.wrong, w / 2, h * 0.93);
+    ctx.fillText('CORRECT ' + this.correct + ' · COMBO ' + this.combo + ' · MISS ' + this.wrong, w / 2, h * 0.93);
+    if (this.comboNotice > 0) {
+      ctx.globalAlpha = Math.min(1, this.comboNotice * 2);
+      ctx.fillStyle = '#ffe08a';
+      ctx.font = '800 15px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText(this.combo + ' 连 · +2 秒', w / 2, h * 0.27);
+      ctx.globalAlpha = 1;
+    }
     ctx.restore();
   };
   CW.SortGame = SortGame;
