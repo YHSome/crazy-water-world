@@ -613,6 +613,12 @@
     if (this.applied.spreadShots > 0) {
       chips += '<span class="summary-chip spread" style="--tone:#ffdf72">散射炮 · ' + this.applied.spreadShots + ' 轮</span>';
     }
+    if (this.applied.trawlPerfect > 0) {
+      chips += '<span class="summary-chip perfect-catch" style="--tone:#ffe08a">完美接取 · ' + this.applied.trawlPerfect + ' 次</span>';
+    }
+    if (this.applied.trawlFrenzy > 0) {
+      chips += '<span class="summary-chip net-frenzy" style="--tone:#ffcf72">满网 · ' + this.applied.trawlFrenzy + ' 次</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
