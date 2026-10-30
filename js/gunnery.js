@@ -31,6 +31,9 @@
     this.credits = 0;
     this.caught = 0;
     this.combo = 0;
+    this.specialCharge = 0;
+    this.spreadReady = false;
+    this.spreadShots = 0;
     this.counts = {};
     for (var i = 0; i < CW.MATERIALS.length; i++) this.counts[CW.MATERIALS[i].id] = 0;
     this.collectibles = [];
@@ -58,6 +61,9 @@
     this.credits = 0;
     this.caught = 0;
     this.combo = 0;
+    this.specialCharge = 0;
+    this.spreadReady = false;
+    this.spreadShots = 0;
     this.targets = [];
     this.bullets = [];
     this.particles = [];
@@ -85,10 +91,18 @@
     var a = Math.atan2(y - p.y, x - p.x);
     if (a > -0.18) a = -0.18;
     p.angle = a;
-    p.cooldown = 0.24;
-    var mx = p.x + Math.cos(a) * 30;
-    var my = p.y + Math.sin(a) * 30;
-    this.bullets.push({ x: mx, y: my, vx: Math.cos(a) * 720, vy: Math.sin(a) * 720, life: 1.2 });
+    var spread = this.spreadReady;
+    p.cooldown = spread ? 0.34 : 0.24;
+    if (spread) {
+      this.spreadReady = false;
+      this.spreadShots += 1;
+      this.popups.push({ x: p.x, y: p.y - 42, text: '散射炮 ×3', color: '#ffdf72', life: 1.1, maxLife: 1.1 });
+    }
+    var angles = spread ? [a - 0.14, a, a + 0.14] : [a];
+    for (var ai = 0; ai < angles.length; ai++) {
+      var aa = angles[ai];
+      this.bullets.push({ x: p.x + Math.cos(aa) * 30, y: p.y + Math.sin(aa) * 30, vx: Math.cos(aa) * 720, vy: Math.sin(aa) * 720, life: 1.2, special: spread });
+    }
     this.audio.click();
   };
   GunneryGame.prototype.pointerMove = function (x, y) {
@@ -107,7 +121,7 @@
       loot: this.counts,
       filters: 0,
       hasAction: false,
-      hint: '点击海面瞄准并开炮 · 击落货箱与金条 · 水雷会扣 3 秒'
+      hint: '点击海面瞄准开炮 · 每命中 5 次装填散射炮 · 水雷会扣 3 秒'
     };
   };
 
@@ -140,6 +154,13 @@
     }
     this.caught += 1;
     this.combo = Math.min(9, this.combo + 1);
+    this.specialCharge += 1;
+    if (this.specialCharge >= 5) {
+      this.specialCharge = 0;
+      this.spreadReady = true;
+      this.popups.push({ x: this.player.x, y: this.player.y - 48, text: '散射炮已装填 · 下一发 ×3', color: '#ffdf72', life: 1.5, maxLife: 1.5 });
+      this.audio.claim();
+    }
     var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.06));
     this.credits += gained;
     for (var k in data.mats) {
@@ -226,7 +247,8 @@
       credits: this.credits,
       collectibles: this.collectibles.slice(),
       filters: 0,
-      materials: this.counts
+      materials: this.counts,
+      spreadShots: this.spreadShots
     };
   };
 
@@ -292,9 +314,9 @@
     for (var i = 0; i < this.targets.length; i++) this.drawTarget(ctx, this.targets[i]);
     for (var b = 0; b < this.bullets.length; b++) {
       var bu = this.bullets[b];
-      ctx.fillStyle = '#ffe6a1';
+      ctx.fillStyle = bu.special ? '#fff1b0' : '#ffe6a1';
       ctx.beginPath();
-      ctx.arc(bu.x, bu.y, 5, 0, Math.PI * 2);
+      ctx.arc(bu.x, bu.y, bu.special ? 6 : 5, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = 'rgba(255, 230, 161, 0.4)';
       ctx.lineWidth = 2;
@@ -333,7 +355,25 @@
     ctx.beginPath();
     ctx.arc(0, 0, 26, 0, Math.PI * 2);
     ctx.stroke();
+    if (this.spreadReady) {
+      ctx.strokeStyle = '#fff1b0';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 33 + Math.sin(this.time * 8) * 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.restore();
+    if (this.spreadReady) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(2,25,34,.78)';
+      ctx.font = '800 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      var sw = ctx.measureText('散射炮就绪').width;
+      ctx.beginPath(); ctx.roundRect(p.x - sw / 2 - 7, p.y - 52, sw + 14, 18, 8); ctx.fill();
+      ctx.fillStyle = '#ffdf72';
+      ctx.fillText('散射炮就绪', p.x, p.y - 39);
+      ctx.restore();
+    }
     for (var pi = 0; pi < this.particles.length; pi++) {
       var pt = this.particles[pi];
       ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
