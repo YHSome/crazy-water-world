@@ -4858,6 +4858,7 @@
       spreadShots: result.type === 'gunnery' ? Math.max(0, Number(result.spreadShots) || 0) : 0,
       trawlPerfect: result.type === 'trawl' ? Math.max(0, Number(result.perfectCatches) || 0) : 0,
       trawlFrenzy: result.type === 'trawl' ? Math.max(0, Number(result.frenzyActivations) || 0) : 0,
+      cutPerfect: result.type === 'cut' ? Math.max(0, Number(result.perfectCuts) || 0) : 0,
       seaBonus: seaBonus,
       seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
