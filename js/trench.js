@@ -28,6 +28,10 @@
     this.collectibles = [];
     this.bars = [];
     this.items = [];
+    this.eels = [];
+    this.depth = 1;
+    this.maxDepth = 1;
+    this.eelTimer = 8;
     this.particles = [];
     this.popups = [];
     this.spawnTimer = 0;
@@ -50,6 +54,10 @@
     this.hull = 3;
     this.bars = [];
     this.items = [];
+    this.eels = [];
+    this.depth = 1;
+    this.maxDepth = 1;
+    this.eelTimer = 8;
     this.particles = [];
     this.popups = [];
     this.collectibles = [];
@@ -83,12 +91,12 @@
   TrenchGame.prototype.getScore = function () { return this.credits; };
   TrenchGame.prototype.getHud = function () {
     return {
-      statLabel: '剩余时间',
-      stat: Math.max(0, Math.ceil(this.remaining)) + 's',
+      statLabel: '剩余 · 深度',
+      stat: Math.max(0, Math.ceil(this.remaining)) + 's · ' + this.depth + '/5',
       loot: this.counts,
       filters: 0,
       hasAction: false,
-      hint: '拖动 / 点击控制潜航器 · 穿过岩层缺口 · 收集回声浮标'
+      hint: '拖动控制潜航器 · 穿过岩层缺口 · 避开电鳗 · 每 10 秒下潜一层'
     };
   };
 
@@ -176,6 +184,29 @@
       this.spawnTimer = Math.max(0.78, 1.22 - this.time * 0.008);
       this.spawnBar();
     }
+    var depthNow = Math.min(5, 1 + Math.floor(this.time / 10));
+    if (depthNow > this.depth) {
+      this.depth = depthNow;
+      this.maxDepth = Math.max(this.maxDepth, depthNow);
+      this.credits += 100;
+      this.flash = 0.3;
+      this.popups.push({ x: this.w / 2, y: this.h * 0.3, text: '深度 ' + this.depth + ' 层 · +100', color: '#8ff3e3', life: 1.5, maxLife: 1.5 });
+      this.audio.claim();
+    }
+    this.eelTimer -= dt;
+    if (this.time > 12 && this.eelTimer <= 0) {
+      this.eels.push({ x: rand(46, this.w - 46), t: 0, hit: false });
+      this.eelTimer = rand(6.5, 9);
+    }
+    for (var ei = this.eels.length - 1; ei >= 0; ei--) {
+      var eel = this.eels[ei];
+      eel.t += dt;
+      if (!eel.hit && eel.t > 1.5 && eel.t < 1.9 && Math.abs(p.x - eel.x) < 27) {
+        eel.hit = true;
+        this.hitBar();
+      }
+      if (eel.t > 2.1) this.eels.splice(ei, 1);
+    }
     this.itemTimer -= dt;
     if (this.itemTimer <= 0) {
       this.itemTimer = rand(1.1, 1.9);
@@ -228,7 +259,8 @@
       credits: this.credits,
       collectibles: this.collectibles.slice(),
       filters: 0,
-      materials: this.counts
+      materials: this.counts,
+      maxDepth: this.maxDepth
     };
   };
 
@@ -282,6 +314,34 @@
       ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(right, top + 10); ctx.lineTo(right, bot - 10); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(midL, top + 10); ctx.lineTo(midL, bot - 10); ctx.stroke();
+    }
+    // electric eels: telegraph → zap → fade
+    for (var ee = 0; ee < this.eels.length; ee++) {
+      var eel = this.eels[ee];
+      var ex = eel.x;
+      var active = eel.t >= 1.5 && eel.t < 2.1;
+      ctx.save();
+      if (!active) {
+        ctx.globalAlpha = 0.45;
+        ctx.strokeStyle = '#ffd166';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 7]);
+        ctx.beginPath(); ctx.moveTo(ex, 0); ctx.lineTo(ex, h - 66); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,209,102,.18)';
+        ctx.fillRect(ex - 25, 0, 50, h - 66);
+      } else {
+        ctx.globalAlpha = Math.max(0, 1 - (eel.t - 1.5) / 0.6);
+        ctx.strokeStyle = '#9ff6e6';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#79d8ff';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.moveTo(ex, 0);
+        for (var ey = 0; ey < h - 66; ey += 22) ctx.lineTo(ex + Math.sin(ey * .23 + t * 18) * 9, ey);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
     // items
     for (var ii = 0; ii < this.items.length; ii++) {
@@ -355,7 +415,7 @@
     ctx.fillText('海沟回声 · 连击 ×' + this.combo, w / 2, h - 40);
     ctx.fillStyle = 'rgba(190,247,240,.68)';
     ctx.font = '10px "Noto Sans SC", sans-serif';
-    ctx.fillText('拖动控制方向 · 船体 ' + this.hull + ' / 3 · 氧气 ' + Math.max(0, Math.ceil(this.remaining)) + 's', w / 2, h - 20);
+    ctx.fillText('深度 ' + this.depth + ' / 5 · 船体 ' + this.hull + ' / 3 · 氧气 ' + Math.max(0, Math.ceil(this.remaining)) + 's', w / 2, h - 20);
   };
 
   CW.TrenchGame = TrenchGame;
