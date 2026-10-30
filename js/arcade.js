@@ -601,6 +601,9 @@
     if (this.applied.masteryLevel > 0) {
       chips += '<span class="summary-chip mastery" style="--tone:#0f8f8a">熟练 Lv.' + this.applied.masteryLevel + ' · +' + (this.applied.masteryLevel * 3) + '%</span>';
     }
+    if (this.applied.perfectCount > 0) {
+      chips += '<span class="summary-chip precision" style="--tone:#ffcf6e">精准投放 ×' + this.applied.perfectCount + ' · 已计入分数</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
@@ -766,6 +769,10 @@
     this.filters = 0;
     this.lowStreak = 0;
     this.highCaught = 0;
+    this.precisionStreak = 0;
+    this.perfectCount = 0;
+    this.goodCount = 0;
+    this.dropQuality = 0;
     this.rareFound = false;
     this.hasFilter = false;
     this.counts = emptyMaterialCounts();
@@ -815,6 +822,10 @@
     this.specials = [];
     this.lowStreak = 0;
     this.highCaught = 0;
+    this.precisionStreak = 0;
+    this.perfectCount = 0;
+    this.goodCount = 0;
+    this.dropQuality = 0;
     this.length = 62;
     this.swingTime = 0;
     this.angle = 0;
@@ -917,6 +928,10 @@
     this.specials = [];
     this.lowStreak = 0;
     this.highCaught = 0;
+    this.precisionStreak = 0;
+    this.perfectCount = 0;
+    this.goodCount = 0;
+    this.dropQuality = 0;
     this.buildItemSprites();
     this.audio.click();
   };
@@ -937,6 +952,20 @@
 
   HookGame.prototype.drop = function () {
     if (this.state !== 'swing') return;
+    var aim = Math.abs(this.angle);
+    this.dropQuality = aim < 0.12 ? 2 : aim < 0.28 ? 1 : 0;
+    if (this.dropQuality === 2) {
+      this.perfectCount += 1;
+      this.precisionStreak += 1;
+      this.flash = Math.max(this.flash, 0.28);
+      this.popups.push({ x: this.pivot().x, y: this.pivot().y + 24, text: 'PERFECT · 精准 +20%', color: '#ffe08a', life: 1.0, maxLife: 1.0 });
+    } else if (this.dropQuality === 1) {
+      this.goodCount += 1;
+      this.precisionStreak = 0;
+      this.popups.push({ x: this.pivot().x, y: this.pivot().y + 24, text: 'GOOD · +10%', color: '#9feeff', life: 0.8, maxLife: 0.8 });
+    } else {
+      this.precisionStreak = 0;
+    }
     this.state = 'shoot';
     this.shootAngle = this.angle;
     this.length = 62;
@@ -957,7 +986,7 @@
       filters: this.filters,
       hasAction: true,
       actionLabel: '放下抓钩' + (this.combo > 1 ? ' · 连击×' + this.combo : ''),
-      hint: '点击水面，抓钩会朝摆动方向下潜 · 连续抓取提高打捞币，水雷会清零'
+      hint: '点击水面放下抓钩 · 摆到中间时松手触发精准 +20% · 水雷会清零连击'
     };
   };
 
@@ -1031,6 +1060,8 @@
           this.attached = null;
           this.combo = 0;
           this.comboTimer = 0;
+          this.precisionStreak = 0;
+          this.dropQuality = 0;
           this.remaining = Math.max(0, this.remaining - 5);
           this.flash = 1;
           this.shake = 10;
@@ -1081,14 +1112,20 @@
       var highTier = data.tier === 'high';
       this.lowStreak = highTier ? 0 : this.lowStreak + 1;
       if (highTier) this.highCaught += 1;
-      var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.08));
+      var gained = Math.round(data.credits * (1 + (this.combo - 1) * 0.08) * (1 + this.dropQuality * 0.1));
       var crit = Math.random() < 0.15;
       if (crit) gained *= 2;
       this.credits += gained;
       for (var key in data.mats) {
         if (Object.prototype.hasOwnProperty.call(data.mats, key)) this.counts[key] = (this.counts[key] || 0) + data.mats[key];
       }
-      this.popups.push({ x: it.x, y: it.y - 20, text: '+' + gained + (crit ? ' 暴击×2' : ''), color: crit ? '#ff9a5c' : '#ffd166', life: crit ? 1.5 : 1.2, maxLife: crit ? 1.5 : 1.2 });
+      this.popups.push({ x: it.x, y: it.y - 20, text: '+' + gained + (crit ? ' 暴击×2' : '') + (this.dropQuality === 2 ? ' 精准' : this.dropQuality === 1 ? ' 良好' : ''), color: crit ? '#ff9a5c' : '#ffd166', life: crit ? 1.5 : 1.2, maxLife: crit ? 1.5 : 1.2 });
+      if (this.dropQuality === 2 && this.precisionStreak === 3) {
+        this.credits += 120;
+        this.flash = 0.32;
+        this.popups.push({ x: it.x, y: it.y - 80, text: '精准三连 +120', color: '#ffe08a', life: 1.7, maxLife: 1.7 });
+      }
+      this.dropQuality = 0;
       if (this.combo > 1) this.popups.push({ x: it.x, y: it.y - 40, text: '连击 ×' + this.combo, color: '#9feeff', life: 1.2, maxLife: 1.2 });
       if (this.combo === 4 || this.combo === 7) {
         var comboBonus = this.combo === 4 ? 80 : 180;
@@ -1189,6 +1226,7 @@
       credits: this.credits,
       filters: this.filters,
       bestCombo: this.bestCombo,
+      perfectCount: this.perfectCount,
       safeCount: this.safeCount,
       goldCount: this.goldCount,
       collectibles: this.collectibles.slice(),
@@ -1325,15 +1363,36 @@
       if (!this.items[it].grabbed) this.drawItem(ctx, this.items[it]);
     }
 
+    // center aim guide: the rope turns gold near the perfect angle
+    var aimGood = this.state === 'swing' && Math.abs(this.angle) < 0.12;
+    ctx.save();
+    ctx.setLineDash([3, 8]);
+    ctx.strokeStyle = 'rgba(255, 224, 138, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pivot.x, pivot.y + 12);
+    ctx.lineTo(pivot.x, bottom + 8);
+    ctx.stroke();
+    ctx.restore();
     // pulley, rope and image-based hook
     this.drawPulley(ctx, pivot);
     var tip = this.hookTip();
-    ctx.strokeStyle = 'rgba(224, 210, 170, 0.58)';
-    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = aimGood ? 'rgba(255, 224, 138, 0.95)' : 'rgba(224, 210, 170, 0.58)';
+    ctx.lineWidth = aimGood ? 2.4 : 1.4;
     ctx.beginPath();
     ctx.moveTo(pivot.x, pivot.y - 1);
     ctx.lineTo(tip.x, tip.y);
     ctx.stroke();
+    if (aimGood) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = '#ffe08a';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(pivot.x, pivot.y, 17, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
     this.drawHook(ctx, tip);
     if (this.attached) {
       this.drawItem(ctx, this.attached, true);
