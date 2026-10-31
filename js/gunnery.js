@@ -34,6 +34,9 @@
     this.specialCharge = 0;
     this.spreadReady = false;
     this.spreadShots = 0;
+    this.boss = null;
+    this.bossSpawned = false;
+    this.bossDefeated = 0;
     this.counts = {};
     for (var i = 0; i < CW.MATERIALS.length; i++) this.counts[CW.MATERIALS[i].id] = 0;
     this.collectibles = [];
@@ -64,6 +67,9 @@
     this.specialCharge = 0;
     this.spreadReady = false;
     this.spreadShots = 0;
+    this.boss = null;
+    this.bossSpawned = false;
+    this.bossDefeated = 0;
     this.targets = [];
     this.bullets = [];
     this.particles = [];
@@ -121,7 +127,7 @@
       loot: this.counts,
       filters: 0,
       hasAction: false,
-      hint: '点击海面瞄准开炮 · 每命中 5 次装填散射炮 · 水雷会扣 3 秒'
+      hint: '点击海面瞄准开炮 · 每命中 5 次装填散射炮 · 15 秒后走私炮艇出现 · 水雷扣 3 秒'
     };
   };
 
@@ -141,6 +147,62 @@
       r: key === 'gold' ? 20 : 18,
       bob: Math.random() * Math.PI * 2
     });
+  };
+
+  GunneryGame.prototype.spawnBoss = function () {
+    this.bossSpawned = true;
+    this.boss = { x: this.w + 64, y: rand(150, this.h * 0.4), vx: -52, hp: 3, r: 40, phase: 0 };
+    this.popups.push({ x: this.w / 2, y: 160, text: '走私炮艇接近！', color: '#ffcf72', life: 1.8, maxLife: 1.8 });
+    this.audio.claim();
+  };
+
+  GunneryGame.prototype.hitBoss = function (boss) {
+    boss.hp -= 1;
+    this.audio.hit ? this.audio.hit() : this.audio.click();
+    this.particles.push({ x: boss.x, y: boss.y, vx: 0, vy: 0, life: 0.5, maxLife: 0.5, size: 8, color: '#ffcf72' });
+    this.popups.push({ x: boss.x, y: boss.y - 46, text: '炮艇装甲 -1', color: '#ffcf72', life: 0.8, maxLife: 0.8 });
+    if (boss.hp > 0) return;
+    this.boss = null;
+    this.bossDefeated += 1;
+    this.credits += 500;
+    if (CW.rollCollectibleDef) {
+      var cdef = CW.rollCollectibleDef();
+      this.collectibles.push(cdef.id);
+      this.popups.push({ x: boss.x, y: boss.y - 76, text: '炮艇击沉 · 收藏 ' + cdef.name, color: '#ffdf72', life: 2.0, maxLife: 2.0 });
+    }
+    this.popups.push({ x: boss.x, y: boss.y - 54, text: '走私炮艇击沉 +500', color: '#ffe18a', life: 1.8, maxLife: 1.8 });
+    for (var p = 0; p < 34; p++) {
+      var a = Math.random() * Math.PI * 2;
+      this.particles.push({ x: boss.x, y: boss.y, vx: Math.cos(a) * rand(50, 220), vy: Math.sin(a) * rand(50, 220), life: rand(0.4, 1), maxLife: 1, size: rand(2, 5), color: '#ffcf72' });
+    }
+    this.audio.claim();
+  };
+
+  GunneryGame.prototype.drawBoss = function (ctx, boss) {
+    ctx.save();
+    ctx.translate(boss.x, boss.y + Math.sin(boss.phase * 2) * 4);
+    ctx.fillStyle = 'rgba(2, 24, 32, 0.38)';
+    ctx.beginPath(); ctx.ellipse(3, 6, 47, 25, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1b3038';
+    ctx.strokeStyle = '#ffcf72';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-45, 4); ctx.lineTo(-27, -17); ctx.lineTo(26, -17); ctx.lineTo(45, 4); ctx.lineTo(28, 22); ctx.lineTo(-28, 22); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffcf72';
+    ctx.fillRect(-20, -10, 40, 7);
+    ctx.fillStyle = '#ff8a5c';
+    ctx.beginPath(); ctx.arc(-24, 12, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(24, 12, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffe18a';
+    ctx.font = '800 9px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('走私炮艇', 0, 51);
+    for (var hp = 0; hp < 3; hp++) {
+      ctx.fillStyle = hp < boss.hp ? '#ffcf72' : 'rgba(255,255,255,.22)';
+      ctx.beginPath(); ctx.arc(-14 + hp * 14, 37, 3.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
   };
 
   GunneryGame.prototype.hit = function (t) {
@@ -202,6 +264,12 @@
         this.targets.splice(i, 1);
       }
     }
+    if (!this.bossSpawned && this.time >= 15) this.spawnBoss();
+    if (this.boss) {
+      this.boss.x += this.boss.vx * dt;
+      this.boss.phase += dt;
+      if (this.boss.x < -80) this.boss = null;
+    }
     for (var b = this.bullets.length - 1; b >= 0; b--) {
       var bu = this.bullets[b];
       bu.x += bu.vx * dt;
@@ -210,6 +278,11 @@
       if (bu.x < -20 || bu.x > this.w + 20 || bu.y < -20 || bu.life <= 0) {
         this.bullets.splice(b, 1);
         continue;
+      }
+      if (this.boss && Math.hypot(bu.x - this.boss.x, bu.y - this.boss.y) < this.boss.r + 6) {
+        this.bullets.splice(b, 1);
+        this.hitBoss(this.boss);
+        break;
       }
       for (var ti = this.targets.length - 1; ti >= 0; ti--) {
         var tt = this.targets[ti];
@@ -248,7 +321,8 @@
       collectibles: this.collectibles.slice(),
       filters: 0,
       materials: this.counts,
-      spreadShots: this.spreadShots
+      spreadShots: this.spreadShots,
+      bossDefeated: this.bossDefeated
     };
   };
 
@@ -312,6 +386,7 @@
       ctx.stroke();
     }
     for (var i = 0; i < this.targets.length; i++) this.drawTarget(ctx, this.targets[i]);
+    if (this.boss) this.drawBoss(ctx, this.boss);
     for (var b = 0; b < this.bullets.length; b++) {
       var bu = this.bullets[b];
       ctx.fillStyle = bu.special ? '#fff1b0' : '#ffe6a1';
