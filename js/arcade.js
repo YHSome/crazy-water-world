@@ -622,6 +622,9 @@
     if (this.applied.spreadShots > 0) {
       chips += '<span class="summary-chip spread" style="--tone:#ffdf72">散射炮 · ' + this.applied.spreadShots + ' 轮</span>';
     }
+    if (this.applied.gunneryBoss > 0) {
+      chips += '<span class="summary-chip boss-sunk" style="--tone:#ffcf72">走私炮艇 · ' + this.applied.gunneryBoss + ' 艘</span>';
+    }
     if (this.applied.trawlPerfect > 0) {
       chips += '<span class="summary-chip perfect-catch" style="--tone:#ffe08a">完美接取 · ' + this.applied.trawlPerfect + ' 次</span>';
     }
