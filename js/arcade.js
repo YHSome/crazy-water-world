@@ -296,6 +296,8 @@
     else if (action === 'arcade-permit') this.choosePermit(el ? el.getAttribute('data-permit') : null);
     else if (action === 'arcade-start') this.startCountdown();
     else if (action === 'arcade-close') this.close();
+  else if (action === 'arcade-retry') this.retryRun();
+  else if (action === 'arcade-next') this.nextRun();
     else if (action === 'arcade-story') this.hub.openStoryDetail('mission', this.type);
     else if (action === 'arcade-action') {
       if (this.phase === 'playing' && this.game && this.game.drop) this.game.drop();
@@ -735,6 +737,18 @@
     this.showPlayUI(true);
     this.updateHud();
     this.audio.click();
+  };
+
+  Arcade.prototype.retryRun = function () {
+    var type = this.type;
+    this.close();
+    if (type) this.hub.startMission(type);
+  };
+
+  Arcade.prototype.nextRun = function () {
+    var next = this.hub.data.activeMissions && this.hub.data.activeMissions[0];
+    this.close();
+    this.hub.startMission(next || 'hook');
   };
 
   Arcade.prototype.close = function () {
