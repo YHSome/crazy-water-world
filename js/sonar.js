@@ -69,6 +69,10 @@
     this.score = 0;
     this.credits = 0;
     this.found = 0;
+    this.scanStreak = 0;
+    this.bestScanStreak = 0;
+    this.emptyProbes = 0;
+    this.perfectSonar = false;
     this.filters = 0;
     this.collectibles = [];
     this.counts = emptyMaterialCounts();
@@ -95,6 +99,10 @@
     this.clues = [];
     this.cargo = {};
     this.found = 0;
+    this.scanStreak = 0;
+    this.bestScanStreak = 0;
+    this.emptyProbes = 0;
+    this.perfectSonar = false;
     this.score = 0;
     this.credits = 0;
     this.filters = 0;
@@ -244,6 +252,15 @@
     } else if (item) {
       item.found = true;
       this.found += 1;
+      this.scanStreak += 1;
+      this.bestScanStreak = Math.max(this.bestScanStreak, this.scanStreak);
+      var streakBonus = (this.scanStreak - 1) * 15;
+      if (streakBonus > 0) {
+        this.credits += streakBonus;
+        this.score += streakBonus;
+        var streakY = Math.max(this.boardY + this.cell * 0.62, cy - this.cell * 0.92);
+        this.popups.push({ x: cx, y: streakY, text: '连找 ×' + this.scanStreak + ' · +' + streakBonus, color: '#ffe08a', life: 1.2, maxLife: 1.2 });
+      }
       var data = CARGO[item.key];
       this.score += data.credits;
       this.credits += data.credits;
@@ -254,7 +271,7 @@
       if (item.collectible) {
         this.collectibles.push(item.collectible);
         this.popups.push({
-          x: cx, y: cy - this.cell * 0.8,
+          x: cx, y: Math.max(this.boardY + this.cell * 0.62, cy - this.cell * 0.8),
           text: '收藏品！' + item.collectibleName,
           color: CW.COLLECTIBLE_RARITY_MAP[CW.COLLECTIBLE_MAP[item.collectible].rarity].color,
           life: 1.5, maxLife: 1.5
@@ -262,7 +279,7 @@
       }
       this.rings.push({ x: cx, y: cy, life: 0.65, maxLife: 0.65, color: data.color, big: true });
       this.popups.push({
-        x: cx, y: cy - this.cell * 0.5,
+        x: cx, y: Math.max(this.boardY + this.cell * 0.55, cy - this.cell * 0.5),
         text: data.name, color: data.color, life: 1.1, maxLife: 1.1
       });
       this.spawnBurst(cx, cy, data.color, item.key === 'filter' ? 28 : 16);
@@ -270,6 +287,8 @@
       if (item.key === 'filter') this.flash = 0.35;
       this.chainReveal(cell.r, cell.c);
     } else {
+      this.scanStreak = 0;
+      this.emptyProbes += 1;
       var dist = this.nearest(cell.r, cell.c);
       this.clues[cell.r][cell.c] = dist;
       this.rings.push({ x: cx, y: cy, life: 0.55, maxLife: 0.55, color: '#79d8ff', big: false });
@@ -348,6 +367,8 @@
     this.done = true;
     this.phase = 'done';
     var bonus = this.found >= 4 ? 90 : 0;
+    this.perfectSonar = this.found >= 4 && this.emptyProbes === 0;
+    if (this.perfectSonar) bonus += 250;
     this.credits += bonus;
     this.score += bonus;
     this.result = {
@@ -356,6 +377,9 @@
       credits: this.credits,
       filters: this.filters,
       found: this.found,
+      bestScanStreak: this.bestScanStreak,
+      emptyProbes: this.emptyProbes,
+      perfectSonar: this.perfectSonar,
       collectibles: this.collectibles.slice(),
       materials: this.counts
     };
@@ -369,12 +393,12 @@
     }
     return {
       statLabel: '剩余声呐',
-      stat: String(this.probesLeft),
+      stat: String(this.probesLeft) + (this.scanStreak ? ' · 连' + this.scanStreak : ''),
       loot: this.counts,
       hasAction: false,
       hint: deepPending
         ? '深层货箱需要二次探测 · 找到货箱会连锁揭示一格'
-        : '点击格子发射声呐 · 数字是离最近货箱的格数'
+        : '点击格子发射声呐 · 数字是离最近货箱的格数 · 连续找到货箱有连找奖励'
     };
   };
 
