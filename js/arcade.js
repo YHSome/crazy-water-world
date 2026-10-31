@@ -150,6 +150,7 @@
     gold: 'assets/real/gold.webp',
     relic: 'assets/collectibles/captain-log.webp',
     treasure: 'assets/collectibles/tide-crown.webp',
+    drone: 'assets/real/sonar.webp',
     mine: 'assets/real/mine.webp'
   };
   for (var ik in ITEM_IMAGES) {
@@ -606,6 +607,9 @@
     if (this.applied.perfectCount > 0) {
       chips += '<span class="summary-chip precision" style="--tone:#ffcf6e">精准投放 ×' + this.applied.perfectCount + ' · 已计入分数</span>';
     }
+    if (this.applied.hookDrones > 0) {
+      chips += '<span class="summary-chip hook-drone" style="--tone:#79d8ff">走私无人机 · ' + this.applied.hookDrones + ' 架</span>';
+    }
     if (this.applied.trenchDepth > 0) {
       chips += '<span class="summary-chip depth" style="--tone:#79d8ff">海沟深度 · ' + this.applied.trenchDepth + ' / 5 层</span>';
     }
@@ -787,6 +791,7 @@
     relic: { name: '沉船秘宝', credits: 420, mats: { chip: 2, glass: 2, copper: 2 }, weight: 3.0, color: '#d9b8ff', tier: 'high', specialDrop: 0.35 },
     treasure: { name: '黄金宝箱', credits: 680, mats: { chip: 3, glass: 3, copper: 3 }, weight: 3.4, color: '#ffe18a', tier: 'high', specialDrop: 0.6 },
     filter: { name: '海水过滤器', credits: 0, mats: {}, weight: 2.45, color: '#9feeff', rare: true, tier: 'special' },
+    drone: { name: '走私无人机', credits: 300, mats: { chip: 1, copper: 1 }, weight: 1.4, color: '#79d8ff', tier: 'high', drone: true },
     mine: { name: '水雷', credits: 0, mats: {}, weight: 0, color: '#ff6c55', mine: true }
   };
 
@@ -825,6 +830,8 @@
     this.dropQuality = 0;
     this.rareFound = false;
     this.hasFilter = false;
+    this.droneTimer = 12;
+    this.droneCount = 0;
     this.counts = emptyMaterialCounts();
     this.items = [];
     this.particles = [];
@@ -861,6 +868,8 @@
     this.filters = 0;
     this.rareFound = false;
     this.hasFilter = false;
+    this.droneTimer = 12;
+    this.droneCount = 0;
     this.attached = null;
     this.credits = 0;
     this.combo = 0;
@@ -960,6 +969,20 @@
     }
   };
 
+  HookGame.prototype.spawnDrone = function () {
+    this.items.push({
+      key: 'drone',
+      x: -26,
+      y: rand(this.fieldTop() + 18, this.fieldBottom() - 18),
+      r: 17 * this.itemScale,
+      phase: Math.random() * TAU,
+      grabbed: false,
+      dead: false,
+      vx: rand(52, 78),
+      drone: true
+    });
+  };
+
   HookGame.prototype.begin = function () {
     this.state = 'swing';
     this.remaining = this.duration;
@@ -1036,7 +1059,7 @@
       filters: this.filters,
       hasAction: true,
       actionLabel: '放下抓钩' + (this.combo > 1 ? ' · 连击×' + this.combo : ''),
-      hint: '点击水面放下抓钩 · 摆到中间时松手触发精准 +20% · 水雷会清零连击'
+      hint: '点击水面放下抓钩 · 中心松手精准 +20% · 走私无人机会横穿水域 · 水雷清零连击'
     };
   };
 
@@ -1056,6 +1079,19 @@
     if (this.combo > 0) {
       this.comboTimer -= dt;
       if (this.comboTimer <= 0) this.combo = 0;
+    }
+    this.droneTimer -= dt;
+    if (this.droneTimer <= 0) {
+      this.droneTimer = rand(14, 20);
+      this.spawnDrone();
+    }
+    for (var di = this.items.length - 1; di >= 0; di--) {
+      var ditem = this.items[di];
+      if (ditem.drone && !ditem.grabbed) {
+        ditem.x += ditem.vx * dt;
+        ditem.y = ditem.y + Math.sin(this.time * 2.2 + ditem.phase) * 8 * dt;
+        if (ditem.x > this.w + 40) this.items.splice(di, 1);
+      }
     }
 
     if (this.state === 'swing') {
@@ -1159,6 +1195,11 @@
       this.bestCombo = Math.max(this.bestCombo, this.combo);
       if (it.key === 'safe') this.safeCount += 1;
       if (it.key === 'gold') this.goldCount += 1;
+      if (data.drone) {
+        this.droneCount += 1;
+        this.popups.push({ x: it.x, y: it.y - 56, text: '走私无人机 · +' + data.credits, color: '#79d8ff', life: 1.6, maxLife: 1.6 });
+        this.flash = Math.max(this.flash, 0.25);
+      }
       var highTier = data.tier === 'high';
       this.lowStreak = highTier ? 0 : this.lowStreak + 1;
       if (highTier) this.highCaught += 1;
@@ -1277,6 +1318,7 @@
       filters: this.filters,
       bestCombo: this.bestCombo,
       perfectCount: this.perfectCount,
+      droneCount: this.droneCount,
       safeCount: this.safeCount,
       goldCount: this.goldCount,
       collectibles: this.collectibles.slice(),
