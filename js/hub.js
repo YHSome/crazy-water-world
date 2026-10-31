@@ -4878,6 +4878,7 @@
       masteryCount: this.missionMasteryCount(taskType),
       masteryUp: masteryUp,
       perfectCount: Math.max(0, Math.floor(Number(result.perfectCount) || 0)),
+      hookDrones: result.type === 'hook' ? Math.max(0, Number(result.droneCount) || 0) : 0,
       trenchDepth: result.type === 'trench' ? Math.max(0, Number(result.maxDepth) || 0) : 0,
       diveLowCaught: result.type === 'dive' ? Math.max(0, Number(result.lowCaught) || 0) : 0,
       spreadShots: result.type === 'gunnery' ? Math.max(0, Number(result.spreadShots) || 0) : 0,
