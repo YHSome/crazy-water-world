@@ -631,6 +631,12 @@
     if (this.applied.beaconPairs > 0) {
       chips += '<span class="summary-chip beacon-pair" style="--tone:#79d8ff">双灯信号 · ' + this.applied.beaconPairs + ' 组</span>';
     }
+    if (this.applied.sonarStreak > 0) {
+      chips += '<span class="summary-chip sonar-streak" style="--tone:#79d8ff">声呐连找 · ×' + this.applied.sonarStreak + '</span>';
+    }
+    if (this.applied.sonarPerfect) {
+      chips += '<span class="summary-chip sonar-perfect" style="--tone:#8ff3e3">无空探 · +250</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
