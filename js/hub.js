@@ -2230,6 +2230,18 @@
     return Math.max(0, runs);
   };
 
+  Hub.prototype.rollUnownedCollectibleDef = function () {
+    var pool = [];
+    for (var id in CW.COLLECTIBLE_MAP) {
+      if (!Object.prototype.hasOwnProperty.call(CW.COLLECTIBLE_MAP, id)) continue;
+      var def = CW.COLLECTIBLE_MAP[id];
+      if (def.special) continue;
+      if (!(this.data.collectibles[id] > 0)) pool.push(def);
+    }
+    if (!pool.length) return CW.rollCollectibleDef();
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
   Hub.prototype.missionMasteryCount = function (id) {
     return Math.max(0, Math.floor(Number(this.data.mastery && this.data.mastery[id]) || 0));
   };
@@ -4822,7 +4834,7 @@
     if (firstClear) {
       creditGain += 200;
       this.data.credits += 200;
-      result.collectibles.push(CW.rollCollectibleDef().id);
+      result.collectibles.push(this.rollUnownedCollectibleDef().id);
     }
     var shelterChance = this.shelterCollectibleChance();
     if (shelterChance > 0 && CW.rollCollectibleDef && Math.random() < shelterChance) {
