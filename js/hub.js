@@ -916,6 +916,9 @@
       achievements: {},
       stats: {
         bestCombo: 0,
+        hookRuns: 0,
+        matchRuns: 0,
+        sonarRuns: 0,
         sonarPerfect: 0,
         filtersFound: 0,
         collectiblesFound: 0,
@@ -1090,6 +1093,9 @@
     data.stats.creditsEarned = Math.max(0, Number(raw.stats && raw.stats.creditsEarned) || 0);
     data.stats.safeTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.safeTotal) || 0));
     data.stats.goldTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.goldTotal) || 0));
+    data.stats.hookRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.hookRuns) || 0));
+    data.stats.matchRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.matchRuns) || 0));
+    data.stats.sonarRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sonarRuns) || 0));
     data.stats.cutRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.cutRuns) || 0));
     data.stats.sortRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sortRuns) || 0));
     data.stats.beaconRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.beaconRuns) || 0));
@@ -2213,6 +2219,14 @@
     return null;
   };
 
+  Hub.prototype.missionRuns = function (id) {
+    var stats = this.data.stats || {};
+    if (id === 'hook') return Math.max(0, Number(stats.hookRuns) || 0);
+    if (id === 'match') return Math.max(0, Number(stats.matchRuns) || 0);
+    if (id === 'sonar') return Math.max(0, Number(stats.sonarRuns) || 0);
+    return Math.max(0, Number(stats[id + 'Runs']) || 0);
+  };
+
   Hub.prototype.missionMasteryCount = function (id) {
     return Math.max(0, Math.floor(Number(this.data.mastery && this.data.mastery[id]) || 0));
   };
@@ -2267,7 +2281,15 @@
     if (at < 0) return;
     this.data.activeMissions.splice(at, 1);
     this.data.candidateMissions.push(finishedId);
-    if (this.data.candidateMissions.length) this.data.activeMissions.push(this.data.candidateMissions.shift());
+    if (this.data.candidateMissions.length) {
+      var pick = 0;
+      var low = Infinity;
+      for (var ci = 0; ci < this.data.candidateMissions.length; ci++) {
+        var runs = this.missionRuns(this.data.candidateMissions[ci]);
+        if (runs < low) { low = runs; pick = ci; }
+      }
+      this.data.activeMissions.push(this.data.candidateMissions.splice(pick, 1)[0]);
+    }
   };
 
   Hub.prototype.promoteMission = function (id) {
@@ -2336,7 +2358,7 @@
           '<span class="mission-kicker">' + m.kicker + '</span>' +
           '<div class="mission-name">' + m.name +
             (this.data.grades[m.id] ? ' <span class="mission-grade grade-' + this.data.grades[m.id].toLowerCase() + '">' + this.data.grades[m.id] + '</span>' : '') +
-            ' <span class="mission-best">最佳 ' + fmt(best) + '</span></div>' +
+            ' <span class="mission-best">最佳 ' + fmt(best) + '</span>' + (this.missionRuns(m.id) === 0 ? ' <span class="mission-new">NEW</span>' : '') + '</div>' +
           '<p class="mission-desc">' + m.desc + '</p>' +
           '<div class="mission-tags">' + tags.map(function (t) {
             if (t === '稀有过滤器') return '<span class="mission-tag rare"><img src="assets/seawater-filter-icon.webp" alt="">稀有过滤器</span>';
@@ -4771,7 +4793,10 @@
     if (filtersGained > 0) this.data.filterPity = 0;
     else this.data.filterPity = Math.min(7, (this.data.filterPity || 0) + 1);
     this.data.runs += 1;
-    if (result.type === 'cut') this.data.stats.cutRuns = (this.data.stats.cutRuns || 0) + 1;
+    if (result.type === 'hook') this.data.stats.hookRuns = (this.data.stats.hookRuns || 0) + 1;
+    else if (result.type === 'match') this.data.stats.matchRuns = (this.data.stats.matchRuns || 0) + 1;
+    else if (result.type === 'sonar') this.data.stats.sonarRuns = (this.data.stats.sonarRuns || 0) + 1;
+    else if (result.type === 'cut') this.data.stats.cutRuns = (this.data.stats.cutRuns || 0) + 1;
     else if (result.type === 'sort') this.data.stats.sortRuns = (this.data.stats.sortRuns || 0) + 1;
     else if (result.type === 'beacon') this.data.stats.beaconRuns = (this.data.stats.beaconRuns || 0) + 1;
     else if (result.type === 'trawl') this.data.stats.trawlRuns = (this.data.stats.trawlRuns || 0) + 1;
