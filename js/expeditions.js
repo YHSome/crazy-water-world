@@ -278,7 +278,7 @@
     this.result = {
       type: 'sort', score: this.score + this.correct * 30, correct: this.correct, bestCombo: this.bestCombo,
       credits: 100 + this.correct * 45, filters: 0,
-      materials: m, collectibles: []
+      materials: m, collectibles: [], pairSteps: this.pairsShown
     };
   };
   SortGame.prototype.render = function (ctx) {
@@ -352,6 +352,7 @@
     this.score = 0; this.rounds = 0; this.targetRounds = 3;
     this.seq = []; this.input = []; this.showTimer = 0; this.showIndex = 0;
     this.state = 'show'; this.flash = [0, 0, 0, 0]; this.between = 0; this.wrong = 0;
+    this.pairsShown = 0; this.pairRemaining = null; this.pairAt = -1;
     this.colors = ['#ff8a5c', '#79d8ff', '#9be2a9', '#ffd166'];
     this.names = ['潮', '火', '风', '星'];
     this.bg = BEACON_BG;
@@ -361,8 +362,17 @@
     if (this.rounds >= this.targetRounds) { this.finish(); return; }
     this.seq = [];
     var len = 2 + this.rounds;
-    for (var i = 0; i < len; i++) this.seq.push((Math.random() * 4) | 0);
-    this.input = []; this.showIndex = 0; this.showTimer = 0.5; this.state = 'show';
+    for (var i = 0; i < len; i++) {
+      if (this.rounds >= 1 && Math.random() < 0.35) {
+        var a = (Math.random() * 4) | 0;
+        var b = (a + 1 + ((Math.random() * 3) | 0)) % 4;
+        this.seq.push([a, b]);
+        this.pairsShown += 1;
+      } else {
+        this.seq.push((Math.random() * 4) | 0);
+      }
+    }
+    this.input = []; this.showIndex = 0; this.showTimer = 0.5; this.state = 'show'; this.pairRemaining = null; this.pairAt = -1;
   };
   BeaconGame.prototype.begin = function () {};
   BeaconGame.prototype.pointerDown = function (x, y) {
@@ -373,17 +383,40 @@
     if (x < gx || x > gx + gw || y < gy || y > gy + gh) return;
     var idx = (y - gy > ch ? 2 : 0) + (x - gx > cw ? 1 : 0);
     this.flash[idx] = 0.3;
-    if (this.seq[this.input.length] === idx) {
+    var expected = this.seq[this.input.length];
+    var hit = false;
+    if (Array.isArray(expected)) {
+      if (!this.pairRemaining || this.pairAt !== this.input.length) {
+        this.pairRemaining = expected.slice();
+        this.pairAt = this.input.length;
+      }
+      var at = this.pairRemaining.indexOf(idx);
+      if (at >= 0) {
+        this.pairRemaining.splice(at, 1);
+        this.audio.sonarPing();
+        if (!this.pairRemaining.length) {
+          this.input.push(expected);
+          this.pairRemaining = null;
+          hit = true;
+        }
+        return;
+      }
+    } else if (expected === idx) {
       this.input.push(idx);
       this.audio.sonarPing();
+      hit = true;
+    }
+    if (hit) {
       if (this.input.length >= this.seq.length) {
         this.rounds += 1; this.score += 100 * this.rounds;
         if (this.rounds >= this.targetRounds) { this.finish(); return; }
         this.state = 'between'; this.between = 0.8;
+        this.pairRemaining = null;
       }
     } else {
       this.wrong += 1; this.remaining = Math.max(0, this.remaining - 5);
       this.input = []; this.showIndex = 0; this.showTimer = 0.6; this.state = 'show';
+      this.pairRemaining = null; this.pairAt = -1;
       this.audio.error();
       if (this.remaining <= 0) this.finish();
     }
@@ -394,7 +427,7 @@
     return {
       statLabel: '信号组', stat: Math.min(this.rounds, this.targetRounds) + ' / ' + this.targetRounds,
       loot: counts(), hasAction: false,
-      hint: this.state === 'show' ? '先记住亮灯顺序 · 再按相同顺序点击' : '按顺序点击四座灯塔 · 看错会扣 5 秒'
+      hint: this.state === 'show' ? '记住亮灯顺序 · 有时两座灯会同时亮起' : '按顺序点击四座灯塔 · 双灯可任意先后 · 看错扣 5 秒'
     };
   };
   BeaconGame.prototype.update = function (dt) {
@@ -406,10 +439,16 @@
       this.showTimer -= dt;
       if (this.showTimer <= 0) {
         if (this.showIndex < this.seq.length) {
-          this.flash[this.seq[this.showIndex]] = 0.38;
+          var step = this.seq[this.showIndex];
+          if (Array.isArray(step)) {
+            for (var sp = 0; sp < step.length; sp++) this.flash[step[sp]] = 0.42;
+            this.showTimer = 0.78;
+          } else {
+            this.flash[step] = 0.38;
+            this.showTimer = 0.62;
+          }
           this.audio.sonarPing();
           this.showIndex += 1;
-          this.showTimer = 0.62;
         } else {
           this.state = 'input';
         }
@@ -430,7 +469,7 @@
     this.result = {
       type: 'beacon', score: this.score, rounds: this.rounds,
       credits: 100 + this.rounds * 90, filters: 0,
-      materials: m, collectibles: []
+      materials: m, collectibles: [], pairSteps: this.pairsShown
     };
   };
   BeaconGame.prototype.render = function (ctx) {
