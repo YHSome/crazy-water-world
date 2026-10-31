@@ -90,6 +90,8 @@
     this.bgCache = null;
     this.score = 0;
     this.combo = 0;
+    this.overdrive = 0;
+    this.overdriveCount = 0;
     this.moves = 0;
     this.counts = [0, 0, 0, 0, 0, 0, 0, 0];
     this.matched = [];
@@ -133,6 +135,8 @@
     this.movesLeft = this.movesStart;
     this.score = 0;
     this.combo = 0;
+    this.overdrive = 0;
+    this.overdriveCount = 0;
     this.counts = [0, 0, 0, 0, 0, 0, 0, 0];
     this.matched = [];
     this.selected = null;
@@ -425,6 +429,17 @@
     }
 
     this.combo += 1;
+    if (this.combo === 5) {
+      this.overdrive = 6;
+      this.overdriveCount += 1;
+      this.flash = Math.max(this.flash, 0.35);
+      this.popups.push({
+        x: this.w / 2, y: this.boardY + this.boardH * 0.3,
+        text: '深海连锁 · 超载 6 秒',
+        life: 1.6, maxLife: 1.6, color: '#ffcf72', size: 17
+      });
+      this.audio.claim();
+    }
     if (this.combo === 4 || this.combo === 6 || this.combo === 8) {
       var comboBonus = this.combo === 4 ? 30 : this.combo === 6 ? 60 : 100;
       this.bonusCredits += comboBonus;
@@ -469,9 +484,9 @@
       if (cell.t === COLLECTIBLE_TILE) {
         if (!collectCell) collectCell = cell;
       } else {
-        this.counts[cell.t] += 1;
+        this.counts[cell.t] += this.overdrive > 0 ? 2 : 1;
       }
-      this.score += 10 * this.combo;
+      this.score += 10 * this.combo * (this.overdrive > 0 ? 2 : 1);
       if (chance(0.15)) {
         this.spawnBurst(
           this.boardX + cell.c * this.cell + this.cell / 2,
@@ -577,6 +592,7 @@
     if (this.phase === 'waiting' || this.phase === 'done') return;
     this.time += dt;
     this.invalidTimer = Math.max(0, this.invalidTimer - dt);
+    this.overdrive = Math.max(0, this.overdrive - dt);
     this.flash = Math.max(0, this.flash - dt * 2.8);
     if (this.fallTimer > 0) {
       this.fallTimer = Math.max(0, this.fallTimer - dt);
@@ -624,10 +640,10 @@
   MatchGame.prototype.getHud = function () {
     return {
       statLabel: '剩余步数',
-      stat: String(this.movesLeft),
+      stat: String(this.movesLeft) + (this.overdrive > 0 ? ' · 超载' : ''),
       loot: this.materialCounts(),
       hasAction: false,
-      hint: '四连扫线、五连清色 · 每 4 次消除触发深海馈赠'
+      hint: '四连扫线、五连清色 · 5 连进入 6 秒深海超载 · 每 4 次消除触发深海馈赠'
     };
   };
 
@@ -649,6 +665,7 @@
       specials: this.specials.slice(),
       credits: credits,
       filters: (((this.arcade.hub.data.filterPity || 0) >= 7) || (this.score >= 1200 && chance(0.05))) ? 1 : 0,
+      overdriveCount: this.overdriveCount,
       materials: this.materialCounts()
     };
   };
@@ -793,6 +810,22 @@
       ctx.restore();
     }
     ctx.restore();
+
+    if (this.overdrive > 0) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 207, 114, ' + (0.45 + Math.sin(this.time * 8) * 0.2).toFixed(3) + ')';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(3, 3, w - 6, h - 6);
+      ctx.fillStyle = 'rgba(2, 31, 41, 0.78)';
+      var odt = '深海连锁 · 分数/材料 ×2 · ' + Math.ceil(this.overdrive) + 's';
+      ctx.font = '800 11px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      var odw = ctx.measureText(odt).width;
+      ctx.beginPath(); ctx.roundRect(w / 2 - odw / 2 - 9, 98, odw + 18, 24, 10); ctx.fill();
+      ctx.fillStyle = '#ffe08a';
+      ctx.textAlign = 'center';
+      ctx.fillText(odt, w / 2, 115);
+      ctx.restore();
+    }
 
     if (this.flash > 0) {
       ctx.save();
