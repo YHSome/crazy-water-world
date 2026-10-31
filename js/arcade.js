@@ -692,7 +692,7 @@
       var collectHtml = '<span>收藏品</span>';
       for (var ci = 0; ci < collectibles.length; ci++) {
         var col = collectibles[ci];
-        collectHtml += '<span class="summary-collect-item" style="--tone:' + col.color + '"><img src="' + col.icon + '" alt="">' + col.name + '</span>';
+        collectHtml += '<span class="summary-collect-item" style="--tone:' + col.color + '"><img src="' + col.icon + '" alt="">' + col.name + (col.isNew ? '<em class="collect-new">NEW</em>' : '') + '</span>';
       }
       this.dom.summaryCollect.innerHTML = collectHtml;
     } else if (this.dom.summaryCollect) {
