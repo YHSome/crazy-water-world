@@ -2221,10 +2221,13 @@
 
   Hub.prototype.missionRuns = function (id) {
     var stats = this.data.stats || {};
-    if (id === 'hook') return Math.max(0, Number(stats.hookRuns) || 0);
-    if (id === 'match') return Math.max(0, Number(stats.matchRuns) || 0);
-    if (id === 'sonar') return Math.max(0, Number(stats.sonarRuns) || 0);
-    return Math.max(0, Number(stats[id + 'Runs']) || 0);
+    var runs = 0;
+    if (id === 'hook') runs = Number(stats.hookRuns) || 0;
+    else if (id === 'match') runs = Number(stats.matchRuns) || 0;
+    else if (id === 'sonar') runs = Number(stats.sonarRuns) || 0;
+    else runs = Number(stats[id + 'Runs']) || 0;
+    if (runs <= 0 && (this.data.best && this.data.best[id]) > 0) runs = 1;
+    return Math.max(0, runs);
   };
 
   Hub.prototype.missionMasteryCount = function (id) {
@@ -4740,6 +4743,7 @@
 
   Hub.prototype.applyRunResult = function (result) {
     var taskType = result.type || 'hook';
+    var firstClear = this.missionRuns(taskType) === 0;
     var runMaterials = result.materials || {};
     result.runMaterials = runMaterials;
     result.materials = {};
@@ -4814,6 +4818,12 @@
       sBonus = 300;
       this.data.credits += sBonus;
     }
+    if (!Array.isArray(result.collectibles)) result.collectibles = [];
+    if (firstClear) {
+      creditGain += 200;
+      this.data.credits += 200;
+      result.collectibles.push(CW.rollCollectibleDef().id);
+    }
     var shelterChance = this.shelterCollectibleChance();
     if (shelterChance > 0 && CW.rollCollectibleDef && Math.random() < shelterChance) {
       if (!Array.isArray(result.collectibles)) result.collectibles = [];
@@ -4878,6 +4888,8 @@
       masteryCount: this.missionMasteryCount(taskType),
       masteryUp: masteryUp,
       perfectCount: Math.max(0, Math.floor(Number(result.perfectCount) || 0)),
+      firstClear: firstClear,
+      firstClearCredits: firstClear ? 200 : 0,
       hookDrones: result.type === 'hook' ? Math.max(0, Number(result.droneCount) || 0) : 0,
       trenchDepth: result.type === 'trench' ? Math.max(0, Number(result.maxDepth) || 0) : 0,
       diveLowCaught: result.type === 'dive' ? Math.max(0, Number(result.lowCaught) || 0) : 0,
