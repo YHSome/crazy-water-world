@@ -610,6 +610,9 @@
     if (this.applied.hookDrones > 0) {
       chips += '<span class="summary-chip hook-drone" style="--tone:#79d8ff">走私无人机 · ' + this.applied.hookDrones + ' 架</span>';
     }
+    if (this.applied.firstClear) {
+      chips += '<span class="summary-chip first-clear" style="--tone:#0b7774">首次航线 · +200 币 · 收藏 +1</span>';
+    }
     if (this.applied.trenchDepth > 0) {
       chips += '<span class="summary-chip depth" style="--tone:#79d8ff">海沟深度 · ' + this.applied.trenchDepth + ' / 5 层</span>';
     }
