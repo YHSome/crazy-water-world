@@ -4864,6 +4864,7 @@
       beaconPairs: result.type === 'beacon' ? Math.max(0, Number(result.pairSteps) || 0) : 0,
       sonarStreak: result.type === 'sonar' ? Math.max(0, Number(result.bestScanStreak) || 0) : 0,
       sonarPerfect: result.type === 'sonar' && result.perfectSonar ? 1 : 0,
+      matchOverdrive: result.type === 'match' ? Math.max(0, Number(result.overdriveCount) || 0) : 0,
       seaBonus: seaBonus,
       seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
