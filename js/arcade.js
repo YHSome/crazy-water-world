@@ -970,6 +970,7 @@
   };
 
   HookGame.prototype.spawnDrone = function () {
+    var cargo = (CW.rollCollectibleDef && Math.random() < 0.45) ? CW.rollCollectibleDef() : null;
     this.items.push({
       key: 'drone',
       x: -26,
@@ -979,7 +980,9 @@
       grabbed: false,
       dead: false,
       vx: rand(52, 78),
-      drone: true
+      drone: true,
+      collectibleId: cargo ? cargo.id : null,
+      collectibleName: cargo ? cargo.name : null
     });
   };
 
@@ -1198,6 +1201,10 @@
       if (data.drone) {
         this.droneCount += 1;
         this.popups.push({ x: it.x, y: it.y - 56, text: '走私无人机 · +' + data.credits, color: '#79d8ff', life: 1.6, maxLife: 1.6 });
+        if (it.collectibleId) {
+          this.collectibles.push(it.collectibleId);
+          this.popups.push({ x: it.x, y: it.y - 82, text: '无人机货舱 · ' + it.collectibleName, color: '#d9b8ff', life: 1.9, maxLife: 1.9 });
+        }
         this.flash = Math.max(this.flash, 0.25);
       }
       var highTier = data.tier === 'high';
@@ -1615,8 +1622,15 @@
     var sprite = this.itemSprites && this.itemSprites[item.key];
     if (sprite) {
       ctx.drawImage(sprite, -sprite.width / 2, -sprite.height / 2);
+      if (item.collectibleId) {
+        ctx.strokeStyle = '#ffdf72';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(0, 0, s + 3, 0, TAU); ctx.stroke();
+        ctx.fillStyle = '#ffdf72';
+        ctx.beginPath(); ctx.arc(s * 0.7, -s * 0.7, 3, 0, TAU); ctx.fill();
+      }
       ctx.restore();
-      this.drawItemLabel(ctx, x, y + s + 13, (data.tier === 'high' ? '★ ' : '') + data.name, data.mine ? '#ff8a6b' : data.color);
+      this.drawItemLabel(ctx, x, y + s + 13, (data.tier === 'high' ? '★ ' : '') + data.name + (item.collectibleId ? ' · 藏' : ''), data.mine ? '#ff8a6b' : data.color);
       return;
     }
 
