@@ -628,6 +628,9 @@
     if (this.applied.stackGolden > 0) {
       chips += '<span class="summary-chip golden-crate" style="--tone:#ffe08a">黄金货箱 · ' + this.applied.stackGolden + ' 箱</span>';
     }
+    if (this.applied.beaconPairs > 0) {
+      chips += '<span class="summary-chip beacon-pair" style="--tone:#79d8ff">双灯信号 · ' + this.applied.beaconPairs + ' 组</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
