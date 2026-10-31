@@ -901,6 +901,7 @@
       urgentLastWin: -1,
       marketPressure: { win: -1, counts: {} },
       equipped: [],
+      recentCollectibles: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
       quality: 'auto',
@@ -1041,6 +1042,13 @@
       }
     }
     data.trackedCollection = CW.COLLECTIBLE_MAP[raw.trackedCollection] ? String(raw.trackedCollection) : '';
+    data.recentCollectibles = [];
+    if (Array.isArray(raw.recentCollectibles)) {
+      for (var rci = 0; rci < raw.recentCollectibles.length && data.recentCollectibles.length < 6; rci++) {
+        var rcid = raw.recentCollectibles[rci];
+        if (CW.COLLECTIBLE_MAP[rcid] && data.recentCollectibles.indexOf(rcid) < 0) data.recentCollectibles.push(rcid);
+      }
+    }
     data.collectionMilestones = [];
     if (Array.isArray(raw.collectionMilestones)) {
       for (var cmi = 0; cmi < raw.collectionMilestones.length; cmi++) {
@@ -2784,6 +2792,8 @@
     if (!this.data.collectibles) this.data.collectibles = {};
     if (this.collectionRoomSpace() > 0) {
       this.data.collectibles[id] = (this.data.collectibles[id] || 0) + 1;
+      if (!Array.isArray(this.data.recentCollectibles)) this.data.recentCollectibles = [];
+      this.data.recentCollectibles = [id].concat(this.data.recentCollectibles.filter(function (x) { return x !== id; })).slice(0, 6);
       return { added: 1, credits: 0 };
     }
     var price = AUCTION_PRICES[def.rarity] || 300;
@@ -4239,7 +4249,7 @@
         var n = item.special === 'filter' ? filterCount : item.special === 'material' ? (this.data.specials[item.id] || 0) : (map[item.id] || 0);
         var isEquipped = !isSpecial && equipped.indexOf(item.id) >= 0;
         var relicInfo = CW.COLLECTIBLE_RELICS[item.id];
-        html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + (this.data.trackedCollection === item.id ? ' tracked' : '') + '" style="--rarity:' + rarity.color + '">' +
+        html += '<article class="collectible-card' + (n ? '' : ' unknown') + (isEquipped ? ' equipped' : '') + (isSpecial ? ' special' : '') + (this.data.trackedCollection === item.id ? ' tracked' : '') + ((this.data.recentCollectibles || []).indexOf(item.id) >= 0 && n ? ' recent' : '') + '" style="--rarity:' + rarity.color + '">' +
           '<button class="collectible-open" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情"></button>' +
           '<span class="collectible-art"><img src="' + (item.thumb || item.icon) + '" alt="" loading="lazy" decoding="async"><button class="img-detail collectible-detail-btn" data-action="collectible-detail" data-id="' + item.id + '" aria-label="查看 ' + item.name + ' 详情">i</button></span>' +
           '<span class="collectible-copy"><b>' + item.name + '</b><em>' + (n ? '×' + n : '未发现') + '</em>' +
@@ -4251,6 +4261,7 @@
           '</span>' : '') +
           (n && isSpecial ? '<span class="collectible-special-mark">' + (item.special === 'filter' ? '净水舱' : '升级件') + '</span>' : '') +
           (this.data.trackedCollection === item.id ? '<span class="collectible-tracked">追踪</span>' : '') +
+          ((this.data.recentCollectibles || []).indexOf(item.id) >= 0 && n ? '<span class="collectible-recent">最近</span>' : '') +
         '</article>';
       }
       html += '</div></section>';
