@@ -2921,6 +2921,7 @@
       var id = result.collectibles[i];
       var def = CW.COLLECTIBLE_MAP[id];
       if (!def || def.special) continue;
+      var wasOwned = (this.data.collectibles[id] || 0) > 0;
       var added = this.addCollectibleToRoom(id);
       overflowCredits += added.credits;
       if (!added.added) continue;
@@ -2929,7 +2930,8 @@
         name: def.name,
         rarity: def.rarity,
         color: CW.COLLECTIBLE_RARITY_MAP[def.rarity].color,
-        icon: def.thumb || def.icon
+        icon: def.thumb || def.icon,
+        isNew: !wasOwned
       });
     }
     result.collectionOverflowCredits = overflowCredits;
