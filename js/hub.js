@@ -4862,6 +4862,8 @@
       sortCombo: result.type === 'sort' ? Math.max(0, Number(result.bestCombo) || 0) : 0,
       stackGolden: result.type === 'stack' ? Math.max(0, Number(result.goldenCrates) || 0) : 0,
       beaconPairs: result.type === 'beacon' ? Math.max(0, Number(result.pairSteps) || 0) : 0,
+      sonarStreak: result.type === 'sonar' ? Math.max(0, Number(result.bestScanStreak) || 0) : 0,
+      sonarPerfect: result.type === 'sonar' && result.perfectSonar ? 1 : 0,
       seaBonus: seaBonus,
       seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
