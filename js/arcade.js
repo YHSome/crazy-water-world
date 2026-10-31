@@ -639,6 +639,9 @@
     if (this.applied.sonarPerfect) {
       chips += '<span class="summary-chip sonar-perfect" style="--tone:#8ff3e3">无空探 · +250</span>';
     }
+    if (this.applied.matchOverdrive > 0) {
+      chips += '<span class="summary-chip match-overdrive" style="--tone:#ffcf72">深海连锁 · ' + this.applied.matchOverdrive + ' 次</span>';
+    }
     if (this.applied.seaBonus > 0) {
       chips += '<span class="summary-chip sea-codex-chip" style="--tone:#79d8ff">海况图鉴 · +' + Math.round(this.applied.seaBonus * 100) + '%</span>';
     }
