@@ -3064,3 +3064,5 @@ body.low-fx .logo { animation: none !important; }
 .summary-actions .btn { min-height: 38px; padding: 0 6px; font-size: 10px; }
 .summary-actions .btn.ghost { border-color: rgba(19, 93, 96, 0.18); background: #fffdf8; color: #0b7774; }
 .summary-actions .btn.ghost:hover { background: #f2fbf6; border-color: #0b7774; }
+
+.mission-new { display: inline-flex; align-items: center; margin-left: 4px; padding: 1px 5px; border-radius: 4px; background: #0b7774; color: #fff; font-family: var(--mono); font-size: 6px; font-weight: 800; letter-spacing: 0.05em; vertical-align: middle; }
