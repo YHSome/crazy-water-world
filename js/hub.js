@@ -791,6 +791,26 @@
       id: 'archive-complete', name: '完整档案', iconImg: 'assets/collectibles/silver-musicbox.webp',
       metric: 'collectionUnique', target: 102, desc: '发现全部 102 件沉船档案。',
       reward: { credits: 5000, mats: { metal: 12, fuel: 12, fiber: 12, chip: 12, glass: 12, copper: 12 } }
+    },
+    {
+      id: 'drone-hunter', name: '走私猎人', iconImg: 'assets/real/sonar.webp',
+      metric: 'dronesCaught', target: 10, desc: '累计抓中 10 架走私无人机。',
+      reward: { credits: 700, mats: { chip: 4, copper: 3 } }
+    },
+    {
+      id: 'airdrop-three', name: '空投常客', iconImg: 'assets/real/storage.webp',
+      metric: 'airdropsCollected', target: 3, desc: '累计回收 3 次无人机空投补给。',
+      reward: { credits: 800, mats: { chip: 4, glass: 6 } }
+    },
+    {
+      id: 'boss-three', name: '炮艇终结者', iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp',
+      metric: 'bossesSunk', target: 3, desc: '累计击沉 3 艘走私炮艇。',
+      reward: { credits: 900, mats: { metal: 8, copper: 6 } }
+    },
+    {
+      id: 'overdrive-five', name: '深海连锁者', iconImg: 'assets/real/puzzle.webp',
+      metric: 'matchOverdrives', target: 5, desc: '累计触发 5 次废料拼图深海超载。',
+      reward: { credits: 700, mats: { fuel: 4, fiber: 5 } }
     }
   ]);
 
@@ -920,6 +940,10 @@
         hookRuns: 0,
         matchRuns: 0,
         sonarRuns: 0,
+        dronesCaught: 0,
+        airdropsCollected: 0,
+        bossesSunk: 0,
+        matchOverdrives: 0,
         sonarPerfect: 0,
         filtersFound: 0,
         collectiblesFound: 0,
@@ -1102,6 +1126,10 @@
     data.stats.safeTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.safeTotal) || 0));
     data.stats.goldTotal = Math.max(0, Math.floor(Number(raw.stats && raw.stats.goldTotal) || 0));
     data.stats.hookRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.hookRuns) || 0));
+    data.stats.dronesCaught = Math.max(0, Math.floor(Number(raw.stats && raw.stats.dronesCaught) || 0));
+    data.stats.airdropsCollected = Math.max(0, Math.floor(Number(raw.stats && raw.stats.airdropsCollected) || 0));
+    data.stats.bossesSunk = Math.max(0, Math.floor(Number(raw.stats && raw.stats.bossesSunk) || 0));
+    data.stats.matchOverdrives = Math.max(0, Math.floor(Number(raw.stats && raw.stats.matchOverdrives) || 0));
     data.stats.matchRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.matchRuns) || 0));
     data.stats.sonarRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sonarRuns) || 0));
     data.stats.cutRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.cutRuns) || 0));
@@ -4364,6 +4392,10 @@
       case 'collectiblesFound': return this.data.stats.collectiblesFound || 0;
       case 'dailyStreak': return this.data.dailyStreak || 0;
       case 'safeTotal': return this.data.stats.safeTotal || 0;
+      case 'dronesCaught': return this.data.stats.dronesCaught || 0;
+      case 'airdropsCollected': return this.data.stats.airdropsCollected || 0;
+      case 'bossesSunk': return this.data.stats.bossesSunk || 0;
+      case 'matchOverdrives': return this.data.stats.matchOverdrives || 0;
       case 'cutRuns': return this.data.stats.cutRuns || 0;
       case 'sortRuns': return this.data.stats.sortRuns || 0;
       case 'beaconRuns': return this.data.stats.beaconRuns || 0;
@@ -4895,6 +4927,10 @@
     stats.safeTotal = (stats.safeTotal || 0) + Math.max(0, Math.floor(Number(result.safeCount) || 0));
     stats.goldTotal = (stats.goldTotal || 0) + Math.max(0, Math.floor(Number(result.goldCount) || 0));
     stats.filtersFound = (stats.filtersFound || 0) + filtersGained;
+    stats.dronesCaught = (stats.dronesCaught || 0) + (result.type === 'hook' ? Math.max(0, Number(result.droneCount) || 0) : 0);
+    stats.airdropsCollected = (stats.airdropsCollected || 0) + (result.type === 'hook' ? Math.max(0, Number(result.airdropCount) || 0) : 0);
+    stats.bossesSunk = (stats.bossesSunk || 0) + (result.type === 'gunnery' ? Math.max(0, Number(result.bossDefeated) || 0) : 0);
+    stats.matchOverdrives = (stats.matchOverdrives || 0) + (result.type === 'match' ? Math.max(0, Number(result.overdriveCount) || 0) : 0);
     stats.collectiblesFound = (stats.collectiblesFound || 0) + collectibles.length;
     stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits + chainBonus + sBonus;
     if (result.type === 'sonar' && Number(result.found || 0) >= 4) stats.sonarPerfect = (stats.sonarPerfect || 0) + 1;
