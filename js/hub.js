@@ -1958,7 +1958,7 @@
           reward += ' · ' + (mn || mk) + '+' + o.mats[mk];
         }
       }
-      html += '<button class="expedition-option" data-action="expedition-choose" data-choice="' + o.id + '"><img src="' + o.icon + '" alt=""><b>' + o.name + '</b><span>' + o.desc + '</span><em>' + reward + '</em></button>';
+      html += '<button class="expedition-option" data-action="expedition-choose" data-choice="' + o.id + '"><img src="' + o.icon + '" alt="" loading="lazy" decoding="async"><b>' + o.name + '</b><span>' + o.desc + '</span><em>' + reward + '</em></button>';
     }
     html += '</div></div>';
     this.dom.expeditionBody.innerHTML = html;
@@ -2163,7 +2163,7 @@
       var def = CREW[i];
       var locked = (def.unlockLevel || 1) > this.shelterLevel();
       if (locked) {
-        html += '<article class="crew-card locked"><div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + (def.unlockLevel || 1) + '</em><button class="img-detail" data-action="crew-detail" data-id="' + def.id + '" aria-label="查看 ' + def.name + ' 档案">i</button></div>' +
+        html += '<article class="crew-card locked"><div class="crew-photo"><img src="' + def.iconImg + '" alt="" loading="lazy" decoding="async"><span>' + def.role + '</span><em class="crew-level">Lv.' + (def.unlockLevel || 1) + '</em><button class="img-detail" data-action="crew-detail" data-id="' + def.id + '" aria-label="查看 ' + def.name + ' 档案">i</button></div>' +
           '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>未解锁</em></div><p>' + def.desc + '</p><div class="crew-reward">避难所达到 Lv.' + (def.unlockLevel || 1) + ' 后开放</div></div>' +
           '<div class="crew-action"><button class="crew-btn" disabled>避难所 Lv.' + (def.unlockLevel || 1) + ' 解锁</button></div></article>';
         continue;
@@ -2222,7 +2222,7 @@
             '<p class="crew-gear-max">工具已满级 · 稀有概率 +3%</p>') + '</div>';
       }
       html += '<article class="crew-card' + stateClass + '">' +
-        '<div class="crew-photo"><img src="' + def.iconImg + '" alt=""><span>' + def.role + '</span><em class="crew-level">Lv.' + level + '</em><button class="img-detail" data-action="crew-detail" data-id="' + def.id + '" aria-label="查看 ' + def.name + ' 档案">i</button></div>' +
+        '<div class="crew-photo"><img src="' + def.iconImg + '" alt="" loading="lazy" decoding="async"><span>' + def.role + '</span><em class="crew-level">Lv.' + level + '</em><button class="img-detail" data-action="crew-detail" data-id="' + def.id + '" aria-label="查看 ' + def.name + ' 档案">i</button></div>' +
         '<div class="crew-copy"><div class="crew-name"><b>' + def.name + '</b><em>' + timer + '</em></div><p>' + def.desc + '</p>' +
           '<div class="crew-mastery"><span>熟练度 ' + (nextXp ? xp + ' / ' + nextXp : 'MAX') + '</span><i><b style="width:' + (xpPct * 100).toFixed(0) + '%"></b></i></div>' +
           '<div class="crew-reward">' + (mastery > 0 ? 'M Lv.' + level + ' · 产出 +' + mastery + '%' : '') + (gearLv ? ' · 工具 +' + (gearLv * 8) + '%' : '') + (mastery > 0 || gearLv ? '<br>' : '') + rewardText + '</div></div>' +
@@ -2406,7 +2406,7 @@
       if (m.id === 'sonar') tags[0] = this.sonarProbes() + ' 次声呐';
       var isRecommended = level >= 2 && recommended && recommended.id === m.id;
       html += '<article class="mission-card' + (isRecommended ? ' recommended' : '') + '">' +
-        '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt=""><button class="img-detail" data-action="mission-detail" data-id="' + m.id + '" aria-label="查看 ' + m.name + ' 详情">i</button></div>' +
+        '<div class="mission-icon' + (m.id === 'match' ? ' match' : '') + '"><img src="' + m.iconImg + '" alt="" loading="lazy" decoding="async"><button class="img-detail" data-action="mission-detail" data-id="' + m.id + '" aria-label="查看 ' + m.name + ' 详情">i</button></div>' +
         '<div class="mission-copy">' +
           '<span class="mission-kicker">' + m.kicker + '</span>' +
           '<div class="mission-name">' + m.name +
@@ -4108,7 +4108,7 @@
         if (amount) rewardHtml += '<span><img src="' + mat.iconImg + '" alt="">' + mat.name + ' +' + amount + '</span>';
       }
       html += '<article class="contract-card' + (def.rare ? ' rare' : '') + (isReady ? ' ready' : '') + (c.claimed ? ' claimed' : '') + '">' +
-        '<div class="contract-icon"><img src="' + def.iconImg + '" alt=""></div>' +
+        '<div class="contract-icon"><img src="' + def.iconImg + '" alt="" loading="lazy" decoding="async"></div>' +
         '<div class="contract-body">' +
           '<div class="contract-title"><b>' + def.name + (def.rare ? ' <em class="contract-rare">稀有</em>' : '') + '</b><span>' + progress + ' / ' + def.target + '</span></div>' +
           '<p class="contract-desc">' + def.desc + '</p>' +
@@ -4535,13 +4535,17 @@
       return ac - bc;
     }.bind(this));
     var filters = [['all', '全部'], ['salvage', '打捞'], ['tasks', '任务'], ['growth', '成长'], ['new', '新玩法']];
+    var filterCounts = {};
+    for (var fcount = 0; fcount < filters.length; fcount++) filterCounts[filters[fcount][0]] = 0;
+    filterCounts.all = list.length;
+    for (var lcount = 0; lcount < list.length; lcount++) filterCounts[this.achievementCategory(list[lcount])] += 1;
     if (!this.achievementFilter || !filters.some(function (f) { return f[0] === this.achievementFilter; }, this)) this.achievementFilter = 'all';
     var filtered = list.filter(function (def) {
       return this.achievementFilter === 'all' || this.achievementCategory(def) === this.achievementFilter;
     }, this);
     var filterHtml = '<div class="achievement-filters">';
     for (var ff = 0; ff < filters.length; ff++) {
-      filterHtml += '<button class="' + (this.achievementFilter === filters[ff][0] ? 'active' : '') + '" data-action="achievement-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + '</button>';
+      filterHtml += '<button class="' + (this.achievementFilter === filters[ff][0] ? 'active' : '') + '" data-action="achievement-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + ' <em>' + filterCounts[filters[ff][0]] + '</em></button>';
     }
     filterHtml += '</div>';
     var html = this.shelterSwitch() + this.renderStoryLog() +
@@ -4570,10 +4574,10 @@
       for (var m = 0; m < MATERIALS.length; m++) {
         var mat = MATERIALS[m];
         var amount = def.reward.mats && def.reward.mats[mat.id];
-        if (amount) mats.push('<span><img src="' + mat.iconImg + '" alt="">' + mat.name + ' +' + amount + '</span>');
+        if (amount) mats.push('<span><img src="' + mat.iconImg + '" alt="" loading="lazy" decoding="async">' + mat.name + ' +' + amount + '</span>');
       }
       html += '<article class="achievement-card' + (isReady ? ' ready' : '') + (claimed ? ' claimed' : '') + '">' +
-        '<span class="achievement-icon"><img src="' + def.iconImg + '" alt=""></span>' +
+        '<span class="achievement-icon"><img src="' + def.iconImg + '" alt="" loading="lazy" decoding="async"></span>' +
         '<div class="achievement-copy">' +
           '<div class="achievement-title"><b>' + def.name + '</b><em>' + progress + ' / ' + def.target + '</em></div>' +
           '<p>' + def.desc + '</p>' +
@@ -5150,6 +5154,13 @@
   Hub.prototype.bindEvents = function () {
     var self = this;
     document.addEventListener('pointerdown', function () { self.audio.unlock(); }, { once: true });
+    document.addEventListener('error', function (e) {
+      var img = e.target;
+      if (!img || img.tagName !== 'IMG' || img.getAttribute('data-img-fallback')) return;
+      img.setAttribute('data-img-fallback', '1');
+      img.classList.add('img-missing');
+      img.src = 'assets/img-missing.svg';
+    }, true);
 
     document.addEventListener('click', function (e) {
       var actionEl = e.target.closest ? e.target.closest('[data-action]') : null;
