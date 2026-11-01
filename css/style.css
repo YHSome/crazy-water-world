@@ -3074,3 +3074,5 @@ body.low-fx .logo { animation: none !important; }
 
 .practice-btn { display: block; margin: 6px auto 0; color: #5f7f80; font-size: 10px; }
 .practice-btn:hover { color: #0b7774; }
+
+.summary-target { margin: -4px 0 10px; color: #7c8f8f; font-family: var(--mono); font-size: 9px; text-align: right; }
