@@ -4496,6 +4496,32 @@
     this.renderPanel();
   };
 
+  Hub.prototype.achievementCategory = function (def) {
+    switch (def.metric) {
+      case 'dronesCaught':
+      case 'airdropsCollected':
+      case 'bossesSunk':
+      case 'matchOverdrives': return 'new';
+      case 'level':
+      case 'shelterLevel':
+      case 'crewMaxed':
+      case 'crewGearMax':
+      case 'dailyStreak':
+      case 'setRewardsCount':
+      case 'collectionUnique': return 'growth';
+      case 'matchScore':
+      case 'sonarPerfect':
+      case 'cutRuns':
+      case 'sortRuns':
+      case 'beaconRuns':
+      case 'expeditionRuns':
+      case 'urgentOrders':
+      case 'missionsPlayed':
+      case 'sGradesCount': return 'tasks';
+      default: return 'salvage';
+    }
+  };
+
   Hub.prototype.renderAchievements = function () {
     var ready = this.achievementsReadyCount();
     var unlocked = this.achievementUnlocked();
@@ -4508,6 +4534,16 @@
       var bc = self.data.achievements[b.id] ? 1 : 0;
       return ac - bc;
     }.bind(this));
+    var filters = [['all', '全部'], ['salvage', '打捞'], ['tasks', '任务'], ['growth', '成长'], ['new', '新玩法']];
+    if (!this.achievementFilter || !filters.some(function (f) { return f[0] === this.achievementFilter; }, this)) this.achievementFilter = 'all';
+    var filtered = list.filter(function (def) {
+      return this.achievementFilter === 'all' || this.achievementCategory(def) === this.achievementFilter;
+    }, this);
+    var filterHtml = '<div class="achievement-filters">';
+    for (var ff = 0; ff < filters.length; ff++) {
+      filterHtml += '<button class="' + (this.achievementFilter === filters[ff][0] ? 'active' : '') + '" data-action="achievement-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + '</button>';
+    }
+    filterHtml += '</div>';
     var html = this.shelterSwitch() + this.renderStoryLog() +
       '<div class="achievement-section-label"><span>LONG LOG · 长期成就</span><b>把每一次出航记下来</b></div>' +
       '<div class="achievement-summary">' +
@@ -4520,9 +4556,11 @@
         '<span><b>' + this.data.stats.sonarPerfect + '</b>声呐全图</span>' +
         '<span><b>' + this.data.stats.collectiblesFound + '</b>累计收藏</span>' +
       '</div>' +
+      filterHtml +
       '<div class="achievement-list">';
-    for (var i = 0; i < list.length; i++) {
-      var def = list[i];
+    if (!filtered.length) html += '<div class="achievement-empty">这个分类还没有可记录的成就。</div>';
+    for (var i = 0; i < filtered.length; i++) {
+      var def = filtered[i];
       var claimed = !!this.data.achievements[def.id];
       var value = this.achievementValue(def);
       var progress = Math.min(def.target, value);
@@ -5135,6 +5173,7 @@
         else if (action === 'tutorial-skip') self.skipTutorial();
         else if (action === 'sea-codex') self.openSeaCodex();
         else if (action === 'claim-sea-codex') self.claimSeaCodex();
+        else if (action === 'achievement-filter') { self.achievementFilter = actionEl.getAttribute('data-filter') || 'all'; self.audio.tab(); self.renderPanel(); }
         else if (action === 'open-tide-mail') self.openTideMail();
         else if (action === 'tide-choice') self.chooseTideMail(actionEl.getAttribute('data-choice'));
         else if (action === 'story-chapter') self.openStoryChapter(actionEl.getAttribute('data-id'));
