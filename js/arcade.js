@@ -212,6 +212,8 @@
       summary: id('arcade-summary'),
       summaryScore: id('summary-score'),
       summaryGrade: id('summary-grade'),
+      summaryTarget: id('summary-target'),
+      summaryRetry: id('summary-retry'),
       summaryCredits: id('summary-credits'),
       summaryLoot: id('summary-loot'),
       summaryRare: id('summary-rare'),
@@ -577,7 +579,19 @@
     }
   };
 
+  Arcade.prototype.gradeTargetText = function (score) {
+    var grades = CW.MISSION_GRADES && CW.MISSION_GRADES[this.type];
+    if (!grades) return '';
+    var tiers = [['B', grades.B], ['A', grades.A], ['S', grades.S]];
+    for (var i = 0; i < tiers.length; i++) {
+      if (score < tiers[i][1]) return '距离 ' + tiers[i][0] + ' 还差 ' + fmt(tiers[i][1] - score);
+    }
+    return '已达成 S 评级';
+  };
+
   Arcade.prototype.finishPractice = function (result) {
+    this.dom.summaryTarget.textContent = this.gradeTargetText(result.score || 0);
+    this.dom.summaryRetry.textContent = '正式出航';
     this.phase = 'summary';
     this.finalResult = result;
     this.applied = null;
@@ -615,6 +629,8 @@
       this.dom.summaryGrade.textContent = this.applied.grade || 'C';
       this.dom.summaryGrade.title = this.applied.sBonus ? '首次 S 评级 · +' + this.applied.sBonus + ' 打捞币' : '本局评级';
     }
+    this.dom.summaryTarget.textContent = this.gradeTargetText(result.score || 0);
+    this.dom.summaryRetry.textContent = '再来一局';
     this.dom.summaryCredits.textContent = fmt(this.applied.totalCredits);
     var chips = '';
     if (this.condition) {
