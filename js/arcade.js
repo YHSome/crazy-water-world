@@ -295,7 +295,8 @@
   Arcade.prototype.onAction = function (action, el) {
     if (action === 'arcade-back') this.back();
     else if (action === 'arcade-permit') this.choosePermit(el ? el.getAttribute('data-permit') : null);
-    else if (action === 'arcade-start') this.startCountdown();
+    else if (action === 'arcade-start') this.startCountdown(false);
+  else if (action === 'arcade-practice') this.startCountdown(true);
     else if (action === 'arcade-close') this.close();
   else if (action === 'arcade-retry') this.retryRun();
   else if (action === 'arcade-next') this.nextRun();
@@ -313,6 +314,7 @@
     this.audio.setScene(type);
     this.phase = 'brief';
     this.applied = null;
+    this.practice = false;
     this.lastLoot = '';
     this.lastHudScore = '';
     this.permit = null;
@@ -478,8 +480,9 @@
     }
   };
 
-  Arcade.prototype.startCountdown = function () {
+  Arcade.prototype.startCountdown = function (practice) {
     if (!this.game) return;
+    this.practice = !!practice;
     this.audio.click();
     this.dom.brief.classList.add('hidden');
     this.dom.summary.classList.add('hidden');
@@ -574,8 +577,30 @@
     }
   };
 
+  Arcade.prototype.finishPractice = function (result) {
+    this.phase = 'summary';
+    this.finalResult = result;
+    this.applied = null;
+    this.dom.countdown.classList.add('hidden');
+    this.showPlayUI(false);
+    this.dom.brief.classList.add('hidden');
+    this.dom.confirm.classList.add('hidden');
+    this.dom.summaryScore.textContent = fmt(result.score || 0);
+    this.dom.summaryGrade.className = 'summary-grade';
+    this.dom.summaryGrade.textContent = '练习';
+    this.dom.summaryGrade.title = '练习模式不结算奖励';
+    this.dom.summaryCredits.textContent = '0';
+    this.dom.summaryLoot.innerHTML = '<span class="summary-chip practice" style="--tone:#7c8f8f">练习模式 · 无打捞币 · 无收藏 · 不计统计</span>';
+    this.dom.summaryRare.classList.add('hidden');
+    this.dom.summaryCollect.classList.add('hidden');
+    this.dom.overflow.classList.add('hidden');
+    this.dom.summary.classList.remove('hidden');
+    this.audio.tab();
+  };
+
   Arcade.prototype.finish = function (result) {
     if (!result || this.phase === 'summary') return;
+    if (this.practice) { this.finishPractice(result); return; }
     this.phase = 'summary';
     var finalResult = this.applyCondition(result);
     this.finalResult = finalResult;
