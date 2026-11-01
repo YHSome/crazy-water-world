@@ -151,6 +151,7 @@
     relic: 'assets/collectibles/captain-log.webp',
     treasure: 'assets/collectibles/tide-crown.webp',
     drone: 'assets/real/sonar.webp',
+    airdrop: 'assets/real/storage.webp',
     mine: 'assets/real/mine.webp'
   };
   for (var ik in ITEM_IMAGES) {
@@ -651,6 +652,9 @@
     if (this.applied.hookDrones > 0) {
       chips += '<span class="summary-chip hook-drone" style="--tone:#79d8ff">走私无人机 · ' + this.applied.hookDrones + ' 架</span>';
     }
+    if (this.applied.hookAirdrops > 0) {
+      chips += '<span class="summary-chip hook-airdrop" style="--tone:#ffdf72">空投补给 · ' + this.applied.hookAirdrops + ' 次</span>';
+    }
     if (this.applied.firstClear) {
       chips += '<span class="summary-chip first-clear" style="--tone:#0b7774">首次航线 · +200 币 · 收藏 +1</span>';
     }
@@ -839,6 +843,7 @@
     treasure: { name: '黄金宝箱', credits: 680, mats: { chip: 3, glass: 3, copper: 3 }, weight: 3.4, color: '#ffe18a', tier: 'high', specialDrop: 0.6 },
     filter: { name: '海水过滤器', credits: 0, mats: {}, weight: 2.45, color: '#9feeff', rare: true, tier: 'special' },
     drone: { name: '走私无人机', credits: 300, mats: { chip: 1, copper: 1 }, weight: 1.4, color: '#79d8ff', tier: 'high', drone: true },
+    airdrop: { name: '空投补给', credits: 250, mats: { chip: 2, glass: 2 }, weight: 2.0, color: '#ffdf72', tier: 'high', airdrop: true },
     mine: { name: '水雷', credits: 0, mats: {}, weight: 0, color: '#ff6c55', mine: true }
   };
 
@@ -879,6 +884,8 @@
     this.hasFilter = false;
     this.droneTimer = 12;
     this.droneCount = 0;
+    this.airdropSpawned = false;
+    this.airdropCount = 0;
     this.counts = emptyMaterialCounts();
     this.items = [];
     this.particles = [];
@@ -917,6 +924,8 @@
     this.hasFilter = false;
     this.droneTimer = 12;
     this.droneCount = 0;
+    this.airdropSpawned = false;
+    this.airdropCount = 0;
     this.attached = null;
     this.credits = 0;
     this.combo = 0;
@@ -1247,12 +1256,25 @@
       if (it.key === 'gold') this.goldCount += 1;
       if (data.drone) {
         this.droneCount += 1;
+        if (this.droneCount % 2 === 0 && !this.airdropSpawned) {
+          this.airdropSpawned = true;
+          this.items.push({ key: 'airdrop', x: this.w / 2, y: this.fieldTop() + 34, r: 25 * this.itemScale, phase: Math.random() * TAU, grabbed: false, dead: false });
+          this.popups.push({ x: this.w / 2, y: this.fieldTop() + 78, text: '两架无人机 · 空投补给！', color: '#ffdf72', life: 1.8, maxLife: 1.8 });
+        }
         this.popups.push({ x: it.x, y: it.y - 56, text: '走私无人机 · +' + data.credits, color: '#79d8ff', life: 1.6, maxLife: 1.6 });
         if (it.collectibleId) {
           this.collectibles.push(it.collectibleId);
           this.popups.push({ x: it.x, y: it.y - 82, text: '无人机货舱 · ' + it.collectibleName, color: '#d9b8ff', life: 1.9, maxLife: 1.9 });
         }
         this.flash = Math.max(this.flash, 0.25);
+      }
+      if (data.airdrop) {
+        this.airdropCount += 1;
+        if (CW.rollCollectibleDef) {
+          for (var ad = 0; ad < 2; ad++) this.collectibles.push(CW.rollCollectibleDef().id);
+        }
+        this.popups.push({ x: it.x, y: it.y - 78, text: '空投补给 · 收藏 ×2', color: '#ffdf72', life: 1.8, maxLife: 1.8 });
+        this.flash = Math.max(this.flash, 0.28);
       }
       var highTier = data.tier === 'high';
       this.lowStreak = highTier ? 0 : this.lowStreak + 1;
@@ -1373,6 +1395,7 @@
       bestCombo: this.bestCombo,
       perfectCount: this.perfectCount,
       droneCount: this.droneCount,
+      airdropCount: this.airdropCount,
       safeCount: this.safeCount,
       goldCount: this.goldCount,
       collectibles: this.collectibles.slice(),
