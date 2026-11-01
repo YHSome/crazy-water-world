@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.67 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.68 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -617,7 +617,8 @@ HUD 以「末日第 1,281 天」计量时间，每完成一局打捞推进 2 天
 
 - 避难所标签内部切换「扩建 / 航海日志」，沿用仓库的子视图模式，保持在现有五项导航内。
 - 29 个一次性里程碑：10 个基础目标 + 切割 / 分拣 / 灯塔 / 拖网 / 潜航 / 吊装首次完成 + 「十一面手」+「第一枚 S」+「十一项全能 S」+「独当一面」+「传奇船队」+ 避难所 Lv.5 / 工具 Lv.3 / 远征 1・10 次 / 急单 10 笔 / 六套奖励 / 完整 102 件档案 / 10 架无人机 / 3 次空投 / 3 艘炮艇 / 5 次深海超载。
-- 成就列表支持 5 个分类筛选：全部 / 打捞 / 任务 / 成长 / 新玩法；`achievementCategory(def)` 按 metric 归类，切换后立即重绘。
+- 成就列表支持 5 个分类筛选：全部 / 打捞 / 任务 / 成长 / 新玩法；`achievementCategory(def)` 按 metric 归类，切换后立即重绘；按钮显示分类条目数。
+- 列表图片使用 `loading="lazy" decoding="async"`；全局捕获图片 `error`，用 `assets/img-missing.svg` 替换一次，避免本地资源损坏时出现破图。
 - 新增统计：`stats.expeditionRuns`、`stats.urgentOrders`；`shelterLevel`、`crewGearMax`、`setRewardsCount`、`collectionUnique` 作为成就指标。
 - `stats` 记录 `bestCombo / sonarPerfect / filtersFound / collectiblesFound / creditsEarned / safeTotal / goldTotal / cutRuns / sortRuns / beaconRuns`，并用 `grades / sGrades` 保存最佳评级与首次 S。
 - 成就奖励打捞币与材料；每个成就 `achievements[id]=true` 后不可重复领取。
@@ -824,6 +825,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
