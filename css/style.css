@@ -3085,3 +3085,8 @@ body.low-fx .logo { animation: none !important; }
 .achievement-filters button { min-height: 28px; padding: 0 11px; border: 1px solid rgba(19, 93, 96, 0.16); border-radius: 999px; background: #fff; color: #4f7d7e; font-family: var(--mono); font-size: 8px; font-weight: 700; }
 .achievement-filters button.active { border-color: #0b7774; background: #0b7774; color: #fff; }
 .achievement-empty { padding: 18px 12px; border: 1px dashed rgba(19, 93, 96, 0.2); border-radius: 10px; color: #7c8f8f; font-family: var(--mono); font-size: 9px; text-align: center; }
+
+.achievement-filters button em { margin-left: 3px; font-style: normal; opacity: 0.62; }
+.achievement-filters button.active em { opacity: 0.9; }
+
+img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
