@@ -902,6 +902,7 @@
       storyClaimed: {},
       mastery: {},
       seaLog: {},
+      seaCodexClaimed: false,
       weekly: { key: '', runs: 0, collectibles: 0, types: {}, claimed: [] },
       tideMail: { date: '', opened: false, choice: '' },
       recommendDay: '',
@@ -1000,6 +1001,7 @@
         data.mastery[mk] = clamp(Math.floor(Number(raw.mastery[mk]) || 0), 0, 9999);
       }
     }
+    data.seaCodexClaimed = !!raw.seaCodexClaimed;
     data.seaLog = {};
     if (raw.seaLog && typeof raw.seaLog === 'object') {
       var seaIds = {};
@@ -3377,7 +3379,13 @@
         '<div><b>' + (seen ? c.name : '未记录海况') + '</b><p>' + (seen ? c.desc : '在打捞中遇到这种海况后自动记录。') + '</p></div>' +
         '<em>' + (seen ? '+1%' : '—') + '</em></div>';
     }
-    html += '</div><div class="sea-codex-foot"><span>已记录 ' + count + ' / ' + CW.CONDITIONS.length + '</span><b>当前加成 +' + (count * 1) + '% 打捞币</b></div><div class="story-actions"><button class="story-action primary" data-action="story-close">收起图鉴</button></div></div>';
+    html += '</div><div class="sea-codex-foot"><span>已记录 ' + count + ' / ' + CW.CONDITIONS.length + '</span><b>当前加成 +' + (count * 1) + '% 打捞币</b></div>';
+    if (count >= CW.CONDITIONS.length) {
+      html += this.data.seaCodexClaimed
+        ? '<div class="sea-codex-complete claimed">全图鉴奖励已领取</div>'
+        : '<button class="sea-codex-claim" data-action="claim-sea-codex">领取全图鉴奖励 · 1,200 币 + 材料</button>';
+    }
+    html += '<div class="story-actions"><button class="story-action primary" data-action="story-close">收起图鉴</button></div></div>';
     this.tutorialStoryOpen = false;
     this.dom.storyBody.innerHTML = html;
     this.dom.storyModal.classList.remove('hidden');
@@ -3449,6 +3457,18 @@
     this.saveGame();
     this.updateUI();
     this.renderPanel();
+  };
+
+  Hub.prototype.claimSeaCodex = function () {
+    if (this.seaLogCount() < CW.CONDITIONS.length || this.data.seaCodexClaimed) return;
+    this.data.seaCodexClaimed = true;
+    var reward = this.grantContractReward({ credits: 1200, mats: { chip: 4, glass: 4, copper: 4 } });
+    this.audio.claim();
+    this.showToast('SEA CODEX COMPLETE', '全图鉴奖励已领取', '+' + fmt(reward.credits) + ' 打捞币 · 芯片 4 · 玻璃 4 · 铜 4');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    this.openSeaCodex();
   };
 
   Hub.prototype.renderStoryLog = function () {
@@ -5114,6 +5134,7 @@
         else if (action === 'tutorial-action') self.tutorialAction();
         else if (action === 'tutorial-skip') self.skipTutorial();
         else if (action === 'sea-codex') self.openSeaCodex();
+        else if (action === 'claim-sea-codex') self.claimSeaCodex();
         else if (action === 'open-tide-mail') self.openTideMail();
         else if (action === 'tide-choice') self.chooseTideMail(actionEl.getAttribute('data-choice'));
         else if (action === 'story-chapter') self.openStoryChapter(actionEl.getAttribute('data-id'));
