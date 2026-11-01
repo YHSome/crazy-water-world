@@ -53,6 +53,12 @@
       desc: '顺风平流：抓钩 +3 秒，三消 +2 步，声呐 +1；全收益 -6%',
       short: '+3 秒 / +2 步 / +1 声呐 · 收益 -6%',
       credit: 0.94, mat: 0.94, mines: 0, time: 3, moves: 2, probes: 1, reel: 1.08
+    },
+    {
+      id: 'aurora', name: '极光', color: '#d9b8ff',
+      desc: '极光映海：抓钩 +2 秒，三消 +1 步，声呐 +1；打捞币 -4%，物资 +6%',
+      short: '+2 秒 / +1 步 / +1 声呐 · 物资 +6% · 打捞币 -4%',
+      credit: 0.96, mat: 1.06, mines: 0, time: 2, moves: 1, probes: 1, reel: 1.04
     }
   ]);
 
