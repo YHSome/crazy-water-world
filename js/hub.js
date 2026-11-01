@@ -4076,7 +4076,7 @@
   };
 
   Hub.prototype.renderCollection = function () {
-    if (['all', 'owned', 'set', 'special'].indexOf(this.collectionFilter) < 0) this.collectionFilter = 'all';
+    if (['all', 'owned', 'set', 'special', 'recent'].indexOf(this.collectionFilter) < 0) this.collectionFilter = 'all';
     var rarityIds = ['all'];
     for (var rar = 0; rar < CW.COLLECTIBLE_RARITIES.length; rar++) rarityIds.push(CW.COLLECTIBLE_RARITIES[rar].id);
     if (rarityIds.indexOf(this.collectionRarity) < 0) this.collectionRarity = 'all';
@@ -4141,7 +4141,7 @@
       '<div class="collection-search"><input id="collection-search-input" type="search" value="' + queryEsc + '" placeholder="搜索藏品名称…" autocomplete="off"><button data-action="collection-search">搜索</button>' +
       (this.collectionQuery ? '<button class="clear" data-action="collection-search-clear">清除</button>' : '') + '</div>' + rarityHtml + '<div class="collection-filters">';
     var filters = [
-      ['all', '全部'], ['owned', '已拥有'], ['set', '套装'], ['special', '升级件']
+      ['all', '全部'], ['owned', '已拥有'], ['set', '套装'], ['special', '升级件'], ['recent', '最近']
     ];
     for (var ff = 0; ff < filters.length; ff++) {
       filterHtml += '<button class="' + (this.collectionFilter === filters[ff][0] ? 'active' : '') + '" data-action="collection-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + '</button>';
@@ -4216,7 +4216,8 @@
         this.collectionFilter === 'all' ||
         this.collectionFilter === 'owned' ||
         (this.collectionFilter === 'set' && !!setIds[mitem.id]) ||
-        (this.collectionFilter === 'special' && !!mitem.special));
+        (this.collectionFilter === 'special' && !!mitem.special) ||
+        (this.collectionFilter === 'recent' && (this.data.recentCollectibles || []).indexOf(mitem.id) >= 0));
       if (!mpass) continue;
       if (this.collectionRarity !== 'all' && mitem.rarity !== this.collectionRarity) continue;
       if (this.collectionQuery && mitem.name.indexOf(this.collectionQuery) < 0) continue;
@@ -4240,6 +4241,17 @@
       }
       var visible = [];
       for (var vq = 0; vq < pageItems.length; vq++) if (pageItems[vq].rarity === rarity.id) visible.push(pageItems[vq]);
+      var recentOrder = this.data.recentCollectibles || [];
+      visible.sort(function (a, b) {
+        var ra = recentOrder.indexOf(a.id);
+        var rb = recentOrder.indexOf(b.id);
+        if (ra >= 0 || rb >= 0) {
+          if (ra < 0) ra = 999;
+          if (rb < 0) rb = 999;
+          return ra - rb;
+        }
+        return 0;
+      });
       if (!visible.length) continue;
       html += '<section class="collection-group" style="--rarity:' + rarity.color + '">' +
         '<header><b>' + rarity.name + '</b><span>' + discovered + ' / ' + group.length + '</span></header><div class="collectible-grid">';
