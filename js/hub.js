@@ -4950,6 +4950,10 @@
       this.data.credits += sBonus;
     }
     if (!Array.isArray(result.collectibles)) result.collectibles = [];
+    if (result.aurora) {
+      if (!Array.isArray(result.collectibles)) result.collectibles = [];
+      result.collectibles.push(CW.rollCollectibleDef().id);
+    }
     if (firstClear) {
       creditGain += 200;
       this.data.credits += 200;
@@ -5027,6 +5031,7 @@
       firstClearCredits: firstClear ? 200 : 0,
       hookDrones: result.type === 'hook' ? Math.max(0, Number(result.droneCount) || 0) : 0,
       hookAirdrops: result.type === 'hook' ? Math.max(0, Number(result.airdropCount) || 0) : 0,
+      aurora: !!result.aurora,
       trenchDepth: result.type === 'trench' ? Math.max(0, Number(result.maxDepth) || 0) : 0,
       diveLowCaught: result.type === 'dive' ? Math.max(0, Number(result.lowCaught) || 0) : 0,
       spreadShots: result.type === 'gunnery' ? Math.max(0, Number(result.spreadShots) || 0) : 0,
