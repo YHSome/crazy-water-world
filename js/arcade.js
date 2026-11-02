@@ -431,6 +431,7 @@
       out.materials[m.id] = Math.round(((result.materials && result.materials[m.id]) || 0) * matMult);
     }
     out.condition = cond.id;
+    out.aurora = String(cond.id).indexOf('aurora') >= 0;
     out.permit = permit ? permit.id : null;
     return out;
   };
@@ -660,6 +661,9 @@
     }
     if (this.applied.hookAirdrops > 0) {
       chips += '<span class="summary-chip hook-airdrop" style="--tone:#ffdf72">空投补给 · ' + this.applied.hookAirdrops + ' 次</span>';
+    }
+    if (this.applied.aurora) {
+      chips += '<span class="summary-chip aurora" style="--tone:#d9b8ff">极光 · 收藏 +1</span>';
     }
     if (this.applied.firstClear) {
       chips += '<span class="summary-chip first-clear" style="--tone:#0b7774">首次航线 · +200 币 · 收藏 +1</span>';
