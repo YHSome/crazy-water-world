@@ -3094,3 +3094,5 @@ img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
 #arcade.aurora::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.26; mix-blend-mode: screen; background: linear-gradient(118deg, transparent 8%, rgba(126, 255, 212, 0.34) 24%, rgba(201, 160, 255, 0.38) 42%, transparent 62%), linear-gradient(300deg, transparent 18%, rgba(126, 225, 255, 0.26) 45%, transparent 72%); background-size: 180% 180%, 160% 160%; animation: aurora-drift 9s ease-in-out infinite alternate; }
 @keyframes aurora-drift { from { background-position: 0% 30%, 100% 70%; } to { background-position: 100% 70%, 0% 30%; } }
 @media (prefers-reduced-motion: reduce) { #arcade.aurora::after { animation: none; } }
+
+.shelter-coupon { padding: 2px 6px; border-radius: 5px; background: #fff1cf; color: #a66a1e; font-family: var(--mono); font-size: 8px; font-weight: 800; }
