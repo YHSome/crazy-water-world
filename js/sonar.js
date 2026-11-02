@@ -78,6 +78,8 @@
     this.echoFound = false;
     this.echoKey = null;
     this.echoTimer = 0;
+    this.echoWindow = 6;
+    this.echoFast = false;
     this.echoBonus = 0;
     this.filters = 0;
     this.collectibles = [];
@@ -113,6 +115,8 @@
     this.echoFound = false;
     this.echoKey = null;
     this.echoTimer = 0;
+    this.echoWindow = 6;
+    this.echoFast = false;
     this.echoBonus = 0;
     this.score = 0;
     this.credits = 0;
@@ -257,9 +261,10 @@
     this.cargo[pick] = { key: 'echo', echo: true, found: false, r: Number(parts[0]), c: Number(parts[1]) };
     this.echoKey = pick;
     this.echoSpawned = true;
-    this.echoTimer = 6;
+    this.echoWindow = (this.condition && String(this.condition.id).indexOf('aurora') >= 0) ? 8 : 6;
+    this.echoTimer = this.echoWindow;
     this.probesLeft += 1;
-    this.popups.push({ x: this.boardX + this.boardW / 2, y: this.boardY - 8, text: '深渊回响 · 6 秒内找到金格', color: '#ffd166', life: 2, maxLife: 2 });
+    this.popups.push({ x: this.boardX + this.boardW / 2, y: this.boardY - 8, text: '深渊回响 · ' + this.echoWindow + ' 秒内找到金格', color: '#ffd166', life: 2, maxLife: 2 });
     this.audio.sonarDeep();
     return true;
   };
@@ -320,10 +325,17 @@
       this.chainReveal(cell.r, cell.c);
       if (item.echo) {
         this.echoFound = true;
+        var echoElapsed = this.echoWindow - this.echoTimer;
         this.echoTimer = 0;
         this.echoBonus = 300;
         this.credits += 300;
         this.score += 300;
+        if (echoElapsed <= 3) {
+          this.echoFast = true;
+          this.credits += 200;
+          this.score += 200;
+          this.popups.push({ x: cx, y: Math.max(this.boardY + this.cell * 0.55, cy - this.cell * 1.15), text: '极速回响 · +200', color: '#fff1b0', life: 1.6, maxLife: 1.6 });
+        }
         if (CW.rollCollectibleDef) this.collectibles.push(CW.rollCollectibleDef().id);
         this.popups.push({ x: cx, y: Math.max(this.boardY + this.cell * 0.55, cy - this.cell * 0.8), text: '回响找到 · +300 · 收藏 +1', color: '#ffd166', life: 2, maxLife: 2 });
         this.spawnBurst(cx, cy, '#ffd166', 24);
@@ -432,6 +444,8 @@
       perfectSonar: this.perfectSonar,
       echoFound: this.echoFound,
       echoBonus: this.echoBonus,
+      echoFast: this.echoFast,
+      echoWindow: this.echoWindow,
       collectibles: this.collectibles.slice(),
       materials: this.counts
     };
@@ -449,7 +463,7 @@
       loot: this.counts,
       hasAction: false,
       hint: this.echoTimer > 0
-        ? '深渊回响：6 秒内点击金色回响格 · 额外 +300 与 1 件收藏'
+        ? '深渊回响：' + this.echoWindow + ' 秒内点击金色回响格 · 额外 +300 与 1 件收藏 · 3 秒内 +200'
         : deepPending
           ? '深层货箱需要二次探测 · 找到货箱会连锁揭示一格'
           : '点击格子发射声呐 · 数字是离最近货箱的格数 · 连续找到货箱有连找奖励'
