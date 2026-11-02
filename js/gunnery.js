@@ -39,6 +39,8 @@
     this.bossDefeated = 0;
     this.supplies = [];
     this.suppliesCollected = 0;
+    this.supplyBonus = false;
+    this.supplyBonusCredits = 0;
     this.counts = {};
     for (var i = 0; i < CW.MATERIALS.length; i++) this.counts[CW.MATERIALS[i].id] = 0;
     this.collectibles = [];
@@ -74,6 +76,8 @@
     this.bossDefeated = 0;
     this.supplies = [];
     this.suppliesCollected = 0;
+    this.supplyBonus = false;
+    this.supplyBonusCredits = 0;
     this.targets = [];
     this.bullets = [];
     this.particles = [];
@@ -198,6 +202,13 @@
     this.supplies.splice(index, 1);
     this.suppliesCollected += 1;
     this.credits += 120;
+    if (this.suppliesCollected >= 3 && !this.supplyBonus) {
+      this.supplyBonus = true;
+      this.supplyBonusCredits = 300;
+      this.credits += 300;
+      if (CW.rollCollectibleDef) this.collectibles.push(CW.rollCollectibleDef().id);
+      this.popups.push({ x: s.x, y: s.y - 50, text: '补给全清 · +300 · 收藏 +1', color: '#fff1b0', life: 1.9, maxLife: 1.9 });
+    }
     if (CW.rollCollectibleDef && Math.random() < 0.3) {
       var cdef = CW.rollCollectibleDef();
       this.collectibles.push(cdef.id);
@@ -395,7 +406,9 @@
       materials: this.counts,
       spreadShots: this.spreadShots,
       bossDefeated: this.bossDefeated,
-      suppliesCollected: this.suppliesCollected
+      suppliesCollected: this.suppliesCollected,
+      supplyBonus: this.supplyBonus,
+      supplyBonusCredits: this.supplyBonusCredits
     };
   };
 
