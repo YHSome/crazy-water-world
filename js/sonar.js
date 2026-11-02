@@ -80,6 +80,7 @@
     this.echoTimer = 0;
     this.echoWindow = 6;
     this.echoFast = false;
+    this.echoMoved = false;
     this.echoBonus = 0;
     this.filters = 0;
     this.collectibles = [];
@@ -117,6 +118,7 @@
     this.echoTimer = 0;
     this.echoWindow = 6;
     this.echoFast = false;
+    this.echoMoved = false;
     this.echoBonus = 0;
     this.score = 0;
     this.credits = 0;
@@ -261,12 +263,35 @@
     this.cargo[pick] = { key: 'echo', echo: true, found: false, r: Number(parts[0]), c: Number(parts[1]) };
     this.echoKey = pick;
     this.echoSpawned = true;
+    this.echoMoved = false;
     this.echoWindow = (this.condition && String(this.condition.id).indexOf('aurora') >= 0) ? 8 : 6;
     this.echoTimer = this.echoWindow;
     this.probesLeft += 1;
     this.popups.push({ x: this.boardX + this.boardW / 2, y: this.boardY - 8, text: '深渊回响 · ' + this.echoWindow + ' 秒内找到金格', color: '#ffd166', life: 2, maxLife: 2 });
     this.audio.sonarDeep();
     return true;
+  };
+
+  SonarGame.prototype.relocateEcho = function () {
+    if (!this.echoKey || this.echoFound) return;
+    var oldKey = this.echoKey;
+    var options = [];
+    for (var r = 0; r < this.rows; r++) {
+      for (var c = 0; c < this.cols; c++) {
+        var key = r + ':' + c;
+        if (key === oldKey || this.revealed[r][c] || this.cargo[key]) continue;
+        options.push(key);
+      }
+    }
+    if (!options.length) { this.echoMoved = true; return; }
+    delete this.cargo[oldKey];
+    var pick = options[(Math.random() * options.length) | 0];
+    var parts = pick.split(':');
+    this.cargo[pick] = { key: 'echo', echo: true, found: false, r: Number(parts[0]), c: Number(parts[1]) };
+    this.echoKey = pick;
+    this.echoMoved = true;
+    this.popups.push({ x: this.boardX + this.boardW / 2, y: this.boardY - 8, text: '回响换位 · ' + Math.ceil(this.echoTimer) + ' 秒内再找它', color: '#ffd166', life: 1.6, maxLife: 1.6 });
+    this.audio.sonarDeep();
   };
 
   SonarGame.prototype.pointerDown = function (x, y) {
@@ -398,6 +423,7 @@
     this.flash = Math.max(0, this.flash - dt * 2.8);
     if (this.echoTimer > 0 && !this.echoFound) {
       this.echoTimer = Math.max(0, this.echoTimer - dt);
+      if (!this.echoMoved && this.echoTimer <= this.echoWindow - 3) this.relocateEcho();
       if (this.echoTimer <= 0 && this.ending <= 0) this.ending = 0.55;
     }
     for (var i = this.rings.length - 1; i >= 0; i--) {
@@ -463,7 +489,7 @@
       loot: this.counts,
       hasAction: false,
       hint: this.echoTimer > 0
-        ? '深渊回响：' + this.echoWindow + ' 秒内点击金色回响格 · 额外 +300 与 1 件收藏 · 3 秒内 +200'
+        ? '深渊回响：' + this.echoWindow + ' 秒内点击金色回响格 · 3 秒内 +200 · 3 秒后换位一次'
         : deepPending
           ? '深层货箱需要二次探测 · 找到货箱会连锁揭示一格'
           : '点击格子发射声呐 · 数字是离最近货箱的格数 · 连续找到货箱有连找奖励'
