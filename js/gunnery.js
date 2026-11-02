@@ -37,6 +37,8 @@
     this.boss = null;
     this.bossSpawned = false;
     this.bossDefeated = 0;
+    this.supplies = [];
+    this.suppliesCollected = 0;
     this.counts = {};
     for (var i = 0; i < CW.MATERIALS.length; i++) this.counts[CW.MATERIALS[i].id] = 0;
     this.collectibles = [];
@@ -70,6 +72,8 @@
     this.boss = null;
     this.bossSpawned = false;
     this.bossDefeated = 0;
+    this.supplies = [];
+    this.suppliesCollected = 0;
     this.targets = [];
     this.bullets = [];
     this.particles = [];
@@ -164,6 +168,7 @@
     if (boss.hp > 0) return;
     this.boss = null;
     this.bossDefeated += 1;
+    this.spawnBossSupplies(boss.x, boss.y);
     this.credits += 500;
     if (CW.rollCollectibleDef) {
       var cdef = CW.rollCollectibleDef();
@@ -176,6 +181,54 @@
       this.particles.push({ x: boss.x, y: boss.y, vx: Math.cos(a) * rand(50, 220), vy: Math.sin(a) * rand(50, 220), life: rand(0.4, 1), maxLife: 1, size: rand(2, 5), color: '#ffcf72' });
     }
     this.audio.claim();
+  };
+
+  GunneryGame.prototype.spawnBossSupplies = function (x, y) {
+    var baseX = Math.min(this.w - 80, Math.max(80, x));
+    for (var i = 0; i < 3; i++) {
+      var sx = Math.min(this.w - 36, Math.max(36, baseX + (i - 1) * 34));
+      this.supplies.push({ x: sx, y: y + 8, vx: (i - 1) * 16, vy: 24, r: 15, life: 5, phase: Math.random() * Math.PI * 2 });
+    }
+    this.popups.push({ x: this.w / 2, y: y + 56, text: '炮艇残骸 · 3 个补给箱', color: '#ffdf72', life: 1.8, maxLife: 1.8 });
+  };
+
+  GunneryGame.prototype.collectSupply = function (index) {
+    var s = this.supplies[index];
+    if (!s) return;
+    this.supplies.splice(index, 1);
+    this.suppliesCollected += 1;
+    this.credits += 120;
+    if (CW.rollCollectibleDef && Math.random() < 0.3) {
+      var cdef = CW.rollCollectibleDef();
+      this.collectibles.push(cdef.id);
+      this.popups.push({ x: s.x, y: s.y - 32, text: '补给收藏！' + cdef.name, color: '#ffdf72', life: 1.5, maxLife: 1.5 });
+    }
+    this.popups.push({ x: s.x, y: s.y, text: '补给箱 +120', color: '#ffdf72', life: 1.0, maxLife: 1.0 });
+    for (var p = 0; p < 10; p++) {
+      var a = Math.random() * Math.PI * 2;
+      this.particles.push({ x: s.x, y: s.y, vx: Math.cos(a) * rand(30, 110), vy: Math.sin(a) * rand(30, 110), life: rand(0.25, 0.6), maxLife: 0.6, size: rand(1, 3), color: '#ffdf72' });
+    }
+    this.audio.coin();
+  };
+
+  GunneryGame.prototype.drawSupply = function (ctx, s) {
+    ctx.save();
+    ctx.translate(s.x, s.y + Math.sin(s.phase * 4) * 2);
+    ctx.fillStyle = 'rgba(2, 24, 32, 0.3)';
+    ctx.beginPath(); ctx.ellipse(2, 6, 18, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#5a3d16';
+    ctx.strokeStyle = '#ffdf72';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.roundRect(-16, -13, 32, 26, 5); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255, 223, 114, 0.75)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(0, 13); ctx.moveTo(-16, 0); ctx.lineTo(16, 0); ctx.stroke();
+    ctx.fillStyle = '#ffe9a5';
+    ctx.font = '800 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('补', 0, 1);
+    ctx.restore();
   };
 
   GunneryGame.prototype.drawBoss = function (ctx, boss) {
@@ -270,6 +323,14 @@
       this.boss.phase += dt;
       if (this.boss.x < -80) this.boss = null;
     }
+    for (var sup = this.supplies.length - 1; sup >= 0; sup--) {
+      var su = this.supplies[sup];
+      su.x += su.vx * dt;
+      su.y += su.vy * dt;
+      su.phase += dt;
+      su.life -= dt;
+      if (su.life <= 0 || su.y > this.h - 90) this.supplies.splice(sup, 1);
+    }
     for (var b = this.bullets.length - 1; b >= 0; b--) {
       var bu = this.bullets[b];
       bu.x += bu.vx * dt;
@@ -279,6 +340,17 @@
         this.bullets.splice(b, 1);
         continue;
       }
+      var supplyHit = false;
+      for (var si = this.supplies.length - 1; si >= 0; si--) {
+        var sp = this.supplies[si];
+        if (Math.hypot(bu.x - sp.x, bu.y - sp.y) < sp.r + 5) {
+          this.bullets.splice(b, 1);
+          this.collectSupply(si);
+          supplyHit = true;
+          break;
+        }
+      }
+      if (supplyHit) continue;
       if (this.boss && Math.hypot(bu.x - this.boss.x, bu.y - this.boss.y) < this.boss.r + 6) {
         this.bullets.splice(b, 1);
         this.hitBoss(this.boss);
@@ -322,7 +394,8 @@
       filters: 0,
       materials: this.counts,
       spreadShots: this.spreadShots,
-      bossDefeated: this.bossDefeated
+      bossDefeated: this.bossDefeated,
+      suppliesCollected: this.suppliesCollected
     };
   };
 
@@ -387,6 +460,7 @@
     }
     for (var i = 0; i < this.targets.length; i++) this.drawTarget(ctx, this.targets[i]);
     if (this.boss) this.drawBoss(ctx, this.boss);
+    for (var si = 0; si < this.supplies.length; si++) this.drawSupply(ctx, this.supplies[si]);
     for (var b = 0; b < this.bullets.length; b++) {
       var bu = this.bullets[b];
       ctx.fillStyle = bu.special ? '#fff1b0' : '#ffe6a1';
@@ -485,3 +559,7 @@
 
   CW.GunneryGame = GunneryGame;
 })();
+
+
+
+
