@@ -811,6 +811,26 @@
       id: 'overdrive-five', name: '深海连锁者', iconImg: 'assets/real/puzzle.webp',
       metric: 'matchOverdrives', target: 5, desc: '累计触发 5 次废料拼图深海超载。',
       reward: { credits: 700, mats: { fuel: 4, fiber: 5 } }
+    },
+    {
+      id: 'echo-ten', name: '回响猎人', iconImg: 'assets/real/sonar.webp',
+      metric: 'sonarEchoes', target: 10, desc: '累计找到 10 次深渊回响。',
+      reward: { credits: 760, mats: { chip: 4, glass: 4 } }
+    },
+    {
+      id: 'echo-fast-three', name: '极速回响', iconImg: 'assets/real/gold.webp',
+      metric: 'sonarEchoFasts', target: 3, desc: '累计 3 次在 3 秒内找到回响。',
+      reward: { credits: 880, mats: { chip: 4, copper: 4 } }
+    },
+    {
+      id: 'supply-clean-three', name: '炮艇清道夫', iconImg: 'assets/collectibles/unique-v2/golden-cannon.webp',
+      metric: 'supplyFullClears', target: 3, desc: '累计 3 次击破全部炮艇补给箱。',
+      reward: { credits: 980, mats: { metal: 8, fuel: 5 } }
+    },
+    {
+      id: 'coupon-three', name: '精打细算', iconImg: 'assets/real/storage.webp',
+      metric: 'couponsUsed', target: 3, desc: '累计使用 3 张避难所扩建券。',
+      reward: { credits: 900, mats: { fiber: 6, glass: 5 } }
     }
   ]);
 
@@ -946,6 +966,10 @@
         airdropsCollected: 0,
         bossesSunk: 0,
         matchOverdrives: 0,
+        sonarEchoes: 0,
+        sonarEchoFasts: 0,
+        supplyFullClears: 0,
+        couponsUsed: 0,
         sonarPerfect: 0,
         filtersFound: 0,
         collectiblesFound: 0,
@@ -1133,6 +1157,10 @@
     data.stats.airdropsCollected = Math.max(0, Math.floor(Number(raw.stats && raw.stats.airdropsCollected) || 0));
     data.stats.bossesSunk = Math.max(0, Math.floor(Number(raw.stats && raw.stats.bossesSunk) || 0));
     data.stats.matchOverdrives = Math.max(0, Math.floor(Number(raw.stats && raw.stats.matchOverdrives) || 0));
+    data.stats.sonarEchoes = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sonarEchoes) || 0));
+    data.stats.sonarEchoFasts = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sonarEchoFasts) || 0));
+    data.stats.supplyFullClears = Math.max(0, Math.floor(Number(raw.stats && raw.stats.supplyFullClears) || 0));
+    data.stats.couponsUsed = Math.max(0, Math.floor(Number(raw.stats && raw.stats.couponsUsed) || 0));
     data.stats.matchRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.matchRuns) || 0));
     data.stats.sonarRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.sonarRuns) || 0));
     data.stats.cutRuns = Math.max(0, Math.floor(Number(raw.stats && raw.stats.cutRuns) || 0));
@@ -4423,6 +4451,10 @@
       case 'airdropsCollected': return this.data.stats.airdropsCollected || 0;
       case 'bossesSunk': return this.data.stats.bossesSunk || 0;
       case 'matchOverdrives': return this.data.stats.matchOverdrives || 0;
+      case 'sonarEchoes': return this.data.stats.sonarEchoes || 0;
+      case 'sonarEchoFasts': return this.data.stats.sonarEchoFasts || 0;
+      case 'supplyFullClears': return this.data.stats.supplyFullClears || 0;
+      case 'couponsUsed': return this.data.stats.couponsUsed || 0;
       case 'cutRuns': return this.data.stats.cutRuns || 0;
       case 'sortRuns': return this.data.stats.sortRuns || 0;
       case 'beaconRuns': return this.data.stats.beaconRuns || 0;
@@ -4508,7 +4540,11 @@
       case 'dronesCaught':
       case 'airdropsCollected':
       case 'bossesSunk':
-      case 'matchOverdrives': return 'new';
+      case 'matchOverdrives':
+      case 'sonarEchoes':
+      case 'sonarEchoFasts':
+      case 'supplyFullClears':
+      case 'couponsUsed': return 'new';
       case 'level':
       case 'shelterLevel':
       case 'crewMaxed':
@@ -4736,7 +4772,10 @@
     }
     var shelterCost = this.shelterCreditCost();
     this.data.credits -= shelterCost;
-    if ((this.data.shelterCoupons || 0) > 0) this.data.shelterCoupons -= 1;
+    if ((this.data.shelterCoupons || 0) > 0) {
+      this.data.shelterCoupons -= 1;
+      this.data.stats.couponsUsed = (this.data.stats.couponsUsed || 0) + 1;
+    }
     for (var id in next.mats) {
       if (!Object.prototype.hasOwnProperty.call(next.mats, id)) continue;
       this.data.materials[id] -= next.mats[id];
@@ -5012,6 +5051,9 @@
     stats.airdropsCollected = (stats.airdropsCollected || 0) + (result.type === 'hook' ? Math.max(0, Number(result.airdropCount) || 0) : 0);
     stats.bossesSunk = (stats.bossesSunk || 0) + (result.type === 'gunnery' ? Math.max(0, Number(result.bossDefeated) || 0) : 0);
     stats.matchOverdrives = (stats.matchOverdrives || 0) + (result.type === 'match' ? Math.max(0, Number(result.overdriveCount) || 0) : 0);
+    stats.sonarEchoes = (stats.sonarEchoes || 0) + (result.type === 'sonar' && result.echoFound ? 1 : 0);
+    stats.sonarEchoFasts = (stats.sonarEchoFasts || 0) + (result.type === 'sonar' && result.echoFast ? 1 : 0);
+    stats.supplyFullClears = (stats.supplyFullClears || 0) + (result.type === 'gunnery' && result.supplyBonus ? 1 : 0);
     stats.collectiblesFound = (stats.collectiblesFound || 0) + collectibles.length;
     stats.creditsEarned = (stats.creditsEarned || 0) + creditGain + overflowCredits + chainBonus + sBonus;
     if (result.type === 'sonar' && Number(result.found || 0) >= 4) stats.sonarPerfect = (stats.sonarPerfect || 0) + 1;
