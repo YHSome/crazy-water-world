@@ -26,7 +26,8 @@
     glass: { name: '玻璃箱', icon: 'assets/collectibles/sea-bottle.webp', credits: 100, mats: { glass: 3 }, color: '#8fe0d8' },
     copper: { name: '铜线圈', icon: 'assets/collectibles/brass-compass.webp', credits: 130, mats: { copper: 3 }, color: '#e2a06a' },
     collectible: { name: '收藏品', icon: 'assets/collectibles/tide-crown.webp', credits: 0, mats: {}, color: '#d9b8ff' },
-    filter: { name: '海水过滤器', icon: 'assets/seawater-filter-icon.webp', credits: 0, mats: {}, color: '#9feeff', rare: true }
+    filter: { name: '海水过滤器', icon: 'assets/seawater-filter-icon.webp', credits: 0, mats: {}, color: '#9feeff', rare: true },
+    echo: { name: '深渊回响', icon: 'assets/real/gold.webp', credits: 0, mats: {}, color: '#ffd166' }
   };
   function emptyMaterialCounts() {
     var out = {};
@@ -73,6 +74,11 @@
     this.bestScanStreak = 0;
     this.emptyProbes = 0;
     this.perfectSonar = false;
+    this.echoSpawned = false;
+    this.echoFound = false;
+    this.echoKey = null;
+    this.echoTimer = 0;
+    this.echoBonus = 0;
     this.filters = 0;
     this.collectibles = [];
     this.counts = emptyMaterialCounts();
@@ -103,6 +109,11 @@
     this.bestScanStreak = 0;
     this.emptyProbes = 0;
     this.perfectSonar = false;
+    this.echoSpawned = false;
+    this.echoFound = false;
+    this.echoKey = null;
+    this.echoTimer = 0;
+    this.echoBonus = 0;
     this.score = 0;
     this.credits = 0;
     this.filters = 0;
@@ -232,6 +243,27 @@
     return best;
   };
 
+  SonarGame.prototype.spawnEcho = function () {
+    var options = [];
+    for (var r = 0; r < this.rows; r++) {
+      for (var c = 0; c < this.cols; c++) {
+        var key = r + ':' + c;
+        if (!this.revealed[r][c] && !this.cargo[key]) options.push(key);
+      }
+    }
+    if (!options.length) return false;
+    var pick = options[(Math.random() * options.length) | 0];
+    var parts = pick.split(':');
+    this.cargo[pick] = { key: 'echo', echo: true, found: false, r: Number(parts[0]), c: Number(parts[1]) };
+    this.echoKey = pick;
+    this.echoSpawned = true;
+    this.echoTimer = 6;
+    this.probesLeft += 1;
+    this.popups.push({ x: this.boardX + this.boardW / 2, y: this.boardY - 8, text: '深渊回响 · 6 秒内找到金格', color: '#ffd166', life: 2, maxLife: 2 });
+    this.audio.sonarDeep();
+    return true;
+  };
+
   SonarGame.prototype.pointerDown = function (x, y) {
     if (this.phase !== 'playing' || this.done || this.ending > 0) return;
     var cell = this.cellAt(x, y);
@@ -286,6 +318,16 @@
       this.audio.sonarFound();
       if (item.key === 'filter') this.flash = 0.35;
       this.chainReveal(cell.r, cell.c);
+      if (item.echo) {
+        this.echoFound = true;
+        this.echoTimer = 0;
+        this.echoBonus = 300;
+        this.credits += 300;
+        this.score += 300;
+        if (CW.rollCollectibleDef) this.collectibles.push(CW.rollCollectibleDef().id);
+        this.popups.push({ x: cx, y: Math.max(this.boardY + this.cell * 0.55, cy - this.cell * 0.8), text: '回响找到 · +300 · 收藏 +1', color: '#ffd166', life: 2, maxLife: 2 });
+        this.spawnBurst(cx, cy, '#ffd166', 24);
+      }
     } else {
       this.scanStreak = 0;
       this.emptyProbes += 1;
@@ -293,6 +335,10 @@
       this.clues[cell.r][cell.c] = dist;
       this.rings.push({ x: cx, y: cy, life: 0.55, maxLife: 0.55, color: '#79d8ff', big: false });
       this.audio.sonarPing();
+    }
+    if (this.found >= 4) {
+      if (!this.echoSpawned) this.spawnEcho();
+      if (this.echoSpawned && !this.echoFound) return;
     }
     if (this.found >= 4 || this.probesLeft <= 0) this.ending = 0.55;
   };
@@ -338,6 +384,10 @@
     if (this.phase === 'waiting' || this.phase === 'done') return;
     this.time += dt;
     this.flash = Math.max(0, this.flash - dt * 2.8);
+    if (this.echoTimer > 0 && !this.echoFound) {
+      this.echoTimer = Math.max(0, this.echoTimer - dt);
+      if (this.echoTimer <= 0 && this.ending <= 0) this.ending = 0.55;
+    }
     for (var i = this.rings.length - 1; i >= 0; i--) {
       this.rings[i].life -= dt;
       if (this.rings[i].life <= 0) this.rings.splice(i, 1);
@@ -380,6 +430,8 @@
       bestScanStreak: this.bestScanStreak,
       emptyProbes: this.emptyProbes,
       perfectSonar: this.perfectSonar,
+      echoFound: this.echoFound,
+      echoBonus: this.echoBonus,
       collectibles: this.collectibles.slice(),
       materials: this.counts
     };
@@ -396,9 +448,11 @@
       stat: String(this.probesLeft) + (this.scanStreak ? ' · 连' + this.scanStreak : ''),
       loot: this.counts,
       hasAction: false,
-      hint: deepPending
-        ? '深层货箱需要二次探测 · 找到货箱会连锁揭示一格'
-        : '点击格子发射声呐 · 数字是离最近货箱的格数 · 连续找到货箱有连找奖励'
+      hint: this.echoTimer > 0
+        ? '深渊回响：6 秒内点击金色回响格 · 额外 +300 与 1 件收藏'
+        : deepPending
+          ? '深层货箱需要二次探测 · 找到货箱会连锁揭示一格'
+          : '点击格子发射声呐 · 数字是离最近货箱的格数 · 连续找到货箱有连找奖励'
     };
   };
 
@@ -435,8 +489,8 @@
     ctx.textAlign = 'left';
     ctx.fillText('SONAR ARRAY · 06 × 06', bx, by - 20);
     ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(15, 143, 138, 0.82)';
-    ctx.fillText('PROBES ' + this.probesLeft, bx + boardW, by - 20);
+    ctx.fillStyle = this.echoTimer > 0 ? 'rgba(184, 120, 20, 0.95)' : 'rgba(15, 143, 138, 0.82)';
+    ctx.fillText('PROBES ' + this.probesLeft + (this.echoTimer > 0 ? ' · ECHO ' + Math.ceil(this.echoTimer) + 's' : ''), bx + boardW, by - 20);
 
     // radar sweep
     ctx.save();
@@ -511,7 +565,7 @@
     ctx.textAlign = 'left';
     ctx.font = '700 10px "Cascadia Mono", monospace';
     ctx.fillStyle = 'rgba(184, 87, 38, 0.92)';
-    ctx.fillText('RECOVERED ' + this.found + ' / 4', bx, by + boardH + 25);
+    ctx.fillText('RECOVERED ' + Math.min(4, this.found) + (this.echoFound ? ' + ECHO' : '') + ' / 4', bx, by + boardH + 25);
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(15, 112, 111, 0.7)';
     ctx.fillText('回波数字 = 最近货箱距离', bx + boardW, by + boardH + 25);
@@ -546,6 +600,14 @@
     ctx.lineWidth = item && item.found ? 1.4 : 1;
     ctx.stroke();
 
+    if (item && item.echo && !item.found) {
+      var pulse = 0.62 + Math.sin(this.time * 5) * 0.16;
+      ctx.strokeStyle = 'rgba(255, 209, 102, ' + pulse.toFixed(3) + ')';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(0, 0, s * 0.38, 0, TAU);
+      ctx.stroke();
+    }
     if (!revealed) {
       ctx.strokeStyle = 'rgba(15, 143, 138, ' + (0.3 + Math.sin(this.time * 1.4 + r + c) * 0.08).toFixed(3) + ')';
       ctx.beginPath();
@@ -599,6 +661,13 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(String(clue), 0, 1);
+    }
+    if (item && item.echo && !item.found) {
+      ctx.fillStyle = 'rgba(255, 209, 102, 0.95)';
+      ctx.font = '800 ' + (s * 0.32) + 'px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('回', 0, 1);
     }
     ctx.restore();
   };
