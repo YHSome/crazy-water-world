@@ -195,6 +195,7 @@
     this.best = 0;
 
     this.dom = {
+      arcade: id('arcade'),
       hud: id('arcade-hud'),
       kicker: id('arcade-kicker'),
       name: id('arcade-name'),
@@ -493,6 +494,7 @@
   Arcade.prototype.startCountdown = function (practice) {
     if (!this.game) return;
     this.practice = !!practice;
+    if (this.dom.arcade) this.dom.arcade.classList.toggle('aurora', !!(this.condition && String(this.condition.id).indexOf('aurora') >= 0));
     this.audio.click();
     this.dom.brief.classList.add('hidden');
     this.dom.summary.classList.add('hidden');
