@@ -4952,7 +4952,7 @@
     if (!Array.isArray(result.collectibles)) result.collectibles = [];
     if (result.aurora) {
       if (!Array.isArray(result.collectibles)) result.collectibles = [];
-      result.collectibles.push(CW.rollCollectibleDef().id);
+      result.collectibles.push(this.rollUnownedCollectibleDef().id);
     }
     if (firstClear) {
       creditGain += 200;
