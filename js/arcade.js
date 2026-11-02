@@ -668,7 +668,7 @@
       chips += '<span class="summary-chip aurora" style="--tone:#d9b8ff">极光 · 收藏 +1</span>';
     }
     if (this.applied.firstClear) {
-      chips += '<span class="summary-chip first-clear" style="--tone:#0b7774">首次航线 · +200 币 · 收藏 +1</span>';
+      chips += '<span class="summary-chip first-clear" style="--tone:#0b7774">首次航线 · +200 币 · 收藏 +1' + (this.applied.couponGained ? ' · 扩建券 +1' : '') + '</span>';
     }
     if (this.applied.trenchDepth > 0) {
       chips += '<span class="summary-chip depth" style="--tone:#79d8ff">海沟深度 · ' + this.applied.trenchDepth + ' / 5 层</span>';
