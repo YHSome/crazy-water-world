@@ -706,6 +706,9 @@
     if (this.applied.sonarPerfect) {
       chips += '<span class="summary-chip sonar-perfect" style="--tone:#8ff3e3">无空探 · +250</span>';
     }
+    if (this.applied.sonarEcho) {
+      chips += '<span class="summary-chip sonar-echo" style="--tone:#ffd166">深渊回响 · +300 · 收藏 +1</span>';
+    }
     if (this.applied.matchOverdrive > 0) {
       chips += '<span class="summary-chip match-overdrive" style="--tone:#ffcf72">深海连锁 · ' + this.applied.matchOverdrive + ' 次</span>';
     }
