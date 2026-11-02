@@ -925,6 +925,7 @@
       recentCollectibles: [],
       contracts: makeContractSet(),
       shelterLevel: 1,
+      shelterCoupons: 0,
       quality: 'auto',
       crew: {},
       crewXp: {},
@@ -1199,6 +1200,7 @@
     data.best.gunnery = Math.max(0, Number(raw.best.gunnery) || 0);
     data.best.trench = Math.max(0, Number(raw.best.trench) || 0);
     data.shelterLevel = clamp(Math.floor(Number(raw.shelterLevel) || 1), 1, 5);
+    data.shelterCoupons = clamp(Math.floor(Number(raw.shelterCoupons) || 0), 0, 3);
     var rotation = normalizeMissionRotation(raw.activeMissions, raw.candidateMissions, data.shelterLevel);
     data.activeMissions = rotation.active;
     data.candidateMissions = rotation.candidates;
@@ -1386,6 +1388,11 @@
   };
   Hub.prototype.shelterLevel = function () { return clamp(Math.floor(Number(this.data.shelterLevel) || 1), 1, 5); };
   Hub.prototype.shelterNext = function () { return SHELTER_LEVELS[this.shelterLevel()] || null; };
+  Hub.prototype.shelterCreditCost = function () {
+    var next = this.shelterNext();
+    if (!next) return 0;
+    return (this.data.shelterCoupons || 0) > 0 ? Math.ceil(next.credits * 0.8) : next.credits;
+  };
   Hub.prototype.shelterCollectibleChance = function () { return Math.min(0.2, (this.shelterLevel() - 1) * 0.045); };
   Hub.prototype.collectionArtifactUnique = function () {
     var n = 0;
@@ -4599,9 +4606,10 @@
     var lvl = this.shelterLevel();
     var next = this.shelterNext();
     var canLevel = this.shelterRequirementsMet();
+    var shelterCost = this.shelterCreditCost();
     var levelCard = '<div class="shelter-level-card"><div class="shelter-level-copy"><span>REFUGE LEVEL · 避难所等级</span><b>Lv.' + lvl + (next ? ' / 5' : ' · 满级') + '</b>' +
       '<p>收藏掉落加成 +' + Math.round(this.shelterCollectibleChance() * 100) + '% · 仓库容量 +' + ((lvl - 1) * 15) + ' 格 · 设施 ' + this.level() + ' 级</p>' +
-      (next ? '<div class="shelter-req"><span class="' + (this.data.credits >= next.credits ? 'ok' : '') + '">币 ' + fmt(next.credits) + '</span>' +
+      (next ? '<div class="shelter-req"><span class="' + (this.data.credits >= shelterCost ? 'ok' : '') + '">币 ' + fmt(shelterCost) + '</span>' + ((this.data.shelterCoupons || 0) > 0 ? '<span class="shelter-coupon">扩建券 ×' + this.data.shelterCoupons + ' · -20%</span>' : '') +
         Object.keys(next.mats).map(function (id) {
           var md = null; for (var q = 0; q < MATERIALS.length; q++) if (MATERIALS[q].id === id) md = MATERIALS[q];
           return '<span class="' + ((this.data.materials[id] || 0) >= next.mats[id] ? 'ok' : '') + '">' + (md ? md.name : id) + ' ' + next.mats[id] + '</span>';
@@ -4702,7 +4710,7 @@
   Hub.prototype.shelterRequirementsMet = function () {
     var next = this.shelterNext();
     if (!next) return false;
-    if ((this.data.credits || 0) < next.credits) return false;
+    if ((this.data.credits || 0) < this.shelterCreditCost()) return false;
     if ((this.data.runs || 0) < next.runs) return false;
     if (this.collectionArtifactUnique() < next.unique) return false;
     for (var i = 0; i < MATERIALS.length; i++) {
@@ -4726,7 +4734,9 @@
       this.showToast('NOT READY', '避难所升级条件不足', '需要打捞币、材料、收藏与出航次数');
       return;
     }
-    this.data.credits -= next.credits;
+    var shelterCost = this.shelterCreditCost();
+    this.data.credits -= shelterCost;
+    if ((this.data.shelterCoupons || 0) > 0) this.data.shelterCoupons -= 1;
     for (var id in next.mats) {
       if (!Object.prototype.hasOwnProperty.call(next.mats, id)) continue;
       this.data.materials[id] -= next.mats[id];
@@ -4954,10 +4964,15 @@
       if (!Array.isArray(result.collectibles)) result.collectibles = [];
       result.collectibles.push(this.rollUnownedCollectibleDef().id);
     }
+    var firstCoupon = false;
     if (firstClear) {
       creditGain += 200;
       this.data.credits += 200;
       result.collectibles.push(this.rollUnownedCollectibleDef().id);
+      if ((this.data.shelterCoupons || 0) < 3) {
+        this.data.shelterCoupons = (this.data.shelterCoupons || 0) + 1;
+        firstCoupon = true;
+      }
     }
     var shelterChance = this.shelterCollectibleChance();
     if (shelterChance > 0 && CW.rollCollectibleDef && Math.random() < shelterChance) {
@@ -5029,6 +5044,7 @@
       perfectCount: Math.max(0, Math.floor(Number(result.perfectCount) || 0)),
       firstClear: firstClear,
       firstClearCredits: firstClear ? 200 : 0,
+      couponGained: firstCoupon,
       hookDrones: result.type === 'hook' ? Math.max(0, Number(result.droneCount) || 0) : 0,
       hookAirdrops: result.type === 'hook' ? Math.max(0, Number(result.airdropCount) || 0) : 0,
       aurora: !!result.aurora,
