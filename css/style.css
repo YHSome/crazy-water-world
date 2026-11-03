@@ -3115,3 +3115,6 @@ img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
 .sea-pair.seen { border-color: color-mix(in srgb, var(--sea-a) 50%, transparent); background: linear-gradient(120deg, color-mix(in srgb, var(--sea-a) 12%, #fff), color-mix(in srgb, var(--sea-b) 14%, #fff)); }
 .sea-pair.seen b { color: #0b4f50; }
 .sea-pair.seen i { color: #b06b2f; }
+
+.sea-pair.resonance { border-color: rgba(20, 184, 178, 0.5); box-shadow: 0 0 0 1px rgba(20, 184, 178, 0.18) inset; }
+.sea-pair.resonance i { color: #0b7774; }
