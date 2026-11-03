@@ -5221,6 +5221,11 @@
   Hub.prototype.bindEvents = function () {
     var self = this;
     document.addEventListener('pointerdown', function () { self.audio.unlock(); }, { once: true });
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) return;
+      var arcade = self.arcade;
+      if (arcade && arcade.active && arcade.phase === 'playing') arcade.pause();
+    });
     document.addEventListener('error', function (e) {
       var img = e.target;
       if (!img || img.tagName !== 'IMG' || img.getAttribute('data-img-fallback')) return;
