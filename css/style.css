@@ -3096,3 +3096,8 @@ img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
 @media (prefers-reduced-motion: reduce) { #arcade.aurora::after { animation: none; } }
 
 .shelter-coupon { padding: 2px 6px; border-radius: 5px; background: #fff1cf; color: #a66a1e; font-family: var(--mono); font-size: 8px; font-weight: 800; }
+
+.pause-summary { margin: 10px 0 12px; padding: 10px 12px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 10px; background: #f3fbf7; text-align: left; }
+.pause-summary b { display: block; color: #0b4f50; font-family: var(--display); font-size: 15px; }
+.pause-summary span { display: block; margin-top: 2px; color: #b06b2f; font-family: var(--mono); font-size: 8px; }
+.pause-summary p { margin: 7px 0 0; color: #6f8a89; font-size: 9px; line-height: 1.45; }
