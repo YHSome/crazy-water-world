@@ -192,6 +192,7 @@
     this.lastHudScore = '';
     this.applied = null;
     this.pausedPhase = 'playing';
+    this.resuming = false;
     this.best = 0;
 
     this.dom = {
@@ -325,6 +326,7 @@
     this.phase = 'brief';
     this.applied = null;
     this.practice = false;
+    this.resuming = false;
     this.lastLoot = '';
     this.lastHudScore = '';
     this.permit = null;
@@ -494,6 +496,7 @@
   Arcade.prototype.startCountdown = function (practice) {
     if (!this.game) return;
     this.practice = !!practice;
+    this.resuming = false;
     if (this.dom.arcade) this.dom.arcade.classList.toggle('aurora', !!(this.condition && String(this.condition.id).indexOf('aurora') >= 0));
     this.audio.click();
     this.dom.brief.classList.add('hidden');
@@ -518,7 +521,8 @@
       if (this.countdown <= 0) {
         this.dom.countdown.classList.add('hidden');
         this.phase = 'playing';
-        this.game.begin();
+        if (!this.resuming) this.game.begin();
+        this.resuming = false;
         this.showPlayUI(true);
         this.updateHud();
       }
@@ -790,15 +794,20 @@
     this.audio.click();
   };
 
+  Arcade.prototype.pause = function () {
+    if (this.phase !== 'playing') return;
+    this.pausedPhase = 'playing';
+    this.phase = 'confirm';
+    this.dom.confirm.classList.remove('hidden');
+    this.dom.bottom.classList.add('hidden');
+    this.audio.click();
+  };
+
   Arcade.prototype.back = function () {
     if (this.phase === 'brief' || this.phase === 'summary') {
       this.close();
     } else if (this.phase === 'playing') {
-      this.pausedPhase = 'playing';
-      this.phase = 'confirm';
-      this.dom.confirm.classList.remove('hidden');
-      this.dom.bottom.classList.add('hidden');
-      this.audio.click();
+      this.pause();
     } else if (this.phase === 'countdown') {
       this.close();
     } else if (this.phase === 'confirm') {
@@ -809,7 +818,11 @@
   Arcade.prototype.resume = function () {
     if (this.phase !== 'confirm') return;
     this.dom.confirm.classList.add('hidden');
-    this.phase = 'playing';
+    this.phase = 'countdown';
+    this.resuming = true;
+    this.countdown = 2;
+    this.dom.countdown.textContent = '2';
+    this.dom.countdown.classList.remove('hidden');
     this.showPlayUI(true);
     this.updateHud();
     this.audio.click();
