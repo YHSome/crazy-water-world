@@ -40,6 +40,8 @@
     this.supplies = [];
     this.suppliesCollected = 0;
     this.supplyBonus = false;
+    this.goldenSupply = false;
+    this.goldenCollected = 0;
     this.supplyBonusCredits = 0;
     this.counts = {};
     for (var i = 0; i < CW.MATERIALS.length; i++) this.counts[CW.MATERIALS[i].id] = 0;
@@ -77,6 +79,8 @@
     this.supplies = [];
     this.suppliesCollected = 0;
     this.supplyBonus = false;
+    this.goldenSupply = false;
+    this.goldenCollected = 0;
     this.supplyBonusCredits = 0;
     this.targets = [];
     this.bullets = [];
@@ -200,6 +204,18 @@
     var s = this.supplies[index];
     if (!s) return;
     this.supplies.splice(index, 1);
+    if (s.golden) {
+      this.credits += 400;
+      this.goldenCollected = 1;
+      if (CW.rollCollectibleDef) this.collectibles.push(CW.rollCollectibleDef().id);
+      this.popups.push({ x: s.x, y: s.y - 30, text: '黄金补给 · +400 · 收藏 +1', color: '#fff1b0', life: 2, maxLife: 2 });
+      for (var gp = 0; gp < 24; gp++) {
+        var ga = Math.random() * Math.PI * 2;
+        this.particles.push({ x: s.x, y: s.y, vx: Math.cos(ga) * rand(40, 150), vy: Math.sin(ga) * rand(40, 150), life: rand(0.3, 0.8), maxLife: 0.8, size: rand(1.5, 4), color: '#fff1b0' });
+      }
+      this.audio.coin();
+      return;
+    }
     this.suppliesCollected += 1;
     this.credits += 120;
     if (this.suppliesCollected >= 3 && !this.supplyBonus) {
@@ -208,6 +224,7 @@
       this.credits += 300;
       if (CW.rollCollectibleDef) this.collectibles.push(CW.rollCollectibleDef().id);
       this.popups.push({ x: s.x, y: s.y - 50, text: '补给全清 · +300 · 收藏 +1', color: '#fff1b0', life: 1.9, maxLife: 1.9 });
+      this.spawnGoldenSupply(s.x, s.y - 24);
     }
     if (CW.rollCollectibleDef && Math.random() < 0.3) {
       var cdef = CW.rollCollectibleDef();
@@ -222,13 +239,19 @@
     this.audio.coin();
   };
 
+  GunneryGame.prototype.spawnGoldenSupply = function (x, y) {
+    this.goldenSupply = true;
+    this.supplies.push({ x: Math.min(this.w - 70, Math.max(70, x)), y: Math.max(110, y), vx: 0, vy: 18, r: 20, life: 7, phase: Math.random() * Math.PI * 2, golden: true });
+    this.popups.push({ x: this.w / 2, y: y - 24, text: '黄金补给出现 · 7 秒', color: '#fff1b0', life: 1.8, maxLife: 1.8 });
+  };
+
   GunneryGame.prototype.drawSupply = function (ctx, s) {
     ctx.save();
     ctx.translate(s.x, s.y + Math.sin(s.phase * 4) * 2);
     ctx.fillStyle = 'rgba(2, 24, 32, 0.3)';
     ctx.beginPath(); ctx.ellipse(2, 6, 18, 10, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#5a3d16';
-    ctx.strokeStyle = '#ffdf72';
+    ctx.fillStyle = s.golden ? '#8d650d' : '#5a3d16';
+    ctx.strokeStyle = s.golden ? '#fff1b0' : '#ffdf72';
     ctx.lineWidth = 2.2;
     ctx.beginPath(); ctx.roundRect(-16, -13, 32, 26, 5); ctx.fill(); ctx.stroke();
     ctx.strokeStyle = 'rgba(255, 223, 114, 0.75)';
@@ -238,7 +261,7 @@
     ctx.font = '800 10px "Noto Sans SC", "Microsoft YaHei", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('补', 0, 1);
+    ctx.fillText(s.golden ? '★' : '补', 0, 1);
     ctx.restore();
   };
 
@@ -408,7 +431,8 @@
       bossDefeated: this.bossDefeated,
       suppliesCollected: this.suppliesCollected,
       supplyBonus: this.supplyBonus,
-      supplyBonusCredits: this.supplyBonusCredits
+      supplyBonusCredits: this.supplyBonusCredits,
+      goldenSupply: this.goldenCollected
     };
   };
 
