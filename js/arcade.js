@@ -231,7 +231,8 @@
       confirm: id('arcade-confirm'),
       pauseMission: id('pause-mission'),
       pauseProgress: id('pause-progress'),
-      pauseHint: id('pause-hint')
+      pauseHint: id('pause-hint'),
+      pauseTarget: id('pause-target')
     };
 
     this.resize();
@@ -803,6 +804,7 @@
     if (this.dom.pauseMission) this.dom.pauseMission.textContent = this.dom.name.textContent || '打捞任务';
     if (this.dom.pauseProgress) this.dom.pauseProgress.textContent = hud ? (hud.statLabel + ' ' + hud.stat + ' · 打捞币 ' + fmt(this.game.getScore ? this.game.getScore() : 0)) : '';
     if (this.dom.pauseHint) this.dom.pauseHint.textContent = hud && hud.hint ? hud.hint : '';
+    if (this.dom.pauseTarget) this.dom.pauseTarget.textContent = this.gradeTargetText(this.game && this.game.getScore ? this.game.getScore() : 0);
     this.pausedPhase = 'playing';
     this.phase = 'confirm';
     this.dom.confirm.classList.remove('hidden');
