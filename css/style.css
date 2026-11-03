@@ -3105,3 +3105,13 @@ img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
 .pause-target { display: block; margin-top: 7px; color: #0b7774; font-family: var(--mono); font-size: 8px; font-style: normal; font-weight: 800; }
 .achievement-overview { height: 6px; margin-top: 10px; overflow: hidden; border-radius: 999px; background: rgba(19, 93, 96, 0.1); }
 .achievement-overview i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #18b8b0, #ffc46b); transition: width 240ms ease; }
+
+.sea-pair-title { margin: 14px 0 8px; color: #0b4f50; font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; }
+.sea-pair-title em { margin-left: 4px; color: #b06b2f; font-style: normal; }
+.sea-pair-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+.sea-pair { display: flex; flex-direction: column; gap: 2px; padding: 6px 7px; border: 1px solid rgba(19, 93, 96, 0.1); border-radius: 7px; background: #f8fcfa; }
+.sea-pair b { color: #5f7f80; font-size: 8px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sea-pair i { color: #9aabaa; font-family: var(--mono); font-size: 6px; font-style: normal; }
+.sea-pair.seen { border-color: color-mix(in srgb, var(--sea-a) 50%, transparent); background: linear-gradient(120deg, color-mix(in srgb, var(--sea-a) 12%, #fff), color-mix(in srgb, var(--sea-b) 14%, #fff)); }
+.sea-pair.seen b { color: #0b4f50; }
+.sea-pair.seen i { color: #b06b2f; }
