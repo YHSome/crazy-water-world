@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.77 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.78 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -157,6 +157,13 @@
 - 结算页标记「练习」，并显示「无打捞币 · 无收藏 · 不计统计」。
 - 练习结算的 `arcade-retry` 按钮文案改为「正式出航」，仍复用 `retryRun` 打开同一任务简报。
 - 不产生离线收益。
+
+### 2.12 暂停与自动暂停
+
+- `arcade-back` 在 playing 阶段调用 `pause()`，把阶段切到 `confirm`，停止 `game.update`。
+- `resume()` 进入 2 秒 `countdown`，用 `resuming` 标记，倒计时结束只恢复 `playing`，不重新 `game.begin()`。
+- 页面 `visibilitychange` 隐藏时自动暂停 playing 阶段。
+- 暂停弹窗文案为「暂停这局？」，继续/放弃保持原行为。
 
 ## 3. 世界观
 
@@ -833,6 +840,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
