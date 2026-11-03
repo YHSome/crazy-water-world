@@ -158,7 +158,7 @@
       </div>
       <div class="title-footer">
         <span>海岸实景素材 · 本地图片 · 无离线收益</span>
-        <span>v7.77 · PURE STATIC</span>
+        <span>v7.78 · PURE STATIC</span>
       </div>
     </section>
 
@@ -247,7 +247,7 @@
         <button class="btn ghost wide" data-action="guide">查看玩法说明</button>
         <button id="reset-save" class="btn danger wide" data-action="reset-save">清空避难所</button>
         <p class="modal-note">清空会删除打捞币、物资和所有扩建，无法撤销。再次点击确认。</p>
-        <p class="version">疯狂水世界 · v7.77 · 本地图片素材 + 程序化特效，无远程依赖</p>
+        <p class="version">疯狂水世界 · v7.78 · 本地图片素材 + 程序化特效，无远程依赖</p>
       </div>
     </section>
 
@@ -256,7 +256,7 @@
       <canvas id="arcade-canvas"></canvas>
 
       <header id="arcade-hud" class="arcade-hud">
-        <button id="arcade-back" class="icon-btn" data-action="arcade-back" aria-label="退出任务"><img src="assets/icons/back.svg" alt="" /></button>
+        <button id="arcade-back" class="icon-btn" data-action="arcade-back" aria-label="暂停游戏"><img src="assets/icons/back.svg" alt="" /></button>
         <div class="arcade-heading">
           <span id="arcade-kicker">MISSION 01</span>
           <b id="arcade-name">沉城抓钩</b>
@@ -312,9 +312,9 @@
       </div>
 
       <div id="arcade-confirm" class="arcade-card confirm-card hidden">
-        <p class="eyebrow">ABANDON RUN</p>
-        <h2>放弃这局？</h2>
-        <p class="arcade-copy">本局已经捞到的东西不会带回避难所。</p>
+        <p class="eyebrow">RUN PAUSED</p>
+        <h2>暂停这局？</h2>
+        <p class="arcade-copy">继续打捞会先进行 2 秒倒计时；放弃则不会带回本局收获。</p>
         <div class="confirm-actions">
           <button class="btn ghost" data-action="arcade-resume">继续打捞</button>
           <button class="btn danger" data-action="arcade-quit">放弃</button>
@@ -351,6 +351,8 @@
   </div>
 </body>
 </html>
+
+
 
 
 
