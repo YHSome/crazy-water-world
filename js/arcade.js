@@ -62,6 +62,12 @@
     }
   ]);
 
+  var SEA_COMBOS = (CW.SEA_COMBOS = {
+    'aurora+calm': { name: '镜海共鸣', desc: '静水与极光叠加：额外带回 1 件收藏', collectible: 1 },
+    'redtide+storm': { name: '雷暴共鸣', desc: '赤潮与雷区叠加：打捞币再 +15%', credit: 1.15 },
+    'oil+tailwind': { name: '顺流共鸣', desc: '油污与顺风叠加：物资再 +10%', mat: 1.1 }
+  });
+
   var PERMITS = (CW.PERMITS = [
     {
       id: 'steady', name: '稳潮许可', color: '#14b8b2',
@@ -439,6 +445,19 @@
     }
     out.condition = cond.id;
     out.aurora = String(cond.id).indexOf('aurora') >= 0;
+    var comboKey = String(cond.id).split('+').sort().join('+');
+    var resonance = CW.SEA_COMBOS[comboKey];
+    if (resonance) {
+      out.comboName = resonance.name;
+      if (resonance.credit) out.credits = Math.round(out.credits * resonance.credit);
+      if (resonance.mat) {
+        for (var ri = 0; ri < MATERIALS.length; ri++) {
+          var rid = MATERIALS[ri].id;
+          out.materials[rid] = Math.round((out.materials[rid] || 0) * resonance.mat);
+        }
+      }
+      if (resonance.collectible) out.comboCollectible = true;
+    }
     out.permit = permit ? permit.id : null;
     return out;
   };
@@ -731,6 +750,9 @@
     }
     if (this.applied.seaPair) {
       chips += '<span class="summary-chip sea-pair-chip" style="--tone:#d9b8ff">新组合 · ' + this.applied.seaPair + ' +' + this.applied.seaPairCredits + '</span>';
+    }
+    if (this.applied.comboName) {
+      chips += '<span class="summary-chip combo-resonance" style="--tone:#8ff3e3">组合共鸣 · ' + this.applied.comboName + '</span>';
     }
     if (this.hub.data.equipped && this.hub.data.equipped.length) {
       chips += '<span class="summary-chip relic" style="--tone:#18b8b0">藏品 · ' + this.hub.data.equipped.length + ' 件</span>';
@@ -1921,4 +1943,5 @@
 
   CW.HookGame = HookGame;
 })();
+
 
