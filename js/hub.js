@@ -3449,7 +3449,8 @@
         var cb = CW.CONDITIONS[pb];
         var pkey = [ca.id, cb.id].sort().join('+');
         var pseen = (this.data.seaPairs || []).indexOf(pkey) >= 0;
-        pairHtml += '<span class="sea-pair' + (pseen ? ' seen' : '') + '" style="--sea-a:' + ca.color + ';--sea-b:' + cb.color + '"><b>' + ca.name + ' × ' + cb.name + '</b><i>' + (pseen ? '已记录 · +80' : '未记录') + '</i></span>';
+        var pres = CW.SEA_COMBOS && CW.SEA_COMBOS[pkey];
+        pairHtml += '<span class="sea-pair' + (pseen ? ' seen' : '') + (pres ? ' resonance' : '') + '" style="--sea-a:' + ca.color + ';--sea-b:' + cb.color + '"' + (pres ? ' title="' + pres.desc + '"' : '') + '><b>' + ca.name + ' × ' + cb.name + '</b><i>' + (pseen ? '已记录 · +80' : '未记录') + (pres ? ' · 共鸣' : '') + '</i></span>';
       }
     }
     pairHtml += '</div>';
@@ -5071,6 +5072,10 @@
       if (!Array.isArray(result.collectibles)) result.collectibles = [];
       result.collectibles.push(this.rollUnownedCollectibleDef().id);
     }
+    if (result.comboCollectible) {
+      if (!Array.isArray(result.collectibles)) result.collectibles = [];
+      result.collectibles.push(CW.rollCollectibleDef().id);
+    }
     var firstCoupon = false;
     if (firstClear) {
       creditGain += 200;
@@ -5179,6 +5184,7 @@
       seaBonus: seaBonus,
       seaPair: seaPair ? seaPair.name : '',
       seaPairCredits: seaPair ? seaPair.credits : 0,
+      comboName: result.comboName || '',
       seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
   };
