@@ -923,6 +923,7 @@
       mastery: {},
       seaLog: {},
       seaPairs: [],
+      seaPairClaimed: false,
       seaCodexClaimed: false,
       weekly: { key: '', runs: 0, collectibles: 0, types: {}, claimed: [] },
       tideMail: { date: '', opened: false, choice: '' },
@@ -1028,6 +1029,7 @@
       }
     }
     data.seaCodexClaimed = !!raw.seaCodexClaimed;
+    data.seaPairClaimed = !!raw.seaPairClaimed;
     data.seaPairs = [];
     if (Array.isArray(raw.seaPairs)) {
       for (var spi = 0; spi < raw.seaPairs.length; spi++) {
@@ -3451,6 +3453,12 @@
       }
     }
     pairHtml += '</div>';
+    var pairTotal = (CW.CONDITIONS.length * (CW.CONDITIONS.length - 1)) / 2;
+    if (pairSeen >= pairTotal) {
+      pairHtml += this.data.seaPairClaimed
+        ? '<div class="sea-codex-complete claimed">组合图鉴奖励已领取</div>'
+        : '<button class="sea-codex-claim" data-action="claim-sea-pair">领取组合全收集奖励 · 1,500 币 + 材料</button>';
+    }
     html += '</div>' + pairHtml + '<div class="sea-codex-foot"><span>已记录 ' + count + ' / ' + CW.CONDITIONS.length + '</span><b>当前加成 +' + (count * 1) + '% 打捞币</b></div>';
     if (count >= CW.CONDITIONS.length) {
       html += this.data.seaCodexClaimed
@@ -3529,6 +3537,19 @@
     this.saveGame();
     this.updateUI();
     this.renderPanel();
+  };
+
+  Hub.prototype.claimSeaPair = function () {
+    var total = (CW.CONDITIONS.length * (CW.CONDITIONS.length - 1)) / 2;
+    if ((this.data.seaPairs || []).length < total || this.data.seaPairClaimed) return;
+    this.data.seaPairClaimed = true;
+    var reward = this.grantContractReward({ credits: 1500, mats: { chip: 5, glass: 5, copper: 5 } });
+    this.audio.claim();
+    this.showToast('SEA PAIRS COMPLETE', '组合图鉴奖励已领取', '+' + fmt(reward.credits) + ' 打捞币 · 芯片 5 · 玻璃 5 · 铜 5');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    this.openSeaCodex();
   };
 
   Hub.prototype.claimSeaCodex = function () {
@@ -5305,6 +5326,7 @@
         else if (action === 'tutorial-skip') self.skipTutorial();
         else if (action === 'sea-codex') self.openSeaCodex();
         else if (action === 'claim-sea-codex') self.claimSeaCodex();
+        else if (action === 'claim-sea-pair') self.claimSeaPair();
         else if (action === 'achievement-filter') { self.achievementFilter = actionEl.getAttribute('data-filter') || 'all'; self.audio.tab(); self.renderPanel(); }
         else if (action === 'open-tide-mail') self.openTideMail();
         else if (action === 'tide-choice') self.chooseTideMail(actionEl.getAttribute('data-choice'));
