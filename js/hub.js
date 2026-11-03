@@ -4597,6 +4597,7 @@
         '<span class="collection-kicker">SHIP\'S LOG · 航海日志</span>' +
         '<div class="collection-headline"><b>' + unlocked + ' / ' + ACHIEVEMENTS.length + '</b><span>已解锁' + (ready ? ' · ' + ready + ' 项可领' : '') + '</span></div>' +
         '<p>长期记录会自动累积，不需要重复刷取；每个里程碑只能领取一次。</p>' +
+        '<div class="achievement-overview"><i style="width:' + (unlocked / ACHIEVEMENTS.length * 100).toFixed(1) + '%"></i></div>' +
       '</div>' +
       '<div class="achievement-stats">' +
         '<span><b>' + this.data.stats.bestCombo + '</b>最高连击</span>' +
