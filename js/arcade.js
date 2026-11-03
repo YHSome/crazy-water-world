@@ -65,7 +65,10 @@
   var SEA_COMBOS = (CW.SEA_COMBOS = {
     'aurora+calm': { name: '镜海共鸣', desc: '静水与极光叠加：额外带回 1 件收藏', collectible: 1 },
     'redtide+storm': { name: '雷暴共鸣', desc: '赤潮与雷区叠加：打捞币再 +15%', credit: 1.15 },
-    'oil+tailwind': { name: '顺流共鸣', desc: '油污与顺风叠加：物资再 +10%', mat: 1.1 }
+    'oil+tailwind': { name: '顺流共鸣', desc: '油污与顺风叠加：物资再 +10%', mat: 1.1 },
+    'aurora+storm': { name: '磁暴共鸣', desc: '极光与雷区叠加：打捞币再 +10%', credit: 1.1 },
+    'oil+redtide': { name: '浊潮共鸣', desc: '油污与赤潮叠加：物资再 +8%', mat: 1.08 },
+    'rich+tailwind': { name: '丰潮共鸣', desc: '富氧与顺风叠加：打捞币再 +6%', credit: 1.06 }
   });
 
   var PERMITS = (CW.PERMITS = [
@@ -206,6 +209,7 @@
       hud: id('arcade-hud'),
       kicker: id('arcade-kicker'),
       name: id('arcade-name'),
+      resonance: id('arcade-resonance'),
       statLabel: id('arcade-stat-label'),
       statValue: id('arcade-stat-value'),
       score: id('arcade-score'),
@@ -342,6 +346,7 @@
     this.permit = null;
     this.condition = this.pickCondition();
     this.pickPermitOptions();
+    if (this.dom.resonance) this.dom.resonance.classList.add('hidden');
     document.body.classList.add('is-arcade');
     this.root.classList.remove('hidden');
     this.resize();
@@ -521,6 +526,12 @@
     this.practice = !!practice;
     this.resuming = false;
     if (this.dom.arcade) this.dom.arcade.classList.toggle('aurora', !!(this.condition && String(this.condition.id).indexOf('aurora') >= 0));
+    if (this.dom.resonance) {
+      var comboKey = this.condition ? String(this.condition.id).split('+').sort().join('+') : '';
+      var combo = CW.SEA_COMBOS && CW.SEA_COMBOS[comboKey];
+      this.dom.resonance.textContent = combo ? '共鸣 · ' + combo.name : '';
+      this.dom.resonance.classList.toggle('hidden', !combo);
+    }
     this.audio.click();
     this.dom.brief.classList.add('hidden');
     this.dom.summary.classList.add('hidden');
@@ -814,6 +825,7 @@
     this.permit = null;
     this.condition = this.pickCondition();
     this.pickPermitOptions();
+    if (this.dom.resonance) this.dom.resonance.classList.add('hidden');
     this.createGame(true);
     this.fillBrief();
     this.lastLoot = '';
