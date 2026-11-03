@@ -4581,14 +4581,21 @@
     var filterCounts = {};
     for (var fcount = 0; fcount < filters.length; fcount++) filterCounts[filters[fcount][0]] = 0;
     filterCounts.all = list.length;
-    for (var lcount = 0; lcount < list.length; lcount++) filterCounts[this.achievementCategory(list[lcount])] += 1;
+    var filterUnlocked = {};
+    for (var ucount = 0; ucount < filters.length; ucount++) filterUnlocked[filters[ucount][0]] = 0;
+    for (var lcount = 0; lcount < list.length; lcount++) {
+      var cat = this.achievementCategory(list[lcount]);
+      filterCounts[cat] += 1;
+      if (this.data.achievements[list[lcount].id]) filterUnlocked[cat] += 1;
+    }
+    filterUnlocked.all = unlocked;
     if (!this.achievementFilter || !filters.some(function (f) { return f[0] === this.achievementFilter; }, this)) this.achievementFilter = 'all';
     var filtered = list.filter(function (def) {
       return this.achievementFilter === 'all' || this.achievementCategory(def) === this.achievementFilter;
     }, this);
     var filterHtml = '<div class="achievement-filters">';
     for (var ff = 0; ff < filters.length; ff++) {
-      filterHtml += '<button class="' + (this.achievementFilter === filters[ff][0] ? 'active' : '') + '" data-action="achievement-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + ' <em>' + filterCounts[filters[ff][0]] + '</em></button>';
+      filterHtml += '<button class="' + (this.achievementFilter === filters[ff][0] ? 'active' : '') + '" data-action="achievement-filter" data-filter="' + filters[ff][0] + '">' + filters[ff][1] + ' <em>' + filterUnlocked[filters[ff][0]] + '/' + filterCounts[filters[ff][0]] + '</em></button>';
     }
     filterHtml += '</div>';
     var html = this.shelterSwitch() + this.renderStoryLog() +
