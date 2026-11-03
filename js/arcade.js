@@ -729,6 +729,9 @@
     if (this.applied.seaDiscoveries && this.applied.seaDiscoveries.length) {
       chips += '<span class="summary-chip sea-new" style="--tone:#ffcf6e">新海况 · ' + this.applied.seaDiscoveries.join(' / ') + ' +' + (this.applied.seaDiscoveries.length * 120) + '</span>';
     }
+    if (this.applied.seaPair) {
+      chips += '<span class="summary-chip sea-pair-chip" style="--tone:#d9b8ff">新组合 · ' + this.applied.seaPair + ' +' + this.applied.seaPairCredits + '</span>';
+    }
     if (this.hub.data.equipped && this.hub.data.equipped.length) {
       chips += '<span class="summary-chip relic" style="--tone:#18b8b0">藏品 · ' + this.hub.data.equipped.length + ' 件</span>';
     }
