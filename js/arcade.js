@@ -691,7 +691,7 @@
       chips += '<span class="summary-chip boss-sunk" style="--tone:#ffcf72">走私炮艇 · ' + this.applied.gunneryBoss + ' 艘</span>';
     }
     if (this.applied.gunnerySupplies > 0) {
-      chips += '<span class="summary-chip boss-supply" style="--tone:#ffdf72">炮艇补给 · ' + this.applied.gunnerySupplies + ' 箱' + (this.applied.gunnerySupplyBonus ? ' · 全清 +300' : '') + '</span>';
+      chips += '<span class="summary-chip boss-supply" style="--tone:#ffdf72">炮艇补给 · ' + this.applied.gunnerySupplies + ' 箱' + (this.applied.gunnerySupplyBonus ? ' · 全清 +300' : '') + (this.applied.gunneryGolden ? ' · 黄金补给 +400' : '') + '</span>';
     }
     if (this.applied.trawlPerfect > 0) {
       chips += '<span class="summary-chip perfect-catch" style="--tone:#ffe08a">完美接取 · ' + this.applied.trawlPerfect + ' 次</span>';
