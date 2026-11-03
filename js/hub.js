@@ -922,6 +922,7 @@
       storyClaimed: {},
       mastery: {},
       seaLog: {},
+      seaPairs: [],
       seaCodexClaimed: false,
       weekly: { key: '', runs: 0, collectibles: 0, types: {}, claimed: [] },
       tideMail: { date: '', opened: false, choice: '' },
@@ -1027,6 +1028,13 @@
       }
     }
     data.seaCodexClaimed = !!raw.seaCodexClaimed;
+    data.seaPairs = [];
+    if (Array.isArray(raw.seaPairs)) {
+      for (var spi = 0; spi < raw.seaPairs.length; spi++) {
+        var spair = String(raw.seaPairs[spi] || '');
+        if (/^[a-z]+\+[a-z]+$/.test(spair) && data.seaPairs.indexOf(spair) < 0) data.seaPairs.push(spair);
+      }
+    }
     data.seaLog = {};
     if (raw.seaLog && typeof raw.seaLog === 'object') {
       var seaIds = {};
@@ -2338,18 +2346,35 @@
   };
 
   Hub.prototype.discoverSeaConditions = function (conditionId) {
+    this.lastSeaPairDiscovery = null;
     if (!conditionId) return [];
     if (!this.data.seaLog) this.data.seaLog = {};
+    if (!Array.isArray(this.data.seaPairs)) this.data.seaPairs = [];
     var found = [];
+    var valid = [];
     var parts = String(conditionId).split('+');
     for (var i = 0; i < parts.length; i++) {
       var cid = parts[i];
       var def = null;
       for (var j = 0; j < CW.CONDITIONS.length; j++) if (CW.CONDITIONS[j].id === cid) def = CW.CONDITIONS[j];
+      if (def) valid.push(def);
       if (!def || this.data.seaLog[def.id]) continue;
       this.data.seaLog[def.id] = true;
       this.data.credits += 120;
       found.push(def);
+    }
+    if (valid.length === 2 && valid[0].id !== valid[1].id) {
+      var ids = [valid[0].id, valid[1].id].sort();
+      var pairKey = ids[0] + '+' + ids[1];
+      if (this.data.seaPairs.indexOf(pairKey) < 0) {
+        this.data.seaPairs.push(pairKey);
+        this.data.credits += 80;
+        this.lastSeaPairDiscovery = {
+          key: pairKey,
+          name: valid[0].name + ' × ' + valid[1].name,
+          credits: 80
+        };
+      }
     }
     return found;
   };
@@ -3414,7 +3439,19 @@
         '<div><b>' + (seen ? c.name : '未记录海况') + '</b><p>' + (seen ? c.desc : '在打捞中遇到这种海况后自动记录。') + '</p></div>' +
         '<em>' + (seen ? '+1%' : '—') + '</em></div>';
     }
-    html += '</div><div class="sea-codex-foot"><span>已记录 ' + count + ' / ' + CW.CONDITIONS.length + '</span><b>当前加成 +' + (count * 1) + '% 打捞币</b></div>';
+    var pairSeen = Array.isArray(this.data.seaPairs) ? this.data.seaPairs.length : 0;
+    var pairHtml = '<h4 class="sea-pair-title">SEA PAIRS · 组合图鉴 <em>' + pairSeen + ' / 21</em></h4><div class="sea-pair-grid">';
+    for (var pa = 0; pa < CW.CONDITIONS.length; pa++) {
+      for (var pb = pa + 1; pb < CW.CONDITIONS.length; pb++) {
+        var ca = CW.CONDITIONS[pa];
+        var cb = CW.CONDITIONS[pb];
+        var pkey = [ca.id, cb.id].sort().join('+');
+        var pseen = (this.data.seaPairs || []).indexOf(pkey) >= 0;
+        pairHtml += '<span class="sea-pair' + (pseen ? ' seen' : '') + '" style="--sea-a:' + ca.color + ';--sea-b:' + cb.color + '"><b>' + ca.name + ' × ' + cb.name + '</b><i>' + (pseen ? '已记录 · +80' : '未记录') + '</i></span>';
+      }
+    }
+    pairHtml += '</div>';
+    html += '</div>' + pairHtml + '<div class="sea-codex-foot"><span>已记录 ' + count + ' / ' + CW.CONDITIONS.length + '</span><b>当前加成 +' + (count * 1) + '% 打捞币</b></div>';
     if (count >= CW.CONDITIONS.length) {
       html += this.data.seaCodexClaimed
         ? '<div class="sea-codex-complete claimed">全图鉴奖励已领取</div>'
@@ -4960,6 +4997,8 @@
     var masteryUp = masteryLevel > oldMasteryLevel;
     var taskCreditScale = (TASK_CREDIT_SCALE[taskType] || 1) * (isRecommended ? 1.2 : 1) * (1 + masteryLevel * 0.03) * (1 + seaBonus);
     var creditGain = Math.round((result.credits || 0) * taskCreditScale * this.creditMult());
+    var seaPair = this.lastSeaPairDiscovery;
+    if (seaPair) creditGain += seaPair.credits;
     var chainBonus = Math.round(creditGain * (chainMult - 1));
     var stored = {};
     var overflowUnits = 0;
@@ -5116,6 +5155,8 @@
       sonarEchoFast: result.type === 'sonar' && result.echoFast ? 1 : 0,
       matchOverdrive: result.type === 'match' ? Math.max(0, Number(result.overdriveCount) || 0) : 0,
       seaBonus: seaBonus,
+      seaPair: seaPair ? seaPair.name : '',
+      seaPairCredits: seaPair ? seaPair.credits : 0,
       seaDiscoveries: seaDiscoveries.map(function (c) { return c.name; })
     };
   };
