@@ -3139,3 +3139,10 @@ img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
 
 .condition-reroll { width: 100%; min-height: 32px; margin-top: 6px; border: 1px dashed rgba(19, 93, 96, 0.22); border-radius: 8px; background: #f4fbf8; color: #0b7774; font-family: var(--mono); font-size: 8px; font-weight: 800; }
 .condition-reroll:disabled { opacity: 0.45; }
+
+.reroll-preview { margin-top: 6px; padding: 8px; border: 1px solid rgba(24, 184, 176, 0.35); border-radius: 9px; background: #f1fcf7; }
+.reroll-preview-copy b { display: block; color: #0b7774; font-family: var(--mono); font-size: 7px; letter-spacing: 0.06em; }
+.reroll-preview-copy span { display: block; margin-top: 2px; color: #083f42; font-size: 11px; font-weight: 800; }
+.reroll-preview-copy p { margin: 2px 0 6px; color: #6d8381; font-size: 7px; line-height: 1.4; }
+.reroll-preview-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.reroll-preview-actions .btn { min-height: 30px; font-size: 8px; }
