@@ -242,6 +242,9 @@
       briefGoal: id('brief-goal'),
       briefCondition: id('brief-condition'),
       conditionReroll: id('condition-reroll'),
+      rerollPreview: id('reroll-preview'),
+      rerollName: id('reroll-name'),
+      rerollDesc: id('reroll-desc'),
       briefPermits: id('brief-permits'),
       briefReward: id('brief-reward'),
       summary: id('arcade-summary'),
@@ -339,6 +342,8 @@
     if (action === 'arcade-back') this.back();
     else if (action === 'arcade-permit') this.choosePermit(el ? el.getAttribute('data-permit') : null);
     else if (action === 'arcade-reroll') this.rerollCondition();
+    else if (action === 'arcade-reroll-confirm') this.confirmReroll();
+    else if (action === 'arcade-reroll-cancel') this.cancelReroll();
     else if (action === 'arcade-start') this.startCountdown(false);
   else if (action === 'arcade-practice') this.startCountdown(true);
     else if (action === 'arcade-close') this.close();
@@ -365,6 +370,7 @@
     this.permit = null;
     this.condition = this.pickCondition();
     this.conditionRerolls = 0;
+    this.pendingCondition = null;
     this.pickPermitOptions();
     if (this.dom.resonance) this.dom.resonance.classList.add('hidden');
     document.body.classList.add('is-arcade');
@@ -560,15 +566,37 @@
       this.hub.showToast('NOT ENOUGH', '打捞币不足', '再换一次需要 ' + fmt(cost) + ' 打捞币');
       return;
     }
+    this.pendingCondition = this.pickCondition();
+    if (this.dom.rerollName) this.dom.rerollName.textContent = this.pendingCondition.name;
+    if (this.dom.rerollDesc) this.dom.rerollDesc.textContent = this.pendingCondition.desc;
+    if (this.dom.rerollPreview) this.dom.rerollPreview.classList.remove('hidden');
+    if (this.dom.conditionReroll) this.dom.conditionReroll.classList.add('hidden');
+    this.audio.tab();
+  };
+
+  Arcade.prototype.confirmReroll = function () {
+    if (this.phase !== 'brief' || !this.pendingCondition) return;
+    var cost = (this.conditionRerolls || 0) === 0 ? 0 : 250;
+    if (cost > this.hub.data.credits) { this.cancelReroll(); return; }
     if (cost > 0) {
       this.hub.data.credits -= cost;
       this.hub.saveGame();
       this.hub.updateUI();
     }
     this.conditionRerolls = (this.conditionRerolls || 0) + 1;
-    this.condition = this.pickCondition();
+    this.condition = this.pendingCondition;
+    this.pendingCondition = null;
+    if (this.dom.rerollPreview) this.dom.rerollPreview.classList.add('hidden');
     this.fillBrief();
-    this.audio.tab();
+    this.audio.claim();
+  };
+
+  Arcade.prototype.cancelReroll = function () {
+    this.pendingCondition = null;
+    if (this.dom.rerollPreview) this.dom.rerollPreview.classList.add('hidden');
+    if (this.dom.conditionReroll) this.dom.conditionReroll.classList.remove('hidden');
+    this.updateRerollButton();
+    this.audio.click();
   };
 
   Arcade.prototype.startCountdown = function (practice) {
@@ -875,6 +903,7 @@
     this.permit = null;
     this.condition = this.pickCondition();
     this.conditionRerolls = 0;
+    this.pendingCondition = null;
     this.pickPermitOptions();
     if (this.dom.resonance) this.dom.resonance.classList.add('hidden');
     this.createGame(true);
