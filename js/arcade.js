@@ -241,6 +241,7 @@
       briefCapacity: id('brief-capacity'),
       briefGoal: id('brief-goal'),
       briefCondition: id('brief-condition'),
+      conditionReroll: id('condition-reroll'),
       briefPermits: id('brief-permits'),
       briefReward: id('brief-reward'),
       summary: id('arcade-summary'),
@@ -337,6 +338,7 @@
   Arcade.prototype.onAction = function (action, el) {
     if (action === 'arcade-back') this.back();
     else if (action === 'arcade-permit') this.choosePermit(el ? el.getAttribute('data-permit') : null);
+    else if (action === 'arcade-reroll') this.rerollCondition();
     else if (action === 'arcade-start') this.startCountdown(false);
   else if (action === 'arcade-practice') this.startCountdown(true);
     else if (action === 'arcade-close') this.close();
@@ -362,6 +364,7 @@
     this.lastHudScore = '';
     this.permit = null;
     this.condition = this.pickCondition();
+    this.conditionRerolls = 0;
     this.pickPermitOptions();
     if (this.dom.resonance) this.dom.resonance.classList.add('hidden');
     document.body.classList.add('is-arcade');
@@ -536,6 +539,36 @@
     if (this.hub.used() >= this.hub.capacity()) {
       this.dom.briefCapacity.textContent = '仓库已满';
     }
+    this.updateRerollButton();
+  };
+
+  Arcade.prototype.updateRerollButton = function () {
+    if (!this.dom.conditionReroll) return;
+    var left = 2 - (this.conditionRerolls || 0);
+    if (left <= 0) { this.dom.conditionReroll.classList.add('hidden'); return; }
+    var cost = (this.conditionRerolls || 0) === 0 ? 0 : 250;
+    this.dom.conditionReroll.classList.remove('hidden');
+    this.dom.conditionReroll.textContent = cost ? '再换一次 · ' + fmt(cost) + ' 币' : '换一次海况 · 免费';
+    this.dom.conditionReroll.disabled = cost > 0 && this.hub.data.credits < cost;
+  };
+
+  Arcade.prototype.rerollCondition = function () {
+    if (this.phase !== 'brief') return;
+    if ((this.conditionRerolls || 0) >= 2) return;
+    var cost = (this.conditionRerolls || 0) === 0 ? 0 : 250;
+    if (cost > this.hub.data.credits) {
+      this.hub.showToast('NOT ENOUGH', '打捞币不足', '再换一次需要 ' + fmt(cost) + ' 打捞币');
+      return;
+    }
+    if (cost > 0) {
+      this.hub.data.credits -= cost;
+      this.hub.saveGame();
+      this.hub.updateUI();
+    }
+    this.conditionRerolls = (this.conditionRerolls || 0) + 1;
+    this.condition = this.pickCondition();
+    this.fillBrief();
+    this.audio.tab();
   };
 
   Arcade.prototype.startCountdown = function (practice) {
@@ -841,6 +874,7 @@
     this.phase = 'brief';
     this.permit = null;
     this.condition = this.pickCondition();
+    this.conditionRerolls = 0;
     this.pickPermitOptions();
     if (this.dom.resonance) this.dom.resonance.classList.add('hidden');
     this.createGame(true);
@@ -1978,5 +2012,6 @@
 
   CW.HookGame = HookGame;
 })();
+
 
 
