@@ -924,6 +924,7 @@
       seaLog: {},
       seaPairs: [],
       seaPairCounts: {},
+      seaPairMilestones: [],
       seaPairClaimed: false,
       seaCodexClaimed: false,
       weekly: { key: '', runs: 0, collectibles: 0, types: {}, claimed: [] },
@@ -1033,6 +1034,10 @@
     data.seaPairClaimed = !!raw.seaPairClaimed;
     data.seaPairs = [];
     data.seaPairCounts = {};
+    data.seaPairMilestones = [];
+    if (Array.isArray(raw.seaPairMilestones)) {
+      for (var spm = 0; spm < raw.seaPairMilestones.length; spm++) data.seaPairMilestones.push(Math.floor(Number(raw.seaPairMilestones[spm]) || 0));
+    }
     if (raw.seaPairCounts && typeof raw.seaPairCounts === 'object') {
       for (var spc in raw.seaPairCounts) {
         if (!Object.prototype.hasOwnProperty.call(raw.seaPairCounts, spc)) continue;
@@ -2355,6 +2360,13 @@
     return this.seaLogCount() * 0.01;
   };
 
+  Hub.prototype.seaPairTotal = function () {
+    var total = 0;
+    var counts = this.data.seaPairCounts || {};
+    for (var key in counts) if (Object.prototype.hasOwnProperty.call(counts, key)) total += Math.max(0, Number(counts[key]) || 0);
+    return total;
+  };
+
   Hub.prototype.discoverSeaConditions = function (conditionId) {
     this.lastSeaPairDiscovery = null;
     if (!conditionId) return [];
@@ -3466,6 +3478,16 @@
     }
     pairHtml += '</div>';
     var pairTotal = (CW.CONDITIONS.length * (CW.CONDITIONS.length - 1)) / 2;
+    var pairMilestones = [[5, 260, { chip: 2, glass: 2 }], [12, 600, { chip: 4, copper: 4 }], [25, 1400, { metal: 6, fuel: 6, glass: 6 }]];
+    var pairTotalCount = this.seaPairTotal();
+    pairHtml += '<h4 class="sea-pair-title">PAIR MILESTONES · 组合里程 <em>' + pairTotalCount + '</em></h4><div class="sea-pair-milestones">';
+    for (var pmi = 0; pmi < pairMilestones.length; pmi++) {
+      var pm = pairMilestones[pmi];
+      var pmClaimed = (this.data.seaPairMilestones || []).indexOf(pm[0]) >= 0;
+      var pmReady = !pmClaimed && pairTotalCount >= pm[0];
+      pairHtml += '<button class="sea-pair-milestone' + (pmClaimed ? ' claimed' : pmReady ? ' ready' : '') + '" data-action="claim-sea-pair-milestone" data-count="' + pm[0] + '"' + (pmReady ? '' : ' disabled') + '><b>' + pm[0] + ' 次</b><span>' + (pmClaimed ? '已领取' : pmReady ? '领取 +' + fmt(pm[1]) : '还差 ' + (pm[0] - pairTotalCount)) + '</span></button>';
+    }
+    pairHtml += '</div>';
     if (pairSeen >= pairTotal) {
       pairHtml += this.data.seaPairClaimed
         ? '<div class="sea-codex-complete claimed">组合图鉴奖励已领取</div>'
@@ -3549,6 +3571,20 @@
     this.saveGame();
     this.updateUI();
     this.renderPanel();
+  };
+
+  Hub.prototype.claimSeaPairMilestone = function (count) {
+    var milestones = { 5: { credits: 260, mats: { chip: 2, glass: 2 } }, 12: { credits: 600, mats: { chip: 4, copper: 4 } }, 25: { credits: 1400, mats: { metal: 6, fuel: 6, glass: 6 } } };
+    var reward = milestones[count];
+    if (!reward || (this.data.seaPairMilestones || []).indexOf(count) >= 0 || this.seaPairTotal() < count) return;
+    this.data.seaPairMilestones.push(count);
+    var gained = this.grantContractReward(reward);
+    this.audio.claim();
+    this.showToast('PAIR MILESTONE', '组合里程 ' + count + ' 次', '+' + fmt(gained.credits) + ' 打捞币 · 材料');
+    this.saveGame();
+    this.updateUI();
+    this.renderPanel();
+    this.openSeaCodex();
   };
 
   Hub.prototype.claimSeaPair = function () {
@@ -5345,6 +5381,7 @@
         else if (action === 'sea-codex') self.openSeaCodex();
         else if (action === 'claim-sea-codex') self.claimSeaCodex();
         else if (action === 'claim-sea-pair') self.claimSeaPair();
+        else if (action === 'claim-sea-pair-milestone') self.claimSeaPairMilestone(parseInt(actionEl.getAttribute('data-count'), 10));
         else if (action === 'achievement-filter') { self.achievementFilter = actionEl.getAttribute('data-filter') || 'all'; self.audio.tab(); self.renderPanel(); }
         else if (action === 'open-tide-mail') self.openTideMail();
         else if (action === 'tide-choice') self.chooseTideMail(actionEl.getAttribute('data-choice'));
