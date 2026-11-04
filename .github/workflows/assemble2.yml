@@ -1,0 +1,17 @@
+name: B
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  b:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for f in a:js/arcade.js d:DESIGN.md s:docs/preview-condition.webp; do cat .deploy/${f%%:*}.gz.*|gzip -d>${f#*:}; done
+          rm -rf .deploy
+          git config user.name cw
+          git config user.email cw@x
+          git add js/arcade.js DESIGN.md docs
+          git commit -m d
+          git push
