@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.91 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.92 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -177,7 +177,7 @@
 ### 2.13 存档导出与导入
 
 - 导出：`saveGame()` 后把 `SAVE_KEY` 原始 JSON 作为 Blob 下载，文件名带日期。
-- 导入：`file.text()` / FileReader 读取，校验 `v === 1`、`started === true`、文件 ≤2MB，确认后写入并 reload。
+- 导入：`file.text()` / FileReader 读取，校验 `v === 1`、`started === true`、文件 ≤2MB；确认框显示待导入存档的打捞币、出航、避难所等级与收藏种类，确认后写入并 reload。
 - 关键点：设置 `this.importing = true`，`saveGame()` 与 `pagehide / beforeunload` 在导入期间跳过，避免旧内存存档覆盖导入结果。
 - 全部本地处理，无远程请求。
 
@@ -858,6 +858,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
