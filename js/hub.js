@@ -923,6 +923,7 @@
       mastery: {},
       seaLog: {},
       seaPairs: [],
+      seaPairCounts: {},
       seaPairClaimed: false,
       seaCodexClaimed: false,
       weekly: { key: '', runs: 0, collectibles: 0, types: {}, claimed: [] },
@@ -1031,6 +1032,13 @@
     data.seaCodexClaimed = !!raw.seaCodexClaimed;
     data.seaPairClaimed = !!raw.seaPairClaimed;
     data.seaPairs = [];
+    data.seaPairCounts = {};
+    if (raw.seaPairCounts && typeof raw.seaPairCounts === 'object') {
+      for (var spc in raw.seaPairCounts) {
+        if (!Object.prototype.hasOwnProperty.call(raw.seaPairCounts, spc)) continue;
+        if (/^[a-z]+\+[a-z]+$/.test(spc)) data.seaPairCounts[spc] = Math.max(0, Math.floor(Number(raw.seaPairCounts[spc]) || 0));
+      }
+    }
     if (Array.isArray(raw.seaPairs)) {
       for (var spi = 0; spi < raw.seaPairs.length; spi++) {
         var spair = String(raw.seaPairs[spi] || '');
@@ -2368,6 +2376,8 @@
     if (valid.length === 2 && valid[0].id !== valid[1].id) {
       var ids = [valid[0].id, valid[1].id].sort();
       var pairKey = ids[0] + '+' + ids[1];
+      if (!this.data.seaPairCounts) this.data.seaPairCounts = {};
+      this.data.seaPairCounts[pairKey] = (this.data.seaPairCounts[pairKey] || 0) + 1;
       if (this.data.seaPairs.indexOf(pairKey) < 0) {
         this.data.seaPairs.push(pairKey);
         this.data.credits += 80;
@@ -3449,8 +3459,9 @@
         var cb = CW.CONDITIONS[pb];
         var pkey = [ca.id, cb.id].sort().join('+');
         var pseen = (this.data.seaPairs || []).indexOf(pkey) >= 0;
+        var pcount = (this.data.seaPairCounts && this.data.seaPairCounts[pkey]) || 0;
         var pres = CW.SEA_COMBOS && CW.SEA_COMBOS[pkey];
-        pairHtml += '<span class="sea-pair' + (pseen ? ' seen' : '') + (pres ? ' resonance' : '') + '" style="--sea-a:' + ca.color + ';--sea-b:' + cb.color + '"' + (pres ? ' title="' + pres.desc + '"' : '') + '><b>' + ca.name + ' × ' + cb.name + '</b><i>' + (pseen ? '已记录 · +80' : '未记录') + (pres ? ' · 共鸣' : '') + '</i></span>';
+        pairHtml += '<span class="sea-pair' + (pseen ? ' seen' : '') + (pres ? ' resonance' : '') + '" style="--sea-a:' + ca.color + ';--sea-b:' + cb.color + '"' + (pres ? ' title="' + pres.desc + '"' : '') + '><b>' + ca.name + ' × ' + cb.name + '</b><i>' + (pseen ? '已记录 ×' + pcount + ' · +80' : '未记录') + (pres ? ' · 共鸣' : '') + '</i></span>';
       }
     }
     pairHtml += '</div>';
