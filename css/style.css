@@ -3124,3 +3124,11 @@ img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
 .pause-sea { display: block; margin-top: 3px; color: #7c8f8f; font-family: var(--mono); font-size: 7px; font-style: normal; }
 
 .pause-resonance { display: block; margin-top: 2px; color: #a06b2c; font-family: var(--mono); font-size: 7px; font-style: normal; }
+
+.sea-pair-milestones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-bottom: 8px; }
+.sea-pair-milestone { display: flex; flex-direction: column; gap: 2px; padding: 7px 4px; border: 1px solid rgba(19, 93, 96, 0.12); border-radius: 8px; background: #f6fbf8; text-align: center; }
+.sea-pair-milestone b { color: #0b4f50; font-family: var(--mono); font-size: 8px; }
+.sea-pair-milestone span { color: #9aabaa; font-size: 7px; }
+.sea-pair-milestone.ready { border-color: #18b8b0; background: #e9fbf4; }
+.sea-pair-milestone.ready span { color: #0b7774; font-weight: 700; }
+.sea-pair-milestone.claimed { opacity: 0.55; }
