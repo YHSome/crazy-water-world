@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.86 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.87 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -169,7 +169,8 @@
 - `resume()` 进入 2 秒 `countdown`，用 `resuming` 标记，倒计时结束只恢复 `playing`，不重新 `game.begin()`。
 - 页面 `visibilitychange` 隐藏时自动暂停 playing 阶段。
 - 暂停弹窗文案为「暂停这局？」，并读取 `game.getHud()` 显示任务名、主资源、本局打捞币与操作提示；继续/放弃保持原行为。
-- 暂停概览底部复用 `gradeTargetText()` 显示距下一评级分数。
+- 暂停概览底部复用 `gradeTargetText()` 显示距下一评级分数，并显示当前海况与共鸣名称。
+- `index.html` 使用 `<link rel="preload" as="image">` 预加载 `bg-title.webp` 与 `bg-hub.webp`，标题图 `fetchpriority="high"`。
 
 ## 3. 世界观
 
@@ -848,6 +849,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
