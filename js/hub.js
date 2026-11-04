@@ -1329,6 +1329,7 @@
 
     var loaded = loadSave();
     this.hasSave = !!loaded;
+    this.importing = false;
     this.data = loaded || makeDefault();
     this.ensureDaily();
     this.state = 'title';
@@ -5238,7 +5239,7 @@
 
   /* ── save / toast ────────────────────────────────────────── */
   Hub.prototype.saveGame = function () {
-    if (this.resetting || !this.data || !this.data.started) return;
+    if (this.importing || this.resetting || !this.data || !this.data.started) return;
     persistSave(this.data);
   };
 
@@ -5303,6 +5304,57 @@
     var labels = document.querySelectorAll('.settings-row .toggle > span');
     for (var j = 0; j < labels.length; j++) labels[j].textContent = this.audio.muted ? '关闭' : '开启';
   };
+  Hub.prototype.exportSave = function () {
+    this.saveGame();
+    var raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { this.audio.warn(); this.showToast('NO SAVE', '没有可导出的存档', '先完成一次打捞或进入避难所'); return; }
+    var blob = new Blob([raw], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'crazy-water-world-save-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    this.audio.claim();
+    this.showToast('SAVE EXPORTED', '存档已导出', '文件保存在浏览器下载目录');
+  };
+
+  Hub.prototype.applyImportedSave = function (text) {
+    var raw = null;
+    try { raw = JSON.parse(String(text || '')); } catch (err) { raw = null; }
+    if (!raw || typeof raw !== 'object' || raw.v !== 1 || !raw.started) {
+      this.showToast('IMPORT FAILED', '存档格式不正确', '需要 crazy-water-world 导出的 JSON');
+      return false;
+    }
+    if (!window.confirm('导入会覆盖当前避难所，确定继续？')) return false;
+    try {
+      this.importing = true;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(raw));
+      location.reload();
+      return true;
+    } catch (err) {
+      this.showToast('IMPORT FAILED', '无法写入本地存档', '检查浏览器存储空间');
+      return false;
+    }
+  };
+
+  Hub.prototype.importSaveFile = function (file) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { this.showToast('IMPORT FAILED', '存档文件过大', '请选择本游戏导出的 JSON'); return; }
+    var self = this;
+    if (file.text) {
+      file.text().then(function (text) { self.applyImportedSave(text); }).catch(function () {
+        self.showToast('IMPORT FAILED', '无法读取存档文件', '请重新选择');
+      });
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () { self.applyImportedSave(reader.result); };
+    reader.readAsText(file);
+  };
+
   Hub.prototype.resetSave = function () {
     this.audio.click();
     if (!this.resetArmed) {
@@ -5345,6 +5397,12 @@
   Hub.prototype.bindEvents = function () {
     var self = this;
     document.addEventListener('pointerdown', function () { self.audio.unlock(); }, { once: true });
+    var importInput = document.getElementById('import-save');
+    if (importInput) importInput.addEventListener('change', function () {
+      var input = this;
+      if (this.files && this.files[0]) self.importSaveFile(this.files[0]);
+      setTimeout(function () { input.value = ''; }, 1000);
+    });
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) return;
       var arcade = self.arcade;
@@ -5366,6 +5424,7 @@
         else if (action === 'guide') self.openGuide();
         else if (action === 'close-guide') self.closeGuide();
         else if (action === 'settings') self.openSettings();
+        else if (action === 'export-save') self.exportSave();
         else if (action === 'close-settings') self.closeSettings();
         else if (action === 'mute') self.toggleMute();
         else if (action === 'quality') self.cycleQuality();
@@ -5537,8 +5596,8 @@
         self.updateLayout();
       });
     }
-    window.addEventListener('pagehide', function () { self.saveGame(); });
-    window.addEventListener('beforeunload', function () { self.saveGame(); });
+    window.addEventListener('pagehide', function () { if (!self.importing) self.saveGame(); });
+    window.addEventListener('beforeunload', function () { if (!self.importing) self.saveGame(); });
     window.addEventListener('blur', function () { self.saveGame(); });
   };
 

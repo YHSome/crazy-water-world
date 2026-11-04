@@ -3132,3 +3132,7 @@ img.img-missing { object-fit: contain; padding: 6px; background: #dcebe8; }
 .sea-pair-milestone.ready { border-color: #18b8b0; background: #e9fbf4; }
 .sea-pair-milestone.ready span { color: #0b7774; font-weight: 700; }
 .sea-pair-milestone.claimed { opacity: 0.55; }
+
+.save-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.save-import { position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.save-import input { display: none; }
