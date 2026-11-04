@@ -1,0 +1,17 @@
+name: A
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  b:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for f in i:index.html h:js/hub.js c:css/style.css r:README.md d:DESIGN.md o:ROADMAP.md s:docs/preview-save.webp t:docs/preview-title.webp; do cat .deploy/${f%%:*}.gz.*|gzip -d>${f#*:}; done
+          rm -rf .deploy
+          git config user.name cw
+          git config user.email cw@x
+          git add index.html js/hub.js css/style.css README.md DESIGN.md ROADMAP.md docs
+          git commit -m d
+          git push
