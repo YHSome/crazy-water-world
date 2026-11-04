@@ -1,6 +1,6 @@
 # 疯狂水世界 · 游戏设计文档
 
-> 版本：7.88 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
+> 版本：7.89 · 类型：海岸打捞 / 小游戏合集 / 轻松经营  
 > 平台：桌面与移动端浏览器 · 单局 1–3 分钟 · 无离线收益
 
 ---
@@ -112,6 +112,7 @@
 - 7 种海况两两组合共 21 组；`discoverSeaConditions` 记录 `seaPairs`，首次遇到 +80 币并在结算显示「新组合」。
 - 海况弹窗在单词条列表后展示组合网格，已记录组合使用双色渐变。
 - 21 组全部记录后显示一次性领取按钮：1,500 币 + 芯片 5 + 玻璃 5 + 铜 5；状态写入 `seaPairClaimed`。
+- `seaPairCounts` 记录每组组合的遭遇次数；图鉴显示「已记录 ×N · +80」，重复不再发币。
 - `CW.SEA_COMBOS` 定义全部 21 组共鸣：6 组强化效果（镜海收藏、雷暴 +15%、顺流 +10%、磁暴 +10%、浊潮 +8%、丰潮 +6%）与 15 组 +4%–+6% 单项效果；`applyCondition()` 按排序组合键结算，图鉴标出共鸣。
 - 打捞 HUD 在任务名下方显示「共鸣 · 名称」，非共鸣隐藏。
 - 极光局给 `#arcade` 添加 `aurora` 类，叠加不拦截点击的极光层；非极光局移除，`prefers-reduced-motion` 时关闭动画。
@@ -169,7 +170,7 @@
 - `resume()` 进入 2 秒 `countdown`，用 `resuming` 标记，倒计时结束只恢复 `playing`，不重新 `game.begin()`。
 - 页面 `visibilitychange` 隐藏时自动暂停 playing 阶段。
 - 暂停弹窗文案为「暂停这局？」，并读取 `game.getHud()` 显示任务名、主资源、本局打捞币与操作提示；继续/放弃保持原行为。
-- 暂停概览底部复用 `gradeTargetText()` 显示距下一评级分数，并显示当前海况与共鸣名称。
+- 暂停概览底部复用 `gradeTargetText()` 显示距下一评级分数，并显示当前海况、共鸣名称与共鸣效果说明。
 - `index.html` 使用 `<link rel="preload" as="image">` 预加载 `bg-title.webp` 与 `bg-hub.webp`，标题图 `fetchpriority="high"`。
 
 ## 3. 世界观
@@ -849,6 +850,7 @@ CREDITS.md                        图片与图标授权
 ---
 
 所有核心数值集中在 `js/hub.js`、`js/arcade.js`、`js/match.js` 顶部，方便直接调整并重新平衡。过滤器出现率分别在 `HookGame.buildField`（12%）和 `MatchGame.finish`（5%）中调整。
+
 
 
 
