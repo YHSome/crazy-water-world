@@ -831,6 +831,16 @@
       id: 'coupon-three', name: '精打细算', iconImg: 'assets/real/storage.webp',
       metric: 'couponsUsed', target: 3, desc: '累计使用 3 张避难所扩建券。',
       reward: { credits: 900, mats: { fiber: 6, glass: 5 } }
+    },
+    {
+      id: 'pair-traveler', name: '共鸣旅人', iconImg: 'assets/real/sonar.webp',
+      metric: 'seaPairTotal', target: 25, desc: '累计遇到 25 次双重海况组合。',
+      reward: { credits: 1100, mats: { chip: 6, glass: 6 } }
+    },
+    {
+      id: 'pair-all', name: '万象共鸣', iconImg: 'assets/collectibles/tide-crown.webp',
+      metric: 'seaPairUnique', target: 21, desc: '记录全部 21 组海况组合。',
+      reward: { credits: 2000, mats: { metal: 10, fuel: 8, fiber: 8, chip: 8, glass: 8, copper: 8 } }
     }
   ]);
 
@@ -4562,6 +4572,8 @@
       case 'sonarEchoFasts': return this.data.stats.sonarEchoFasts || 0;
       case 'supplyFullClears': return this.data.stats.supplyFullClears || 0;
       case 'couponsUsed': return this.data.stats.couponsUsed || 0;
+      case 'seaPairTotal': return this.seaPairTotal();
+      case 'seaPairUnique': return (this.data.seaPairs || []).length;
       case 'cutRuns': return this.data.stats.cutRuns || 0;
       case 'sortRuns': return this.data.stats.sortRuns || 0;
       case 'beaconRuns': return this.data.stats.beaconRuns || 0;
@@ -4651,7 +4663,9 @@
       case 'sonarEchoes':
       case 'sonarEchoFasts':
       case 'supplyFullClears':
-      case 'couponsUsed': return 'new';
+      case 'couponsUsed':
+      case 'seaPairTotal':
+      case 'seaPairUnique': return 'new';
       case 'level':
       case 'shelterLevel':
       case 'crewMaxed':
