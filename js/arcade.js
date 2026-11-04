@@ -68,7 +68,22 @@
     'oil+tailwind': { name: '顺流共鸣', desc: '油污与顺风叠加：物资再 +10%', mat: 1.1 },
     'aurora+storm': { name: '磁暴共鸣', desc: '极光与雷区叠加：打捞币再 +10%', credit: 1.1 },
     'oil+redtide': { name: '浊潮共鸣', desc: '油污与赤潮叠加：物资再 +8%', mat: 1.08 },
-    'rich+tailwind': { name: '丰潮共鸣', desc: '富氧与顺风叠加：打捞币再 +6%', credit: 1.06 }
+    'rich+tailwind': { name: '丰潮共鸣', desc: '富氧与顺风叠加：打捞币再 +6%', credit: 1.06 },
+    'aurora+oil': { name: '夜油共鸣', desc: '极光与油污叠加：物资再 +5%', mat: 1.05 },
+    'aurora+redtide': { name: '极赤共鸣', desc: '极光与赤潮叠加：打捞币再 +6%', credit: 1.06 },
+    'aurora+rich': { name: '极昼共鸣', desc: '极光与富氧叠加：物资再 +5%', mat: 1.05 },
+    'aurora+tailwind': { name: '极风共鸣', desc: '极光与顺风叠加：打捞币再 +5%', credit: 1.05 },
+    'calm+oil': { name: '静油共鸣', desc: '静水与油污叠加：打捞币再 +4%', credit: 1.04 },
+    'calm+redtide': { name: '静赤共鸣', desc: '静水与赤潮叠加：物资再 +5%', mat: 1.05 },
+    'calm+rich': { name: '静氧共鸣', desc: '静水与富氧叠加：打捞币再 +4%', credit: 1.04 },
+    'calm+storm': { name: '静雷共鸣', desc: '静水与雷区叠加：物资再 +4%', mat: 1.04 },
+    'calm+tailwind': { name: '风平共鸣', desc: '静水与顺风叠加：打捞币再 +4%', credit: 1.04 },
+    'oil+rich': { name: '富油共鸣', desc: '油污与富氧叠加：物资再 +5%', mat: 1.05 },
+    'oil+storm': { name: '油雷共鸣', desc: '油污与雷区叠加：打捞币再 +5%', credit: 1.05 },
+    'redtide+rich': { name: '赤氧共鸣', desc: '赤潮与富氧叠加：物资再 +5%', mat: 1.05 },
+    'redtide+tailwind': { name: '赤风共鸣', desc: '赤潮与顺风叠加：打捞币再 +5%', credit: 1.05 },
+    'rich+storm': { name: '富雷共鸣', desc: '富氧与雷区叠加：物资再 +5%', mat: 1.05 },
+    'storm+tailwind': { name: '雷风共鸣', desc: '雷区与顺风叠加：打捞币再 +5%', credit: 1.05 }
   });
 
   var PERMITS = (CW.PERMITS = [
