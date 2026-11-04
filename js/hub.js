@@ -5328,7 +5328,12 @@
       this.showToast('IMPORT FAILED', '存档格式不正确', '需要 crazy-water-world 导出的 JSON');
       return false;
     }
-    if (!window.confirm('导入会覆盖当前避难所，确定继续？')) return false;
+    var ownedCount = 0;
+    for (var ci in (raw.collectibles || {})) {
+      if (Object.prototype.hasOwnProperty.call(raw.collectibles, ci) && raw.collectibles[ci] > 0) ownedCount++;
+    }
+    var summary = '打捞币 ' + fmt(raw.credits || 0) + ' · 出航 ' + (raw.runs || 0) + ' 次 · 避难所 Lv.' + (raw.shelterLevel || 1) + ' · 收藏 ' + ownedCount + ' 种';
+    if (!window.confirm('导入这段存档？\n' + summary + '\n\n会覆盖当前避难所。')) return false;
     try {
       this.importing = true;
       localStorage.setItem(SAVE_KEY, JSON.stringify(raw));
