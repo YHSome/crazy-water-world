@@ -258,7 +258,8 @@
       pauseProgress: id('pause-progress'),
       pauseHint: id('pause-hint'),
       pauseTarget: id('pause-target'),
-      pauseSea: id('pause-sea')
+      pauseSea: id('pause-sea'),
+      pauseResonance: id('pause-resonance')
     };
 
     this.resize();
@@ -862,6 +863,7 @@
       var pkey = this.condition ? String(this.condition.id).split('+').sort().join('+') : '';
       var pres = CW.SEA_COMBOS && CW.SEA_COMBOS[pkey];
       this.dom.pauseSea.textContent = this.condition ? ('海况 · ' + this.condition.name + (pres ? ' · ' + pres.name : '')) : '';
+      if (this.dom.pauseResonance) this.dom.pauseResonance.textContent = pres ? pres.desc : '';
     }
     this.pausedPhase = 'playing';
     this.phase = 'confirm';
